@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kompass</title>
+<style>
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:#f6f7fb;color:#172033}
+.app{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+aside{background:white;padding:24px;border-right:1px solid #e6e8f0}
+.logo{font-size:32px;font-weight:900}.sub{color:#667085;margin:4px 0 24px}
+button{font:inherit}
+.nav button{display:block;width:100%;padding:14px;border:0;background:transparent;text-align:left;border-radius:14px;margin:4px 0}
+.nav button.active{background:#eef2ff;font-weight:800;color:#3142aa}
+main{padding:28px}
+h1{font-size:34px;margin:0 0 8px}.hint{color:#667085;margin-bottom:22px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card{background:white;border:1px solid #e6e8f0;border-radius:22px;padding:20px;box-shadow:0 10px 30px rgba(16,24,40,.08)}
+.tile{text-align:left;cursor:pointer;min-height:110px}
+.tile b{font-size:21px;display:block;margin-bottom:8px}.tile span,.card p{color:#667085}
+.section{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:#667085;font-weight:900;margin:28px 0 10px}
+.classgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.klasse{color:white;border:0}.a{background:#4f8cff}.b{background:#ef5b5b}.c{background:#f3c64e;color:#4b3b00}.d{background:#8b5cf6}.e{background:#34c779}
+.students{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.dot{display:inline-block;width:14px;height:14px;border-radius:50%;margin-right:8px}
+.matrixwrap{overflow:auto}
+table{width:100%;border-collapse:separate;border-spacing:0 8px;min-width:900px}
+th{color:#667085;font-size:13px;padding:8px}td{background:white;padding:10px;border-top:1px solid #f0f1f6;border-bottom:1px solid #f0f1f6}
+td:first-child{font-weight:750;border-radius:14px 0 0 14px}
+.status{width:42px;height:42px;border-radius:14px;border:2px solid #e5e7ef;background:#f2f4f7;margin:0 2px}
+.green.on{background:#d9f7e8;border-color:#55d49a;color:#087443}.yellow.on{background:#fff3c4;border-color:#f2c94c;color:#946200}.red.on{background:#ffe0df;border-color:#f97066;color:#b42318}
+.mobile{display:none}
+@media(max-width:900px){.app{display:block}aside{display:none}main{padding:18px 14px 88px}.grid,.classgrid{grid-template-columns:1fr}.students{grid-template-columns:1fr 1fr}h1{font-size:29px}.mobile{display:flex;position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid #e6e8f0;padding:8px;gap:6px}.mobile button{flex:1;border:0;background:transparent;border-radius:14px;padding:10px 4px}.mobile button.active{background:#eef2ff;font-weight:900;color:#3142aa}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+let view='start', subject=null;
+const pupils=[['David N.','d'],['Noah M.','a'],['Anna K.','b'],['Lea S.','c'],['Mira T.','e'],['Max W.','d'],['Lina F.','d'],['Tim B.','a']];
+const subjects={
+'Englisch':{'Grammatik':['Simple Present anwenden','Fragen bilden'],'Schreiben':['Über Alltag schreiben']},
+'Deutsch':{'Lesen':['Sachtexten Informationen entnehmen']},
+'Mathematik':{'Daten':['Diagramme lesen und beschreiben']},
+'WBS':{'Wirtschaft':['Kostenarten unterscheiden','Diagramme analysieren']},
+'Biologie':{'Naturwissenschaftlich arbeiten':['Versuche beschreiben']},
+'Technik':{'Sicherheit':['Werkzeuge sicher nutzen']},
+'Gitarre':{'Club':['regelmäßig teilgenommen']}
+};
+let ratings={};
+function shell(c){root.innerHTML='<div class="app"><aside><div class="logo">Kompass</div><div class="sub">Online-Demo · v1.1</div><div class="nav">'+nav('start','Start')+nav('years','Jahrgänge')+nav('students','Schülerdatenbank')+nav('matrix','Kompetenzmatrix')+nav('reports','Auswertungen')+'</div></aside><main>'+c+'</main></div><div class="mobile">'+mnav('start','Start')+mnav('years','Jg.')+mnav('students','SuS')+mnav('matrix','Matrix')+mnav('reports','Stats')+'</div>'}
+function nav(v,t){return '<button class="'+(view==v?'active':'')+'" onclick="go(\''+v+'\')">'+t+'</button>'}
+function mnav(v,t){return nav(v,t)}
+function go(v){view=v;subject=null;render()}
+function head(t,h){return '<h1>'+t+'</h1><div class="hint">'+h+'</div>'}
+function start(){shell(head('Hallo Juliane','Kompass ist online und iPad-tauglich.')+'<div class="grid"><button class="card tile" onclick="go(\'matrix\')"><b>Kompetenzmatrix</b><span>Fach öffnen, Bereich auswählen, bewerten.</span></button><button class="card tile" onclick="go(\'students\')"><b>Schülerdatenbank</b><span>David N. und weitere Lernprofile.</span></button><button class="card tile" onclick="go(\'years\')"><b>Jahrgänge 5–10</b><span>Admin- und Stufenleitungsübersicht.</span></button></div><div class="section">Klassenfarben</div><div class="classgrid">'+['a','b','c','d','e'].map((x,i)=>'<div class="card klasse '+x+'"><b>5'+x+'</b><p>'+['Blau','Rot','Gelb','Violett','Grün'][i]+'</p></div>').join('')+'</div>')}
+function years(){let h=head('Jahrgänge','Admin sieht alle Jahrgänge 5–10.')+'<div class="grid">';for(let y=5;y<=10;y++)h+='<div class="card tile"><b>Jahrgang '+y+'</b><span>Klassen und Lerngruppen</span></div>';shell(h+'</div>')}
+function students(){shell(head('Schülerdatenbank','Kurznamen und Klassenfarben statt voller Verwaltungslisten.')+'<div class="students">'+pupils.map(p=>'<div class="card"><span class="dot '+p[1]+'"></span><b>'+p[0]+'</b><p>Klasse 5'+p[1]+' · Lernprofil</p></div>').join('')+'</div>')}
+function matrix(){if(!subject){let h=head('Kompetenzmatrix','Zuerst Fach auswählen. Dann erscheinen Bereiche und Kompetenzen.');h+='<div class="section">Kernfächer</div><div class="grid">'+['Englisch','Deutsch','Mathematik'].map(tile).join('')+'</div><div class="section">Werkstatt</div><div class="grid">'+['WBS','Biologie','Technik'].map(tile).join('')+'</div><div class="section">Clubs</div><div class="grid">'+['Gitarre'].map(tile).join('')+'</div>';shell(h);return}let h=head(subject,'Bewertungen bleiben sichtbar markiert.')+'<button onclick="subject=null;render()">← Fächerübersicht</button>';Object.keys(subjects[subject]).forEach(area=>{h+='<div class="card"><h2>'+area+'</h2><div class="matrixwrap"><table><tr><th>Kompetenz</th>'+pupils.map(p=>'<th>'+p[0]+'</th>').join('')+'</tr>';subjects[subject][area].forEach(c=>{h+='<tr><td>'+c+'</td>'+pupils.map(p=>cell(c,p[0])).join('')+'</tr>'});h+='</table></div></div>'});shell(h)}
+function tile(s){return '<button class="card tile" onclick="subject=\''+s+'\';render()"><b>'+s+'</b><span>öffnen</span></button>'}
+function cell(c,p){let k=c+p,v=ratings[k]||'';return '<td><button class="status green '+(v=='g'?'on':'')+'" onclick="ratings[\''+k+'\']=\'g\';render()">●</button><button class="status yellow '+(v=='y'?'on':'')+'" onclick="ratings[\''+k+'\']=\'y\';render()">●</button><button class="status red '+(v=='r'?'on':'')+'" onclick="ratings[\''+k+'\']=\'r\';render()">●</button></td>'}
+function reports(){shell(head('Auswertungen','Überblick für Stufenleitung und LEG.')+'<div class="grid"><div class="card"><h2>Englisch</h2><p>72 % bewertet</p></div><div class="card"><h2>Werkstatt</h2><p>64 % bewertet</p></div><div class="card"><h2>Offene Pflichtkompetenzen</h2><p>5 SuS ohne Bewertung bei Diagramme analysieren.</p></div></div>')}
+function render(){if(view=='start')start();if(view=='years')years();if(view=='students')students();if(view=='matrix')matrix();if(view=='reports')reports()}
+render();
+</script>
+</body>
+</html>
