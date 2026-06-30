@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kompass 2.0</title>
+<style>
+:root{
+--bg:#f3f6fb;--card:#fff;--ink:#14213d;--muted:#667085;--line:#dfe7f2;--nav:#082a53;--active:#def3e8;
+--shadow:0 16px 38px rgba(18,36,72,.10);--blue:#4f8cff;--red:#ef5b5b;--yellow:#f3c64e;--violet:#8b5cf6;--green:#34c779;
+--ok:#d9f7e8;--warn:#fff3c4;--bad:#ffe0df
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+.app{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+aside{background:var(--nav);color:white;padding:24px;position:sticky;top:0;height:100vh}
+.logo{font-size:31px;font-weight:900;letter-spacing:.04em}.sub{color:#c8d8ed;margin:8px 0 22px}
+.role{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16);border-radius:18px;padding:12px;margin-bottom:16px}
+.role select{width:100%;border:0;background:transparent;color:white;font-weight:800}.role option{color:#111}
+.nav button{width:100%;border:0;background:transparent;color:white;text-align:left;padding:14px 16px;border-radius:16px;margin:4px 0;font-size:16px;cursor:pointer}
+.nav button.active{background:var(--active);color:#082a53;font-weight:850}
+main{padding:28px;max-width:1500px;width:100%}
+h1{font-size:34px;margin:0 0 8px}.hint{color:var(--muted);margin-bottom:22px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.grid5{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.card,.tile{background:white;border:1px solid var(--line);border-radius:24px;padding:20px;box-shadow:var(--shadow)}
+.tile{text-align:left;cursor:pointer;min-height:112px}.tile b{font-size:21px;display:block;margin-bottom:8px}.tile span,.card p{color:var(--muted);line-height:1.45}
+.section{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:900;margin:28px 0 10px}
+.a{background:var(--blue)}.b{background:var(--red)}.c{background:var(--yellow);color:#4b3b00}.d{background:var(--violet)}.e{background:var(--green)}
+.klasse{color:white;border:0}.klasse span{color:rgba(255,255,255,.86)}.c span{color:#6b5700}
+.dot{display:inline-block;width:14px;height:14px;border-radius:50%;margin-right:8px}
+.students{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.mini{font-size:13px;color:var(--muted)}
+.chip{display:inline-block;border:1px solid var(--line);background:white;border-radius:999px;padding:10px 14px;margin:0 8px 12px 0;cursor:pointer}
+.chip.dark{background:#14213d;color:white;border-color:#14213d}.chip.good{background:#e8f8ef;color:#087443}
+input,select,textarea{width:100%;border:1px solid var(--line);border-radius:15px;padding:12px;margin:6px 0 12px;font:inherit;background:white}
+textarea{min-height:86px}label{font-weight:800}.formgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.profile{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
+.stats{display:flex;gap:10px;flex-wrap:wrap}.stat{background:white;border:1px solid var(--line);border-radius:18px;padding:14px 18px;text-align:center;min-width:94px}.stat b{font-size:25px;display:block}
+.list{display:grid;gap:10px}.row{background:white;border:1px solid var(--line);border-radius:18px;padding:15px;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.status{width:44px;height:44px;border-radius:15px;border:2px solid #d7e0ee;background:#f7f9fc;margin:0 2px;font-weight:900;cursor:pointer}
+.status.green.on{background:var(--ok);border-color:#55d49a;color:#087443}.status.yellow.on{background:var(--warn);border-color:#f2c94c;color:#946200}.status.red.on{background:var(--bad);border-color:#f97066;color:#b42318}
+.historyline{border-left:3px solid #dfe7f2;padding:8px 0 8px 14px;color:var(--muted)}
+.toast{position:fixed;right:22px;bottom:22px;background:#14213d;color:white;border-radius:999px;padding:14px 18px;opacity:0;transform:translateY(16px);transition:.2s;box-shadow:var(--shadow)}.toast.show{opacity:1;transform:translateY(0)}
+@media(max-width:900px){.app{display:block}aside{display:none}main{padding:18px 14px}.grid,.grid2,.grid5,.formgrid,.profile{grid-template-columns:1fr}.students{grid-template-columns:1fr 1fr}h1{font-size:29px}}
+</style>
+</head>
+<body>
+<div id="root"></div><div id="toast" class="toast">Gespeichert</div>
+<script>
+let view='dashboard',role='Stufenleitung',year=null,klasse=null,pupilId=null,compId=null,showStudentForm=false,showCompForm=false,editCompId=null;
+
+const seedPupils=[
+{id:'david',short:'David N.',full:'David Navaratnam',className:'5d',color:'d',coach:'Juliane'},
+{id:'noah',short:'Noah M.',full:'Noah Müller',className:'5a',color:'a',coach:'Nicole'},
+{id:'anna',short:'Anna K.',full:'Anna Keller',className:'5b',color:'b',coach:'Dagmar'},
+{id:'lea',short:'Lea S.',full:'Lea Schneider',className:'5c',color:'c',coach:'Peter'},
+{id:'mira',short:'Mira T.',full:'Mira Tuna',className:'5e',color:'e',coach:'Julia'},
+{id:'max',short:'Max W.',full:'Max Weber',className:'5d',color:'d',coach:'Juliane'},
+{id:'lina',short:'Lina F.',full:'Lina Fischer',className:'5d',color:'d',coach:'Juliane'},
+{id:'tim',short:'Tim B.',full:'Tim Becker',className:'5a',color:'a',coach:'Nicole'}
+];
+const seedComps=[
+{id:'eng_simple',learning:'Kernfächer',subject:'Englisch',area:'Grammatik',type:'kompetenz',text:'Simple Present anwenden',required:true},
+{id:'eng_write',learning:'Kernfächer',subject:'Englisch',area:'Schreiben',type:'kompetenz',text:'Über Alltag schreiben',required:true},
+{id:'wbs_cost',learning:'Werkstatt',subject:'WBS',area:'Wirtschaft',type:'kompetenz',text:'Kostenarten unterscheiden',required:true},
+{id:'wbs_chart',learning:'Werkstatt',subject:'WBS',area:'Wirtschaft',type:'kompetenz',text:'Diagramme analysieren',required:true},
+{id:'bio_exp',learning:'Werkstatt',subject:'Biologie',area:'Naturwissenschaftlich arbeiten',type:'kompetenz',text:'Versuche beschreiben',required:false},
+{id:'tec_safe',learning:'Werkstatt',subject:'Technik',area:'Sicherheit',type:'kompetenz',text:'Werkzeuge sicher nutzen',required:true},
+{id:'guitar_att',learning:'Clubs',subject:'Gitarre',area:'Teilnahme & Engagement',type:'teilnahme',text:'regelmäßig teilgenommen und eingebracht',required:false},
+{id:'garden_att',learning:'Kreativband/Labore',subject:'Garten',area:'Teilnahme & Engagement',type:'teilnahme',text:'anwesend und engagiert mitgearbeitet',required:false},
+{id:'robot_sensor',learning:'Kreativband/Labore',subject:'Robotik',area:'optionale Kompetenz',type:'kompetenz',text:'Sensoren testen',required:false}
+];
+let pupils=JSON.parse(localStorage.getItem('kompass2_pupils')||'null')||seedPupils;
+let comps=JSON.parse(localStorage.getItem('kompass2_comps')||'null')||seedComps;
+let records=JSON.parse(localStorage.getItem('kompass2_records')||'{}');
+function persist(){localStorage.setItem('kompass2_pupils',JSON.stringify(pupils));localStorage.setItem('kompass2_comps',JSON.stringify(comps));localStorage.setItem('kompass2_records',JSON.stringify(records))}
+function today(){return new Date().toLocaleDateString('de-DE')}
+function canEdit(){return role==='Stufenleitung'||role==='Admin'}
+function recKey(c,p){return c+'|'+p}
+function setRecord(c,p,value,comment=''){let k=recKey(c,p),r=records[k]||{current:null,firstGreen:null,history:[]};r.current=value;if(value==='green'&&!r.firstGreen)r.firstGreen=today();r.history.push({date:today(),value,comment});records[k]=r;persist();toast();render()}
+function toast(){let t=document.getElementById('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),850)}
+function shell(content){root.innerHTML='<div class="app"><aside><div class="logo">KOMPASS</div><div class="sub">Kompass 2.0 · Entwicklung</div><div class="role"><div class="mini">Rolle</div><select onchange="role=this.value;render()"><option '+sel('Lehrkraft')+'>Lehrkraft</option><option '+sel('Stufenleitung')+'>Stufenleitung</option><option '+sel('Admin')+'>Admin</option></select></div><div class="nav">'+nav('dashboard','🏠 Dashboard')+nav('years','👥 Jahrgänge')+nav('students','🗂️ Schülerdatenbank')+nav('catalog','📚 Kompetenzkatalog')+nav('assessment','✅ Einzelbewertung')+nav('development','📈 Entwicklung')+nav('reports','📊 Auswertungen')+'</div></aside><main>'+content+'</main></div>'}
+function sel(x){return role===x?'selected':''}
+function nav(v,t){if(v==='catalog'&&!canEdit())return '';return '<button class="'+(view===v?'active':'')+'" onclick="go(\''+v+'\')">'+t+'</button>'}
+function go(v){view=v;year=null;klasse=null;pupilId=null;compId=null;showStudentForm=false;showCompForm=false;editCompId=null;render()}
+function head(t,h){return '<h1>'+t+'</h1><div class="hint">'+h+'</div>'}
+function render(){({dashboard,years,students,catalog,assessment,development,reports}[view]||dashboard)()}
+
+function dashboard(){
+shell(head('Guten Morgen, Juliane 👋','Heute arbeitest du nicht in einer Tabelle, sondern von Schüler*in, Kompetenz und Entwicklung aus.')+
+'<div class="grid"><button class="tile" onclick="go(\'students\')"><b>Schülerdatenbank</b><span>SuS anlegen, Profile öffnen, Entwicklung sehen.</span></button><button class="tile" onclick="go(\'catalog\')"><b>Kompetenz anlegen</b><span>Lernbereich, Fach und Bereich zuordnen.</span></button><button class="tile" onclick="go(\'assessment\')"><b>Einzelbewertung</b><span>Kompetenz auswählen und Verlauf speichern.</span></button></div>'+
+'<div class="section">Klassenfarben</div>'+classGrid(5)+
+'<div class="section">Systemlogik</div><div class="grid"><div class="card"><h2>Aktuelle Ausprägung</h2><p>Rot, Gelb oder Grün bleibt sichtbar gespeichert.</p></div><div class="card"><h2>Erstmals erreicht</h2><p>Bei erster grüner Bewertung wird das Datum automatisch gespeichert.</p></div><div class="card"><h2>Historie</h2><p>Jede Veränderung wird mit Datum im Verlauf dokumentiert.</p></div></div>');
+}
+function classGrid(y){return '<div class="grid5">'+['a','b','c','d','e'].map((x,i)=>'<button class="tile klasse '+x+'" onclick="klasse=\''+y+x+'\';view=\'students\';render()"><b>'+y+x+'</b><span>'+['Blau','Rot','Gelb','Violett','Grün'][i]+'</span></button>').join('')+'</div>'}
+function years(){if(year){shell(head('Jahrgang '+year,'Klassenübersicht')+'<button class="chip" onclick="year=null;render()">← Jahrgänge</button>'+classGrid(year));return}let h=head('Jahrgänge','Admin sieht 5–10. Stufenleitungen sehen ihre Jahrgänge.')+'<div class="grid">';for(let y=5;y<=10;y++)h+='<button class="tile" onclick="year='+y+';render()"><b>Jahrgang '+y+'</b><span>Klassen öffnen</span></button>';shell(h+'</div>')}
+function filtered(){return klasse?pupils.filter(p=>p.className===klasse):pupils}
+function students(){if(pupilId){studentProfile();return}let h=head(klasse?'Klasse '+klasse:'Schülerdatenbank','SuS können durch Stufenleitung/Admin angelegt werden.');if(klasse)h+='<button class="chip" onclick="klasse=null;render()">alle anzeigen</button>';if(canEdit())h+='<button class="chip dark" onclick="showStudentForm=!showStudentForm;render()">+ Schüler*in anlegen</button>';if(showStudentForm)h+=studentForm();h+='<div class="students">'+filtered().map(p=>'<div class="card" onclick="pupilId=\''+p.id+'\';render()" style="cursor:pointer"><span class="dot '+p.color+'"></span><b>'+p.short+'</b><p>'+p.className+' · Lerncoach: '+p.coach+'</p></div>').join('')+'</div>';shell(h)}
+function studentForm(){return '<div class="card"><h2>Schüler*in anlegen</h2><div class="formgrid"><div><label>Voller Name</label><input id="sf_full" value="Neue Schülerin"></div><div><label>Kurzname</label><input id="sf_short" value="Neue S."></div><div><label>Klasse</label><select id="sf_class"><option>5a</option><option>5b</option><option>5c</option><option selected>5d</option><option>5e</option></select></div><div><label>Lerncoach</label><input id="sf_coach" value="Juliane"></div></div><button class="chip dark" onclick="addStudent()">Speichern</button></div>'}
+function addStudent(){let cls=sf_class.value;pupils.push({id:'s'+Date.now(),full:sf_full.value,short:sf_short.value,className:cls,color:cls.slice(-1),coach:sf_coach.value});showStudentForm=false;persist();toast();render()}
+function studentProfile(){let p=pupils.find(x=>x.id===pupilId);let hist=Object.entries(records).filter(([k,r])=>k.endsWith('|'+p.id));shell(head(p.short,'Lernprofil · '+p.className+' · Lerncoach: '+p.coach)+'<button class="chip" onclick="pupilId=null;render()">← zurück</button><div class="profile"><div class="card"><h2>'+p.full+'</h2><p>Anzeige: '+p.short+'</p><div class="section">Verlauf</div><div class="list">'+(hist.length?hist.map(([k,r])=>historyRow(k,r)).join(''):'<p>Noch keine Einträge.</p>')+'</div></div><div class="card"><h2>Status</h2><div class="stats"><div class="stat"><b>'+hist.filter(([k,r])=>r.current==='green').length+'</b>grün</div><div class="stat"><b>'+hist.filter(([k,r])=>r.current==='yellow').length+'</b>gelb</div><div class="stat"><b>'+hist.filter(([k,r])=>r.current==='red').length+'</b>rot</div></div></div></div>')}
+function historyRow(k,r){let cid=k.split('|')[0],c=comps.find(x=>x.id===cid);return '<div class="historyline"><b>'+(c?c.text:'Kompetenz')+'</b><br>Aktuell: '+r.current+' · erstmals grün: '+(r.firstGreen||'—')+' · '+r.history.length+' Veränderung(en)</div>'}
+
+function catalog(){if(!canEdit()){shell(head('Kein Zugriff','Nur Stufenleitung und Admin können Kompetenzen anlegen/bearbeiten.'));return}let h=head('Kompetenzkatalog','Jede Kompetenz gehört zu Lernbereich → Fach → Bereich.')+'<button class="chip dark" onclick="showCompForm=!showCompForm;editCompId=null;render()">+ Kompetenz / Eintrag anlegen</button>';if(showCompForm)h+=compForm();h+='<div class="list">'+comps.map(c=>'<div class="row"><div><b>'+c.text+'</b><div class="mini">'+c.learning+' · '+c.subject+' · '+c.area+' · '+c.type+'</div></div><button class="chip" onclick="editCompId=\''+c.id+'\';showCompForm=true;render()">Bearbeiten</button></div>').join('')+'</div>';shell(h)}
+function compForm(){let c=editCompId?comps.find(x=>x.id===editCompId):{learning:'Werkstatt',subject:'WBS',area:'Neuer Bereich',type:'kompetenz',text:'Ich kann ...',required:false};return '<div class="card"><h2>'+(editCompId?'Kompetenz bearbeiten':'Neue Kompetenz / neuer Eintrag')+'</h2><div class="formgrid"><div><label>Lernbereich</label><select id="cf_learning"><option '+opt(c.learning,'Kernfächer')+'>Kernfächer</option><option '+opt(c.learning,'Werkstatt')+'>Werkstatt</option><option '+opt(c.learning,'Kreativband/Labore')+'>Kreativband/Labore</option><option '+opt(c.learning,'Clubs')+'>Clubs</option></select></div><div><label>Fach/Angebot</label><input id="cf_subject" value="'+c.subject+'"></div><div><label>Bereich</label><input id="cf_area" value="'+c.area+'"></div><div><label>Typ</label><select id="cf_type"><option value="kompetenz" '+(c.type==='kompetenz'?'selected':'')+'>Kompetenzbewertung</option><option value="teilnahme" '+(c.type==='teilnahme'?'selected':'')+'>Teilnahme/Engagement</option></select></div></div><label>Text</label><textarea id="cf_text">'+c.text+'</textarea><button class="chip dark" onclick="saveComp()">Speichern</button></div>'}
+function opt(a,b){return a===b?'selected':''}
+function saveComp(){if(editCompId){let c=comps.find(x=>x.id===editCompId);c.learning=cf_learning.value;c.subject=cf_subject.value;c.area=cf_area.value;c.type=cf_type.value;c.text=cf_text.value}else{comps.push({id:'c'+Date.now(),learning:cf_learning.value,subject:cf_subject.value,area:cf_area.value,type:cf_type.value,text:cf_text.value,required:false})}showCompForm=false;editCompId=null;persist();toast();render()}
+
+function assessment(){let h=head('Einzelbewertung','Wähle Schüler*in und Kompetenz. Jede Veränderung wird gespeichert.');h+='<div class="grid2"><div class="card"><h2>Schüler*in</h2>'+pupils.map(p=>'<button class="chip '+(pupilId===p.id?'dark':'')+'" onclick="pupilId=\''+p.id+'\';render()"><span class="dot '+p.color+'"></span>'+p.short+'</button>').join('')+'</div><div class="card"><h2>Kompetenz / Eintrag</h2>'+comps.map(c=>'<button class="chip '+(compId===c.id?'dark':'')+'" onclick="compId=\''+c.id+'\';render()">'+c.subject+' · '+c.text+'</button>').join('')+'</div></div>';if(pupilId&&compId)h+=assessPanel();shell(h)}
+function assessPanel(){let p=pupils.find(x=>x.id===pupilId),c=comps.find(x=>x.id===compId),r=records[recKey(c.id,p.id)]||{};if(c.type==='teilnahme')return '<div class="card"><h2>'+p.short+' · '+c.text+'</h2><p>'+c.learning+' · '+c.subject+' · '+c.area+'</p><button class="status present '+(r.current==='present'?'on':'')+'" onclick="setRecord(\''+c.id+'\',\''+p.id+'\',\'present\')">✓</button><button class="status effort '+(r.current==='effort'?'on':'')+'" onclick="setRecord(\''+c.id+'\',\''+p.id+'\',\'effort\')">★</button><p>Historie: '+(r.history?.length||0)+' Einträge</p></div>';return '<div class="card"><h2>'+p.short+' · '+c.text+'</h2><p>'+c.learning+' · '+c.subject+' · '+c.area+'</p><button class="status green '+(r.current==='green'?'on':'')+'" onclick="setRecord(\''+c.id+'\',\''+p.id+'\',\'green\')">●</button><button class="status yellow '+(r.current==='yellow'?'on':'')+'" onclick="setRecord(\''+c.id+'\',\''+p.id+'\',\'yellow\')">●</button><button class="status red '+(r.current==='red'?'on':'')+'" onclick="setRecord(\''+c.id+'\',\''+p.id+'\',\'red\')">●</button><p>Erstmals grün: '+(r.firstGreen||'—')+' · Historie: '+(r.history?.length||0)+' Einträge</p></div>'}
+
+function development(){let h=head('Entwicklung','Verlauf aller gespeicherten Veränderungen.');let entries=Object.entries(records).slice(-30).reverse();h+='<div class="list">'+(entries.length?entries.map(([k,r])=>{let [cid,pid]=k.split('|'),c=comps.find(x=>x.id===cid),p=pupils.find(x=>x.id===pid);return '<div class="card"><h2>'+(p?p.short:'SuS')+' · '+(c?c.text:'Eintrag')+'</h2><p>Aktuell: '+r.current+' · erstes Grün: '+(r.firstGreen||'—')+' · Historie: '+r.history.length+'</p></div>'}).join(''):'<div class="card"><p>Noch keine Veränderungen gespeichert.</p></div>')+'</div>';shell(h)}
+function reports(){shell(head('Auswertungen','Erste Kennzahlen aus der lokalen Demo-Datenbank.')+'<div class="grid"><div class="card"><h2>Schüler*innen</h2><p>'+pupils.length+' angelegt</p></div><div class="card"><h2>Kompetenzen/Einträge</h2><p>'+comps.length+' im Katalog</p></div><div class="card"><h2>Historie</h2><p>'+Object.values(records).reduce((a,r)=>a+r.history.length,0)+' Veränderungen gespeichert</p></div></div>')}
+render()
+</script>
+</body>
+</html>
