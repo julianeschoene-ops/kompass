@@ -9,3 +9,4 @@ Fokus:
 - Kompetenzen können LEB-relevant oder nur intern sein
 
 Startdatei: index.html
+ 
