@@ -1,0 +1,24 @@
+KOMPASS 8.2.1 – Update von 8.2
+
+Geänderte Dateien für GitHub:
+- SUPABASE_SETUP.sql
+- VERSION.md
+- app.js
+- auth.js
+- sync.js
+- admin.js
+- students.js
+- activities.js
+- behaviour.js
+- leb.js
+- workshop.js
+
+WICHTIG:
+Das alte SUPABASE_SETUP.sql aus 8.2 NICHT ausführen.
+In dem neu angelegten Supabase-Projekt wurde laut aktuellem Arbeitsstand noch kein KOMPASS-SQL ausgeführt. Daher kann direkt das neue SUPABASE_SETUP.sql aus 8.2.1 verwendet werden.
+
+Rechtemodell:
+- Admin: schulweit Stufe 5–7, Benutzerverwaltung
+- Lehrkraft/Lerncoach: pro freigegebener Stufe Zugriff auf die gesamte Stufe und fachliche Einträge
+- Stufenleitung: pro freigegebener Stufe zusätzlich Schüler-Stammdaten ändern
+- Ein Benutzer kann gleichzeitig mehreren Stufen zugeordnet sein und je Stufe unterschiedliche Rechte haben.
