@@ -5,7 +5,7 @@ const QUOP_WINDOWS_2026_27=[
 function calPad(n){return String(n).padStart(2,'0')}
 function calISO(d){return `${d.getFullYear()}-${calPad(d.getMonth()+1)}-${calPad(d.getDate())}`}
 function calTeamsForGrade(grade){
-  const teams=[...new Set(Store.pupils.filter(p=>Number(p.year||String(p.className||'').charAt(0))===Number(grade)).map(p=>p.team).filter(Boolean))];
+  const teams=[...new Set((Store.pupils||[]).filter(p=>Number(p.year||String(p.className||'').charAt(0))===Number(grade)).map(p=>p.team).filter(Boolean))];
   return (teams.length?teams:TEAMS).sort((a,b)=>String(a).localeCompare(String(b),'de'));
 }
 function ensureCalendarDefaults(){
