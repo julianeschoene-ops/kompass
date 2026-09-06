@@ -25,3 +25,5 @@
 
 ## 8.3.5
 - Hotfix: leere/noch nicht geladene Schülerliste führt nicht mehr zum Absturz nach Login.
+
+- Benutzerverwaltung: automatische Schul-E-Mail nach dem Schema vorname.nachname@jbgms-sha.de und gemeinsames Erstpasswort für neue Kollegiumskonten.

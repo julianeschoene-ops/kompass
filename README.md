@@ -37,3 +37,6 @@ Für den Einsatz mit mehreren Kolleg:innen/Geräten wird Supabase verwendet:
 4. Das erste registrierte Konto wird automatisch Admin. Weitere Kolleg:innen registrieren sich mit ihrer Schul-E-Mail und werden anschließend unter „Verwaltung → Benutzer“ freigegeben und einer Rolle zugeordnet.
 
 KOMPASS speichert im Cloud-Modus den gemeinsamen Datenstand in `kompass_state`. Änderungen werden zusätzlich im internen Änderungsprotokoll erfasst. Der Kalender ist über die Navigation erreichbar.
+
+### Kollegiumskonten
+Für vorbereitete Kolleg:innen wird die Schul-E-Mail automatisch aus dem Namen erzeugt. Ein gemeinsames Erstpasswort kann in der Benutzerverwaltung einmal pro Sitzung gesetzt werden; es wird nicht dauerhaft gespeichert.

@@ -14,3 +14,5 @@ Hotfix für den Produktivstart 2026/27.
 
 
 8.3.5 Startfix: data.js kann die Schüler-Startliste nun laden, bevor app.js geladen wird.
+
+- Kollegiumskonten: Schul-E-Mail wird automatisch aus dem Namen gebildet; ein gemeinsames Erstpasswort kann einmal pro Sitzung festgelegt werden.
