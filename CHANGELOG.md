@@ -1,3 +1,9 @@
+## 8.3.8
+- Kontenerstellung aus dem Browser-`signUp` entfernt und auf eine geschützte Supabase Edge Function umgestellt. Dadurch entfällt das E-Mail-Rate-Limit bei der Admin-Kontoanlage.
+- Coachinggruppen als feste Schulliste hinterlegt; Auswahl funktioniert auch dann, wenn die betreffende Stufe gerade nicht lokal geladen ist.
+- Alle zehn konkreten Coach-Teams stehen im Auswahlfeld zur Verfügung.
+- SQL-Reparatur aus 8.3.7 vollständig in `UPDATE_8_3_8.sql` übernommen.
+
 ## 8.3.7
 - Fix: fehlende Profilzeilen für Supabase-Auth-Konten werden per Migration nachgezogen.
 - Auth-Trigger für `kompass_profiles` wird zuverlässig neu installiert.

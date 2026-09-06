@@ -40,34 +40,18 @@ const Sync={
   async cloudProfiles(){if(!this.enabled())return[];const [{data:profiles,error:pErr},{data:access,error:aErr}]=await Promise.all([Auth.cloudClient.from('kompass_profiles').select('id,display_name,role,active,coach_teams,coaching_groups,created_at').order('display_name'),Auth.cloudClient.from('kompass_grade_access').select('user_id,grade,access_level')]);if(pErr)throw pErr;if(aErr)throw aErr;return (profiles||[]).map(p=>({...p,gradeAccess:Object.fromEntries((access||[]).filter(a=>a.user_id===p.id).map(a=>[a.grade,a.access_level]))}));},
   async createCloudUser({name,email,password,role='teacher',gradeAccess={},coachTeams={},coachingGroups={}}){
     if(!this.enabled()||!Auth.isAdmin())throw new Error('Nur ein angemeldeter Admin kann Konten anlegen.');
-    const temp=window.supabase.createClient(Auth.cloud.url,Auth.cloud.anonKey,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
-    const {data,error}=await temp.auth.signUp({email,password,options:{data:{display_name:name}}});
-    if(error)throw new Error(error.message||'Konto konnte nicht angelegt werden.');
-    const id=data?.user?.id;
-    if(!id)throw new Error('Supabase hat kein Benutzerkonto zurückgegeben.');
-    // Bei bereits registrierter E-Mail liefert Supabase aus Sicherheitsgründen ggf. ein scheinbares User-Objekt ohne Identity.
-    // Das darf nicht als neu angelegtes Konto behandelt werden.
-    if(Array.isArray(data?.user?.identities)&&data.user.identities.length===0)throw new Error('Für diese E-Mail existiert bereits ein Supabase-Konto. Bitte das vorhandene Konto unter „Angelegte Konten“ bearbeiten oder eine andere E-Mail verwenden.');
-    // Der DB-Trigger legt kompass_profiles an. Kurz darauf warten und wirklich prüfen, statt ein Update auf 0 Zeilen als Erfolg zu werten.
-    let profile=null;
-    for(let i=0;i<12;i++){
-      const {data:row,error:rErr}=await Auth.cloudClient.from('kompass_profiles').select('id').eq('id',id).maybeSingle();
-      if(rErr)throw new Error('Konto wurde angelegt, aber das KOMPASS-Profil konnte nicht geprüft werden: '+rErr.message);
-      if(row){profile=row;break}
-      await new Promise(r=>setTimeout(r,250));
+    // Neue Konten werden serverseitig über eine Supabase Edge Function angelegt.
+    // Dadurch wird die Admin-Sitzung nicht ersetzt und es werden keine Bestätigungs-E-Mails versandt / Rate-Limits ausgelöst.
+    const {data,error}=await Auth.cloudClient.functions.invoke('create-kompass-user',{body:{name,email,password,role,gradeAccess,coachTeams,coachingGroups}});
+    if(error){
+      const msg=error.message||String(error);
+      throw new Error('Konto konnte nicht angelegt werden. Die Supabase-Funktion „create-kompass-user“ ist nicht erreichbar oder noch nicht veröffentlicht. Bitte die mit KOMPASS 8.3.8 gelieferte Edge Function einmal in Supabase deployen. Technischer Hinweis: '+msg);
     }
-    if(!profile)throw new Error('Das Supabase-Konto wurde angelegt, aber das KOMPASS-Profil fehlt. Bitte einmal UPDATE_8_3_7.sql in Supabase ausführen und danach „Konten neu laden“ wählen.');
-    const patch={display_name:name,role:role||'teacher',active:false,coach_teams:coachTeams||{},coaching_groups:coachingGroups||{}};
-    const {data:updated,error:pErr}=await Auth.cloudClient.from('kompass_profiles').update(patch).eq('id',id).select('id').maybeSingle();
-    if(pErr)throw new Error('Konto wurde erstellt, aber die Zuordnung konnte nicht gespeichert werden: '+pErr.message);
-    if(!updated)throw new Error('Konto wurde erstellt, aber das Profil konnte nicht geändert werden. Bitte UPDATE_8_3_7.sql ausführen.');
-    for(const [grade,level] of Object.entries(gradeAccess||{})){
-      const {error:gErr}=await Auth.cloudClient.from('kompass_grade_access').upsert({user_id:id,grade:Number(grade),access_level:level});
-      if(gErr)throw new Error('Konto wurde erstellt, aber das Stufenrecht konnte nicht gespeichert werden: '+gErr.message);
-    }
+    if(data?.error)throw new Error(data.error);
+    if(!data?.user?.id)throw new Error('Die Kontofunktion hat kein Benutzerkonto zurückgegeben.');
     Store.log('Cloud-Benutzer angelegt',{target:name,email,role,gradeAccess,coachTeams,coachingGroups});
-    return {user:{id,email},profile:patch};
+    return data;
   },
-  async updateCloudProfile(id,patch){if(!this.enabled())return;const {data,error}=await Auth.cloudClient.from('kompass_profiles').update(patch).eq('id',id).select('id').maybeSingle();if(error)throw error;if(!data)throw new Error('Profil nicht gefunden oder nicht änderbar. Bitte UPDATE_8_3_7.sql ausführen und Konten neu laden.');Store.log('Cloud-Benutzer geändert',{target:id,...patch})},
+  async updateCloudProfile(id,patch){if(!this.enabled())return;const {data,error}=await Auth.cloudClient.from('kompass_profiles').update(patch).eq('id',id).select('id').maybeSingle();if(error)throw error;if(!data)throw new Error('Profil nicht gefunden oder nicht änderbar. Bitte UPDATE_8_3_8.sql ausführen und Konten neu laden.');Store.log('Cloud-Benutzer geändert',{target:id,...patch})},
   async updateCloudGradeAccess(userId,grade,level){if(!this.enabled())return;if(!level){const {error}=await Auth.cloudClient.from('kompass_grade_access').delete().eq('user_id',userId).eq('grade',grade);if(error)throw error;}else{const {error}=await Auth.cloudClient.from('kompass_grade_access').upsert({user_id:userId,grade:Number(grade),access_level:level});if(error)throw error;}Store.log('Stufenrecht geändert',{target:userId,grade:Number(grade),level:level||'kein Zugriff'});}
 };
