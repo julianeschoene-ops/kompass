@@ -41,7 +41,7 @@ const Store = {
   },
   migrate(){
     const d=this.data;
-    d.version='7.1';
+    d.version='8.3.2';
     d.subjects=d.subjects||clone(SEED.subjects);
     d.coreSubjects=d.coreSubjects||clone(SEED.coreSubjects);
     d.sprints=d.sprints||clone(SEED.sprints);
@@ -53,6 +53,7 @@ const Store = {
     d.activityRecords=d.activityRecords||{};
     d.behaviour=d.behaviour||{};
     d.coaching=d.coaching||{};
+    d.teamConfig=d.teamConfig||{};
     d.projectTemplates=d.projectTemplates||clone(SEED.projectTemplates);
     d.creativeRooms=d.creativeRooms||clone(SEED.creativeRooms);
     d.workshopPaths=d.workshopPaths||{};
@@ -73,7 +74,7 @@ const Store = {
     d.settings=d.settings||{};
     d.settings.scoreConfig=d.settings.scoreConfig||{...DEFAULT_SCORE_CONFIG};
     d.metadata=d.metadata||{};
-    d.metadata.version='7.1';
+    d.metadata.version='8.3.2';
     d.sprints.forEach(s=>{ if(!s.id)s.id='s'+s.year+'_'+s.number; if(s.startDate===undefined)s.startDate=''; if(s.endDate===undefined)s.endDate=''; });
     d.competencies.forEach((c,i)=>{
       if(!c.id)c.id=uid('comp');
@@ -89,6 +90,34 @@ const Store = {
     SEED.competencies.forEach(c=>{ if(!d.competencies.some(x=>x.id===c.id)) d.competencies.push(clone(c)); });
     d.subjects=WORKSHOP_SUBJECTS.slice();
     SEED.sprints.forEach(s=>{ if(!d.sprints.some(x=>x.year===s.year&&x.number===s.number)) d.sprints.push(clone(s)); });
+    // Sauberer Produktivstart 2026/27: Alle bisherigen Einträge waren Testdaten.
+    // Beim ersten Start von 8.3.2 wird deshalb der Datenbestand der Stufen 5–7
+    // EINMAL vollständig durch die geprüfte Startliste ersetzt. So können bereits
+    // vorhandene 6er nicht doppelt vorkommen. Danach wird nie wieder automatisch
+    // zurückgesetzt; alle neuen Einträge werden regulär gespeichert und synchronisiert.
+    if(!d.metadata.cleanStart2026_27_v1){
+      d.pupils=clone(SEED.pupils);
+      d.records={};
+      d.lebDrafts={};
+      d.activities=[];
+      d.activityRecords={};
+      d.behaviour={};
+      d.coaching={};
+      d.workshopPaths={};
+      d.clubMemberships={};
+      d.assignments=[];
+      d.choiceImports=[];
+      d.sprintHistory={};
+      d.clubHistory={};
+      d.dailyCreativeVisits={};
+      d.calendarEvents=[];
+      d.auditLog=[];
+      d.teamConfig={};
+      d.metadata.cleanStart2026_27_v1=true;
+      d.metadata.cleanStart2026_27At=new Date().toISOString();
+      d.metadata.roster2026_27=true;
+      this._rosterChanged=true;
+    }
   },
   _lastSnapshot:null,
   saveLocalOnly(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data)); this._lastSnapshot=JSON.stringify(this.data); },

@@ -1,3 +1,10 @@
+# KOMPASS 8.3.2
+
+- Start-Stammdaten 2026/27 für Stufe 5–7 ergänzt und migrationssicher gemacht.
+- Stufe 6: Coachinggruppen und bekannte Coaches hinterlegt.
+- Stufe 7: Farbteams + Hell/Dunkelgruppen hinterlegt; Coach-Unterzuordnung offen.
+- Bestehende Datensätze werden beim ersten Start auf den neuen Jahrgangsstand migriert; Alt-SuS nur archiviert.
+
 # Änderungsprotokoll
 
 ## 8.1b
