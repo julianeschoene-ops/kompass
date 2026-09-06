@@ -1,3 +1,11 @@
+## 8.3.7
+- Fix: fehlende Profilzeilen für Supabase-Auth-Konten werden per Migration nachgezogen.
+- Auth-Trigger für `kompass_profiles` wird zuverlässig neu installiert.
+- Fix für Foreign-Key-Fehler beim Speichern von Stufenrechten.
+- Benutzeränderungen melden Fehler jetzt sichtbar statt scheinbar nichts zu tun.
+- „Konten neu laden“ erhält sichtbaren Ladestatus.
+- Doppelte/bereits registrierte E-Mail wird beim Konto-Anlegen erkannt.
+
 ## 8.3.6
 - Fix: Kollegiumskonten werden ohne Edge Function angelegt; die Admin-Sitzung bleibt bestehen.
 - Benutzerzuordnung erweitert auf Stufe → Farbteam → konkrete Coachinggruppe.

@@ -1,8 +1,8 @@
-# KOMPASS 8.3.6
+# KOMPASS 8.3.7
 
-- Konto-Anlegen repariert: kein Aufruf einer nicht bereitgestellten Edge Function mehr. Neue Konten werden über einen getrennten Supabase-Auth-Client angelegt, sodass die Admin-Sitzung erhalten bleibt.
-- Neue Kollegiumskonten bleiben zunächst gesperrt und werden anschließend durch einen Admin freigegeben.
-- Zuordnung jetzt dreistufig: Stufe → Farbteam → konkrete Coachinggruppe.
-- Bekannte Coachinggruppen der Stufe 6 sind vorausgefüllt (z. B. Blau → Hellblau/Dunkelblau, Violett → Pink/Lila).
-- Moritz Stephan: Stufe 6 → Stufenleitung → Blau voreingestellt.
-- Neue Profildaten `coaching_groups`; Migration `UPDATE_8_3_6.sql` einmalig in Supabase ausführen.
+- Repariert fehlende `kompass_profiles`-Einträge bei neu angelegten Supabase-Konten.
+- `UPDATE_8_3_7.sql` installiert den Auth-Trigger neu und legt fehlende Profile für bereits vorhandene Auth-Konten nachträglich an.
+- Stufenrechte lassen sich dadurch wieder speichern; der Foreign-Key-Fehler `kompass_grade_access_user_id_fkey` wird behoben.
+- Änderungen an Rolle, Freigabe, Farbteam und Coachinggruppe prüfen jetzt, ob tatsächlich ein Profil aktualisiert wurde, und zeigen Fehler sichtbar an.
+- „Konten neu laden“ zeigt während des Ladens einen Status.
+- Bereits vorhandene E-Mail-Adressen werden beim Anlegen erkannt, statt fälschlich als neues Konto behandelt zu werden.
