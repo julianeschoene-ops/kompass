@@ -23,5 +23,5 @@
 - Zusätzliche Prüfmeldungen für Sperrzeitverletzungen und Fachparallelität
 - ZIP- und Innenordner tragen dieselbe Versionsnummer
 
-## 8.3.3
+## 8.3.4
 - Hotfix: leere/noch nicht geladene Schülerliste führt nicht mehr zum Absturz nach Login.
