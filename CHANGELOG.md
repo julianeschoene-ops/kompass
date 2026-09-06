@@ -1,3 +1,9 @@
+## 8.3.6
+- Fix: Kollegiumskonten werden ohne Edge Function angelegt; die Admin-Sitzung bleibt bestehen.
+- Benutzerzuordnung erweitert auf Stufe → Farbteam → konkrete Coachinggruppe.
+- Bekannte Coachinggruppen der Stufe 6 werden vorausgefüllt.
+- Datenbankmigration `UPDATE_8_3_6.sql` ergänzt.
+
 # KOMPASS 8.3.2
 
 - Start-Stammdaten 2026/27 für Stufe 5–7 ergänzt und migrationssicher gemacht.

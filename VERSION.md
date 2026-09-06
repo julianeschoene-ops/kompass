@@ -1,18 +1,8 @@
-# KOMPASS 8.3.5
+# KOMPASS 8.3.6
 
-- Kollegiumsliste 5–7 in der Benutzerverwaltung: bekannte Lehrkräfte erscheinen mit „kein Login“ und können vorausgefüllt angelegt werden.
-- Bekannte Stufen-, Stufenleitungs- und Coach-Team-Zuordnungen werden beim Anlegen vorausgefüllt und bleiben änderbar.
-- Besuchszählung im Kreativband und in zählbaren besonderen Angeboten ist nicht mehr bei 39 gedeckelt. 39 Besuche = 100 %, weitere Besuche werden weitergezählt.
-- Die große Anzeige „39 Maximum“ wurde entfernt.
-
-Hotfix für den Produktivstart 2026/27.
-
-- behebt den Login-Abbruch `Store.pupils.filter` nach leerem Cloud-State
-- Schülerlisten werden defensiv initialisiert
-- bestehende Produktivstart-Stammdaten 5–7 bleiben unverändert
-- keine Änderung an Benutzerkonten oder Supabase-Daten erforderlich
-
-
-8.3.5 Startfix: data.js kann die Schüler-Startliste nun laden, bevor app.js geladen wird.
-
-- Kollegiumskonten: Schul-E-Mail wird automatisch aus dem Namen gebildet; ein gemeinsames Erstpasswort kann einmal pro Sitzung festgelegt werden.
+- Konto-Anlegen repariert: kein Aufruf einer nicht bereitgestellten Edge Function mehr. Neue Konten werden über einen getrennten Supabase-Auth-Client angelegt, sodass die Admin-Sitzung erhalten bleibt.
+- Neue Kollegiumskonten bleiben zunächst gesperrt und werden anschließend durch einen Admin freigegeben.
+- Zuordnung jetzt dreistufig: Stufe → Farbteam → konkrete Coachinggruppe.
+- Bekannte Coachinggruppen der Stufe 6 sind vorausgefüllt (z. B. Blau → Hellblau/Dunkelblau, Violett → Pink/Lila).
+- Moritz Stephan: Stufe 6 → Stufenleitung → Blau voreingestellt.
+- Neue Profildaten `coaching_groups`; Migration `UPDATE_8_3_6.sql` einmalig in Supabase ausführen.

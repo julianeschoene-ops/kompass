@@ -23,14 +23,14 @@ const Auth={
   logout(){this.session=null;sessionStorage.removeItem(SESSION_KEY);if(this.cloudClient)this.cloudClient.auth.signOut().catch(()=>{});render();},
   async initCloud(){if(!this.cloudConfigured())return false;this.cloudClient=window.supabase.createClient(this.cloud.url,this.cloud.anonKey);const {data}=await this.cloudClient.auth.getSession();if(data?.session)await this.applyCloudSession(data.session);this.cloudClient.auth.onAuthStateChange(async(_e,s)=>{if(s)await this.applyCloudSession(s);else{this.session=null;sessionStorage.removeItem(SESSION_KEY);render()}});return true;},
   async applyCloudSession(s){
-    const {data,error}=await this.cloudClient.from('kompass_profiles').select('id,display_name,role,active,coach_teams').eq('id',s.user.id).single();
+    const {data,error}=await this.cloudClient.from('kompass_profiles').select('id,display_name,role,active,coach_teams,coaching_groups').eq('id',s.user.id).single();
     if(error){await this.cloudClient.auth.signOut();throw new Error('KOMPASS-Profil konnte nicht geladen werden: '+(error.message||String(error)));}if(!data){await this.cloudClient.auth.signOut();throw new Error('Für dieses Konto wurde kein KOMPASS-Profil gefunden.');}if(data.active===false){await this.cloudClient.auth.signOut();throw new Error('Dieses KOMPASS-Konto ist noch nicht freigeschaltet.');}
     let gradeAccess={};
     if(data.role!=='admin'){
       const {data:ga,error:gaErr}=await this.cloudClient.from('kompass_grade_access').select('grade,access_level').eq('user_id',s.user.id);
       if(gaErr)throw gaErr;(ga||[]).forEach(x=>gradeAccess[x.grade]=x.access_level);
     }else{gradeAccess={5:'leitung',6:'leitung',7:'leitung'};}
-    this.session={mode:'cloud',user:{id:data.id,name:data.display_name||s.user.email,username:s.user.email,role:data.role||'teacher',gradeAccess,coachTeams:data.coach_teams||{}}};
+    this.session={mode:'cloud',user:{id:data.id,name:data.display_name||s.user.email,username:s.user.email,role:data.role||'teacher',gradeAccess,coachTeams:data.coach_teams||{},coachingGroups:data.coaching_groups||{}}};
     sessionStorage.setItem(SESSION_KEY,JSON.stringify(this.session));State.teacher=this.session.user.name;State.role=this.session.user.role;
     const years=this.allowedGrades();if(years.length&&!years.includes(State.year))State.year=years[0];
     if(window.Sync)await Sync.pull();render();
