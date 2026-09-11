@@ -1,4 +1,8 @@
-## 8.3.8
+## 8.3.9
+- Kontenerstellung ruft `create-kompass-user` direkt per HTTP auf und zeigt die echte Server-Fehlermeldung inklusive HTTP-Status.
+- Cache-Busting für JavaScript/CSS, damit GitHub Pages nach dem Upload sicher die neue Version lädt.
+
+## 8.3.9
 - Kontenerstellung aus dem Browser-`signUp` entfernt und auf eine geschützte Supabase Edge Function umgestellt. Dadurch entfällt das E-Mail-Rate-Limit bei der Admin-Kontoanlage.
 - Coachinggruppen als feste Schulliste hinterlegt; Auswahl funktioniert auch dann, wenn die betreffende Stufe gerade nicht lokal geladen ist.
 - Alle zehn konkreten Coach-Teams stehen im Auswahlfeld zur Verfügung.

@@ -1,4 +1,4 @@
-# KOMPASS 8.3.8
+# KOMPASS 8.3.9
 
 - Kontenerstellung serverseitig über `create-kompass-user`, ohne Bestätigungs-E-Mail und ohne E-Mail-Rate-Limit.
 - Neue Konten werden zunächst gesperrt angelegt und erhalten Profil, Stufenrechte, Farbteam und konkrete Coachinggruppe in einem Vorgang.

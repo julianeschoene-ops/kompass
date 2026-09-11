@@ -40,15 +40,40 @@ const Sync={
   async cloudProfiles(){if(!this.enabled())return[];const [{data:profiles,error:pErr},{data:access,error:aErr}]=await Promise.all([Auth.cloudClient.from('kompass_profiles').select('id,display_name,role,active,coach_teams,coaching_groups,created_at').order('display_name'),Auth.cloudClient.from('kompass_grade_access').select('user_id,grade,access_level')]);if(pErr)throw pErr;if(aErr)throw aErr;return (profiles||[]).map(p=>({...p,gradeAccess:Object.fromEntries((access||[]).filter(a=>a.user_id===p.id).map(a=>[a.grade,a.access_level]))}));},
   async createCloudUser({name,email,password,role='teacher',gradeAccess={},coachTeams={},coachingGroups={}}){
     if(!this.enabled()||!Auth.isAdmin())throw new Error('Nur ein angemeldeter Admin kann Konten anlegen.');
-    // Neue Konten werden serverseitig über eine Supabase Edge Function angelegt.
-    // Dadurch wird die Admin-Sitzung nicht ersetzt und es werden keine Bestätigungs-E-Mails versandt / Rate-Limits ausgelöst.
-    const {data,error}=await Auth.cloudClient.functions.invoke('create-kompass-user',{body:{name,email,password,role,gradeAccess,coachTeams,coachingGroups}});
-    if(error){
-      const msg=error.message||String(error);
-      throw new Error('Konto konnte nicht angelegt werden. Die Supabase-Funktion „create-kompass-user“ ist nicht erreichbar oder noch nicht veröffentlicht. Bitte die mit KOMPASS 8.3.8 gelieferte Edge Function einmal in Supabase deployen. Technischer Hinweis: '+msg);
+
+    // 8.3.9: direkter HTTP-Aufruf statt functions.invoke().
+    // So bleibt die echte Antwort der Edge Function erhalten und kann in KOMPASS angezeigt werden.
+    const {data:sessionData,error:sessionErr}=await Auth.cloudClient.auth.getSession();
+    if(sessionErr)throw new Error('Admin-Sitzung konnte nicht gelesen werden: '+(sessionErr.message||String(sessionErr)));
+    const token=sessionData?.session?.access_token;
+    if(!token)throw new Error('Keine aktive Supabase-Anmeldung gefunden. Bitte einmal neu anmelden.');
+
+    let response;
+    try{
+      response=await fetch(Auth.cloud.url+'/functions/v1/create-kompass-user',{
+        method:'POST',
+        headers:{
+          'Authorization':'Bearer '+token,
+          'apikey':Auth.cloud.anonKey,
+          'Content-Type':'application/json'
+        },
+        body:JSON.stringify({name,email,password,role,gradeAccess,coachTeams,coachingGroups})
+      });
+    }catch(e){
+      throw new Error('Die Kontofunktion konnte nicht erreicht werden: '+(e?.message||String(e)));
     }
-    if(data?.error)throw new Error(data.error);
-    if(!data?.user?.id)throw new Error('Die Kontofunktion hat kein Benutzerkonto zurückgegeben.');
+
+    const raw=await response.text();
+    let data=null;
+    try{data=raw?JSON.parse(raw):null}catch(_e){}
+
+    if(!response.ok){
+      const detail=data?.error||data?.message||raw||('HTTP '+response.status);
+      throw new Error('Konto konnte nicht angelegt werden: '+detail+' (HTTP '+response.status+')');
+    }
+    if(data?.error)throw new Error('Konto konnte nicht angelegt werden: '+data.error);
+    if(!data?.user?.id)throw new Error('Die Kontofunktion hat kein Benutzerkonto zurückgegeben. Serverantwort: '+(raw||'leer'));
+
     Store.log('Cloud-Benutzer angelegt',{target:name,email,role,gradeAccess,coachTeams,coachingGroups});
     return data;
   },
