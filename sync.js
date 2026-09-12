@@ -38,11 +38,8 @@ const Sync={
   async pushAudit(){const u=Auth.currentUser();const rows=(Store.auditLog||[]).slice(-40).map(l=>({id:l.id,at:l.at,user_id:u?.id||null,user_name:l.user||u?.name||'',action:l.action||'Änderung gespeichert',details:l.details||{},sections:l.sections||[]}));if(!rows.length)return;const {error}=await Auth.cloudClient.from('kompass_audit_log').upsert(rows,{onConflict:'id',ignoreDuplicates:true});if(error&&error.code!=='42501')console.warn('Audit sync',error)},
   async pullAudit(){const {data,error}=await Auth.cloudClient.from('kompass_audit_log').select('id,at,user_id,user_name,action,details,sections').order('at',{ascending:false}).limit(500);if(error)throw error;Store.data.auditLog=(data||[]).reverse().map(x=>({id:x.id,at:x.at,userId:x.user_id,user:x.user_name,action:x.action,details:x.details||{},sections:x.sections||[]}));},
   async cloudProfiles(){if(!this.enabled())return[];const [{data:profiles,error:pErr},{data:access,error:aErr}]=await Promise.all([Auth.cloudClient.from('kompass_profiles').select('id,display_name,role,active,coach_teams,coaching_groups,created_at').order('display_name'),Auth.cloudClient.from('kompass_grade_access').select('user_id,grade,access_level')]);if(pErr)throw pErr;if(aErr)throw aErr;return (profiles||[]).map(p=>({...p,gradeAccess:Object.fromEntries((access||[]).filter(a=>a.user_id===p.id).map(a=>[a.grade,a.access_level]))}));},
-  async createCloudUser({name,email,password,role='teacher',gradeAccess={},coachTeams={},coachingGroups={}}){
-    if(!this.enabled()||!Auth.isAdmin())throw new Error('Nur ein angemeldeter Admin kann Konten anlegen.');
-
-    // 8.3.9: direkter HTTP-Aufruf statt functions.invoke().
-    // So bleibt die echte Antwort der Edge Function erhalten und kann in KOMPASS angezeigt werden.
+  async adminAccountAction(payload){
+    if(!this.enabled()||!Auth.isAdmin())throw new Error('Nur ein angemeldeter Admin kann Konten verwalten.');
     const {data:sessionData,error:sessionErr}=await Auth.cloudClient.auth.getSession();
     if(sessionErr)throw new Error('Admin-Sitzung konnte nicht gelesen werden: '+(sessionErr.message||String(sessionErr)));
     const token=sessionData?.session?.access_token;
@@ -57,7 +54,7 @@ const Sync={
           'apikey':Auth.cloud.anonKey,
           'Content-Type':'application/json'
         },
-        body:JSON.stringify({name,email,password,role,gradeAccess,coachTeams,coachingGroups})
+        body:JSON.stringify(payload)
       });
     }catch(e){
       throw new Error('Die Kontofunktion konnte nicht erreicht werden: '+(e?.message||String(e)));
@@ -67,16 +64,38 @@ const Sync={
     let data=null;
     try{data=raw?JSON.parse(raw):null}catch(_e){}
 
-    if(!response.ok){
+    if(!response.ok||data?.error){
       const detail=data?.error||data?.message||raw||('HTTP '+response.status);
-      throw new Error('Konto konnte nicht angelegt werden: '+detail+' (HTTP '+response.status+')');
+      throw new Error(detail+' (HTTP '+response.status+')');
     }
-    if(data?.error)throw new Error('Konto konnte nicht angelegt werden: '+data.error);
-    if(!data?.user?.id)throw new Error('Die Kontofunktion hat kein Benutzerkonto zurückgegeben. Serverantwort: '+(raw||'leer'));
-
+    return data||{};
+  },
+  async createCloudUser({name,email,password,role='teacher',gradeAccess={},coachTeams={},coachingGroups={}}){
+    const data=await this.adminAccountAction({
+      action:'create',
+      name,email,password,role,gradeAccess,coachTeams,coachingGroups
+    });
+    if(!data?.user?.id||data?.verified!==true){
+      throw new Error('Das Konto wurde serverseitig nicht vollständig bestätigt.');
+    }
+    const users=await this.cloudProfiles();
+    const created=users.find(u=>u.id===data.user.id);
+    if(!created){
+      throw new Error('Das Auth-Konto wurde angelegt, aber das KOMPASS-Profil ist nach dem Anlegen nicht sichtbar.');
+    }
     Store.log('Cloud-Benutzer angelegt',{target:name,email,role,gradeAccess,coachTeams,coachingGroups});
     return data;
   },
-  async updateCloudProfile(id,patch){if(!this.enabled())return;const {data,error}=await Auth.cloudClient.from('kompass_profiles').update(patch).eq('id',id).select('id').maybeSingle();if(error)throw error;if(!data)throw new Error('Profil nicht gefunden oder nicht änderbar. Bitte UPDATE_8_3_8.sql ausführen und Konten neu laden.');Store.log('Cloud-Benutzer geändert',{target:id,...patch})},
-  async updateCloudGradeAccess(userId,grade,level){if(!this.enabled())return;if(!level){const {error}=await Auth.cloudClient.from('kompass_grade_access').delete().eq('user_id',userId).eq('grade',grade);if(error)throw error;}else{const {error}=await Auth.cloudClient.from('kompass_grade_access').upsert({user_id:userId,grade:Number(grade),access_level:level});if(error)throw error;}Store.log('Stufenrecht geändert',{target:userId,grade:Number(grade),level:level||'kein Zugriff'});}
+  async updateCloudProfile(id,patch){
+    const data=await this.adminAccountAction({action:'updateProfile',userId:id,patch});
+    if(data?.verified!==true)throw new Error('Die Änderung wurde serverseitig nicht bestätigt.');
+    Store.log('Cloud-Benutzer geändert',{target:id,...patch});
+    return data;
+  },
+  async updateCloudGradeAccess(userId,grade,level){
+    const data=await this.adminAccountAction({action:'updateGradeAccess',userId,grade:Number(grade),level:level||null});
+    if(data?.verified!==true)throw new Error('Das Stufenrecht wurde serverseitig nicht bestätigt.');
+    Store.log('Stufenrecht geändert',{target:userId,grade:Number(grade),level:level||'kein Zugriff'});
+    return data;
+  }
 };

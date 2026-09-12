@@ -40,3 +40,7 @@ KOMPASS speichert im Cloud-Modus den gemeinsamen Datenstand in `kompass_state`. 
 
 ### Kollegiumskonten
 Für vorbereitete Kolleg:innen wird die Schul-E-Mail automatisch aus dem Namen erzeugt. Ein gemeinsames Erstpasswort kann in der Benutzerverwaltung einmal pro Sitzung gesetzt werden; es wird nicht dauerhaft gespeichert.
+
+
+## Update 8.4.0 – Kontenverwaltung
+Für 8.4.0 muss die Supabase Edge Function `create-kompass-user` durch die mitgelieferte Datei `supabase/functions/create-kompass-user/index.ts` ersetzt und neu deployed werden. `Verify JWT with legacy secret` bleibt AUS. `UPDATE_8_4_0.sql` ist idempotent und kann einmal im SQL Editor ausgeführt werden.
