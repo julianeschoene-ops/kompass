@@ -1,28 +1,44 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+const API_VERSION = '8.4.1'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-function json(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
+function json(data: Record<string, unknown>, status = 200) {
+  return new Response(JSON.stringify({ apiVersion: API_VERSION, ...data }), {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   })
 }
 
+function sameJson(a: unknown, b: unknown) {
+  const normalize = (v: unknown): unknown => {
+    if (Array.isArray(v)) return v.map(normalize)
+    if (v && typeof v === 'object') {
+      return Object.fromEntries(Object.entries(v as Record<string, unknown>)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([k, val]) => [k, normalize(val)]))
+    }
+    return v
+  }
+  return JSON.stringify(normalize(a)) === JSON.stringify(normalize(b))
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+
+  let createdUserId: string | null = null
+  let admin: ReturnType<typeof createClient> | null = null
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const authHeader = req.headers.get('Authorization') || ''
-    const token = authHeader.replace(/^Bearer\s+/i, '')
+    const token = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '')
     if (!token) throw new Error('Nicht angemeldet.')
 
-    const admin = createClient(supabaseUrl, serviceKey, {
+    admin = createClient(supabaseUrl, serviceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     })
 
@@ -66,49 +82,76 @@ Deno.serve(async (req) => {
       if (createErr) throw new Error(createErr.message)
       const id = created.user?.id
       if (!id) throw new Error('Supabase hat keine Benutzer-ID zurückgegeben.')
+      createdUserId = id
 
-      try {
-        const { error: profileErr } = await admin.from('kompass_profiles').upsert({
-          id,
-          display_name: name,
-          role,
-          active: false,
-          coach_teams: coachTeams,
-          coaching_groups: coachingGroups,
-        }, { onConflict: 'id' })
-        if (profileErr) throw profileErr
+      const { error: profileErr } = await admin.from('kompass_profiles').upsert({
+        id,
+        display_name: name,
+        role,
+        active: false,
+        coach_teams: coachTeams,
+        coaching_groups: coachingGroups,
+      }, { onConflict: 'id' })
+      if (profileErr) throw new Error('KOMPASS-Profil konnte nicht gespeichert werden: ' + profileErr.message)
 
-        const { error: delErr } = await admin.from('kompass_grade_access').delete().eq('user_id', id)
-        if (delErr) throw delErr
+      const { error: delErr } = await admin.from('kompass_grade_access').delete().eq('user_id', id)
+      if (delErr) throw new Error('Alte Stufenrechte konnten nicht bereinigt werden: ' + delErr.message)
 
-        const rows = Object.entries(gradeAccess)
-          .filter(([, level]) => level)
-          .map(([grade, level]) => ({ user_id: id, grade: Number(grade), access_level: level }))
-        if (rows.length) {
-          const { error: accessErr } = await admin.from('kompass_grade_access').insert(rows)
-          if (accessErr) throw accessErr
-        }
-
-        // 8.4.0: echte Nachkontrolle, bevor Erfolg gemeldet wird.
-        const [{ data: authCheck, error: authCheckErr }, { data: profileCheck, error: profileCheckErr }, { data: accessCheck, error: accessCheckErr }] = await Promise.all([
-          admin.auth.admin.getUserById(id),
-          admin.from('kompass_profiles').select('id,display_name,role,active,coach_teams,coaching_groups').eq('id', id).single(),
-          admin.from('kompass_grade_access').select('grade,access_level').eq('user_id', id),
-        ])
-        if (authCheckErr || !authCheck.user) throw new Error('Nachkontrolle Auth-Konto fehlgeschlagen: ' + (authCheckErr?.message || 'nicht gefunden'))
-        if (profileCheckErr || !profileCheck) throw new Error('Nachkontrolle KOMPASS-Profil fehlgeschlagen: ' + (profileCheckErr?.message || 'nicht gefunden'))
-        if (accessCheckErr) throw new Error('Nachkontrolle Stufenrechte fehlgeschlagen: ' + accessCheckErr.message)
-
-        return json({
-          user: { id, email: authCheck.user.email },
-          profile: profileCheck,
-          gradeAccess: accessCheck || [],
-          verified: true,
-        })
-      } catch (e) {
-        await admin.auth.admin.deleteUser(id)
-        throw e
+      const rows = Object.entries(gradeAccess)
+        .filter(([, level]) => level)
+        .map(([grade, level]) => ({ user_id: id, grade: Number(grade), access_level: level }))
+      if (rows.length) {
+        const { error: accessErr } = await admin.from('kompass_grade_access').insert(rows)
+        if (accessErr) throw new Error('Stufenrechte konnten nicht gespeichert werden: ' + accessErr.message)
       }
+
+      // Serverseitige Nachkontrolle. Der Browser muss das neue, zunächst gesperrte Konto nicht lesen können.
+      const authResult = await admin.auth.admin.getUserById(id)
+      if (authResult.error || !authResult.data.user) {
+        throw new Error('Nachkontrolle Auth-Konto fehlgeschlagen: ' + (authResult.error?.message || 'nicht gefunden'))
+      }
+      const { data: profileCheck, error: profileCheckErr } = await admin
+        .from('kompass_profiles')
+        .select('id,display_name,role,active,coach_teams,coaching_groups')
+        .eq('id', id)
+        .single()
+      if (profileCheckErr || !profileCheck) {
+        throw new Error('Nachkontrolle KOMPASS-Profil fehlgeschlagen: ' + (profileCheckErr?.message || 'nicht gefunden'))
+      }
+      const { data: accessCheck, error: accessCheckErr } = await admin
+        .from('kompass_grade_access')
+        .select('grade,access_level')
+        .eq('user_id', id)
+      if (accessCheckErr) throw new Error('Nachkontrolle Stufenrechte fehlgeschlagen: ' + accessCheckErr.message)
+
+      const expectedAccess = Object.entries(gradeAccess)
+        .filter(([, level]) => level)
+        .map(([grade, level]) => ({ grade: Number(grade), access_level: level }))
+        .sort((a, b) => a.grade - b.grade)
+      const actualAccess = (accessCheck || [])
+        .map((r: any) => ({ grade: Number(r.grade), access_level: r.access_level }))
+        .sort((a: any, b: any) => a.grade - b.grade)
+
+      if (profileCheck.display_name !== name || profileCheck.role !== role || profileCheck.active !== false) {
+        throw new Error('Nachkontrolle KOMPASS-Profil stimmt nicht mit den angeforderten Daten überein.')
+      }
+      if (!sameJson(profileCheck.coach_teams || {}, coachTeams || {})) {
+        throw new Error('Nachkontrolle Farbteam stimmt nicht mit den angeforderten Daten überein.')
+      }
+      if (!sameJson(profileCheck.coaching_groups || {}, coachingGroups || {})) {
+        throw new Error('Nachkontrolle Coachinggruppe stimmt nicht mit den angeforderten Daten überein.')
+      }
+      if (!sameJson(actualAccess, expectedAccess)) {
+        throw new Error('Nachkontrolle Stufenrechte stimmt nicht mit den angeforderten Daten überein.')
+      }
+
+      createdUserId = null // Ab hier kein Rollback mehr.
+      return json({
+        user: { id, email: authResult.data.user.email },
+        profile: profileCheck,
+        gradeAccess: actualAccess,
+        verified: true,
+      })
     }
 
     if (action === 'updateProfile') {
@@ -123,21 +166,19 @@ Deno.serve(async (req) => {
       if ('coaching_groups' in incoming) patch.coaching_groups = incoming.coaching_groups || {}
       if (!Object.keys(patch).length) throw new Error('Keine gültige Profiländerung übergeben.')
 
-      const { error: updateErr } = await admin.from('kompass_profiles').update(patch).eq('id', userId)
-      if (updateErr) throw updateErr
-      const { data: check, error: checkErr } = await admin
+      const { data: updated, error: updateErr } = await admin
         .from('kompass_profiles')
-        .select('id,display_name,role,active,coach_teams,coaching_groups')
+        .update(patch)
         .eq('id', userId)
+        .select('id,display_name,role,active,coach_teams,coaching_groups')
         .single()
-      if (checkErr || !check) throw new Error('Änderung konnte nicht bestätigt werden: ' + (checkErr?.message || 'Profil nicht gefunden'))
+      if (updateErr || !updated) throw new Error('Profiländerung fehlgeschlagen: ' + (updateErr?.message || 'Profil nicht gefunden'))
+
       for (const [key, expected] of Object.entries(patch)) {
-        const actual = (check as Record<string, unknown>)[key]
-        if (JSON.stringify(actual) !== JSON.stringify(expected)) {
-          throw new Error('Änderung wurde nicht korrekt gespeichert: ' + key)
-        }
+        const actual = (updated as Record<string, unknown>)[key]
+        if (!sameJson(actual, expected)) throw new Error('Änderung wurde nicht korrekt gespeichert: ' + key)
       }
-      return json({ profile: check, verified: true })
+      return json({ profile: updated, verified: true })
     }
 
     if (action === 'updateGradeAccess') {
@@ -149,10 +190,13 @@ Deno.serve(async (req) => {
 
       if (!level) {
         const { error } = await admin.from('kompass_grade_access').delete().eq('user_id', userId).eq('grade', grade)
-        if (error) throw error
+        if (error) throw new Error('Stufenrecht konnte nicht entfernt werden: ' + error.message)
       } else {
-        const { error } = await admin.from('kompass_grade_access').upsert({ user_id: userId, grade, access_level: level }, { onConflict: 'user_id,grade' })
-        if (error) throw error
+        const { error } = await admin.from('kompass_grade_access').upsert(
+          { user_id: userId, grade, access_level: level },
+          { onConflict: 'user_id,grade' },
+        )
+        if (error) throw new Error('Stufenrecht konnte nicht gespeichert werden: ' + error.message)
       }
 
       const { data: check, error: checkErr } = await admin
@@ -161,7 +205,7 @@ Deno.serve(async (req) => {
         .eq('user_id', userId)
         .eq('grade', grade)
         .maybeSingle()
-      if (checkErr) throw checkErr
+      if (checkErr) throw new Error('Nachkontrolle Stufenrecht fehlgeschlagen: ' + checkErr.message)
       if (level && (!check || check.access_level !== level)) throw new Error('Stufenrecht konnte nicht bestätigt werden.')
       if (!level && check) throw new Error('Stufenrecht wurde nicht entfernt.')
       return json({ grade, level, verified: true })
@@ -169,6 +213,28 @@ Deno.serve(async (req) => {
 
     throw new Error('Unbekannte Konto-Aktion: ' + action)
   } catch (e) {
-    return json({ error: e instanceof Error ? e.message : String(e) }, 400)
+    const message = e instanceof Error ? e.message : String(e)
+
+    // 8.4.1: Falls die Auth-Anlage bereits geklappt hat, räumen wir EXPLIZIT alle Teile auf.
+    // Dadurch bleibt die E-Mail nach einem späteren Fehler nicht mehr blockiert.
+    if (createdUserId && admin) {
+      const cleanupErrors: string[] = []
+      const accessDelete = await admin.from('kompass_grade_access').delete().eq('user_id', createdUserId)
+      if (accessDelete.error) cleanupErrors.push('Stufenrechte: ' + accessDelete.error.message)
+      const profileDelete = await admin.from('kompass_profiles').delete().eq('id', createdUserId)
+      if (profileDelete.error) cleanupErrors.push('Profil: ' + profileDelete.error.message)
+      const authDelete = await admin.auth.admin.deleteUser(createdUserId)
+      if (authDelete.error) cleanupErrors.push('Auth-Konto: ' + authDelete.error.message)
+
+      if (cleanupErrors.length) {
+        return json({
+          error: message + ' | Automatische Bereinigung war nicht vollständig: ' + cleanupErrors.join(' / '),
+          cleanupComplete: false,
+        }, 400)
+      }
+      return json({ error: message, cleanupComplete: true }, 400)
+    }
+
+    return json({ error: message }, 400)
   }
 })

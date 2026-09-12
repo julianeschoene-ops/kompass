@@ -1,3 +1,13 @@
+## 8.4.1
+- Falsche Browser-Nachkontrolle nach erfolgreicher Kontoanlage entfernt.
+- Kontoanlage wird vollständig serverseitig verifiziert.
+- Bei Fehlern nach Auth-Erstellung werden Stufenrechte, Profil und Auth-Konto explizit wieder gelöscht.
+- Bereinigungsfehler werden konkret angezeigt; E-Mail-Adressen sollen nicht mehr unbemerkt hängen bleiben.
+- Änderungen an Profilen werden per `update(...).select().single()` direkt gespeichert und verifiziert.
+- Robuster JSON-Vergleich für Farbteam/Coachinggruppe.
+- Frontend prüft, ob wirklich die Edge Function API 8.4.1 läuft.
+- Cache-Busting auf 8.4.1 aktualisiert.
+
 ## 8.4.0
 - Neue Kollegiumskonten werden erst nach erfolgreicher Nachkontrolle als angelegt gemeldet.
 - Änderungen bestehender Accounts (Rolle, Freigabe, Stufenrecht, Farbteam, konkrete Coachinggruppe) laufen nun vollständig über die serverseitige Admin-Funktion.

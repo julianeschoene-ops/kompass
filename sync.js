@@ -68,6 +68,9 @@ const Sync={
       const detail=data?.error||data?.message||raw||('HTTP '+response.status);
       throw new Error(detail+' (HTTP '+response.status+')');
     }
+    if(data?.apiVersion!=='8.4.1'){
+      throw new Error('Die Supabase-Kontofunktion ist noch nicht auf KOMPASS 8.4.1 aktualisiert. Bitte die mitgelieferte Edge Function einmal neu deployen.');
+    }
     return data||{};
   },
   async createCloudUser({name,email,password,role='teacher',gradeAccess={},coachTeams={},coachingGroups={}}){
@@ -77,11 +80,6 @@ const Sync={
     });
     if(!data?.user?.id||data?.verified!==true){
       throw new Error('Das Konto wurde serverseitig nicht vollständig bestätigt.');
-    }
-    const users=await this.cloudProfiles();
-    const created=users.find(u=>u.id===data.user.id);
-    if(!created){
-      throw new Error('Das Auth-Konto wurde angelegt, aber das KOMPASS-Profil ist nach dem Anlegen nicht sichtbar.');
     }
     Store.log('Cloud-Benutzer angelegt',{target:name,email,role,gradeAccess,coachTeams,coachingGroups});
     return data;

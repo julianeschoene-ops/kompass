@@ -1,3 +1,12 @@
+# KOMPASS 8.4.1
+
+## Wichtig für dieses Update
+Die mitgelieferte Edge Function `supabase/functions/create-kompass-user/index.ts` muss einmal in Supabase eingesetzt und deployed werden. Danach erkennt KOMPASS automatisch, ob wirklich die 8.4.1-Funktion aktiv ist.
+
+Die Kontoanlage wird jetzt ausschließlich serverseitig bestätigt. Scheitert nach dem Erzeugen des Auth-Kontos ein späterer Schritt, werden Stufenrechte, Profil und Auth-Konto in dieser Reihenfolge wieder entfernt, damit die E-Mail-Adresse nicht hängen bleibt. Änderungen an bestehenden Konten werden ebenfalls serverseitig gespeichert und direkt verifiziert.
+
+---
+
 # KOMPASS 8.0
 
 ## Neu im Stundenplanmodul
@@ -42,5 +51,5 @@ KOMPASS speichert im Cloud-Modus den gemeinsamen Datenstand in `kompass_state`. 
 Für vorbereitete Kolleg:innen wird die Schul-E-Mail automatisch aus dem Namen erzeugt. Ein gemeinsames Erstpasswort kann in der Benutzerverwaltung einmal pro Sitzung gesetzt werden; es wird nicht dauerhaft gespeichert.
 
 
-## Update 8.4.0 – Kontenverwaltung
+## Update 8.4.0 (vorherige Version) – Kontenverwaltung
 Für 8.4.0 muss die Supabase Edge Function `create-kompass-user` durch die mitgelieferte Datei `supabase/functions/create-kompass-user/index.ts` ersetzt und neu deployed werden. `Verify JWT with legacy secret` bleibt AUS. `UPDATE_8_4_0.sql` ist idempotent und kann einmal im SQL Editor ausgeführt werden.
