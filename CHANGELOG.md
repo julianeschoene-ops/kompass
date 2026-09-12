@@ -1,4 +1,11 @@
-## 8.5.1
+## 8.5.2
+- Angelegte Konten werden kompakt als Liste dargestellt.
+- Bearbeitungsformular öffnet sich erst über „Bearbeiten“.
+- Konten können mit Sicherheitsabfrage vollständig gelöscht werden.
+- Löschen entfernt Auth-Konto, KOMPASS-Profil und Stufenrechte gemeinsam.
+- Eigenes angemeldetes Admin-Konto ist gegen Löschen/Sperren/Rollenverlust geschützt.
+
+## 8.5.2
 - Kontenliste wird serverseitig über die geschützte Edge Function geladen.
 - Gesperrte/inaktive Konten erscheinen zuverlässig in der Admin-Ansicht.
 - Auth-E-Mail wird in jeder Kontokarte angezeigt, damit gleichnamige Konten unterscheidbar sind.
@@ -12,7 +19,7 @@
 - Kontoänderungen werden jetzt gesammelt über „Änderungen speichern“ übertragen statt durch mehrere konkurrierende `onchange`-Requests.
 - Serverseitige Nachkontrolle für Profil, Status, Stufenrechte, Farbteam und Coachinggruppe.
 - Rollback auf den vorherigen Stand bei Fehlern an bestehenden Konten.
-- Cache-Busting und sichtbare Version auf 8.5.1 aktualisiert.
+- Cache-Busting und sichtbare Version auf 8.5.2 aktualisiert.
 
 ## 8.4.1
 - Falsche Browser-Nachkontrolle nach erfolgreicher Kontoanlage entfernt.

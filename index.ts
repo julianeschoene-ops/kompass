@@ -1,6 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const API_VERSION = '8.5.1'
+const API_VERSION = '8.5.2'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -155,7 +155,7 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}))
     const action = String(body.action || 'ping')
 
-    // Wichtig: Versionsprüfung ist ab 8.5.1 eine eigene, NICHT verändernde Anfrage.
+    // Wichtig: Versionsprüfung ist ab 8.5.2 eine eigene, NICHT verändernde Anfrage.
     if (action === 'ping' || action === 'version') {
       return json({ ok: true, verified: true, mutation: false, version: API_VERSION })
     }
@@ -285,6 +285,9 @@ Deno.serve(async (req) => {
       const coachingGroups = (body.coachingGroups || {}) as Record<string, unknown>
 
       if (!userId || !name) throw new Error('Benutzer-ID oder Name fehlt.')
+      if (userId === authData.user.id && (role !== 'admin' || active !== true)) {
+        throw new Error('Das aktuell angemeldete Admin-Konto kann sich nicht selbst sperren oder die eigene Adminrolle entfernen.')
+      }
 
       const before = await readAccountState(admin, userId)
       if (!before.profile) throw new Error('Das zu ändernde KOMPASS-Konto wurde nicht gefunden.')
@@ -322,6 +325,52 @@ Deno.serve(async (req) => {
         }
         throw saveError
       }
+    }
+
+
+    if (action === 'deleteAccount') {
+      const userId = String(body.userId || '')
+      if (!userId) throw new Error('Benutzer-ID fehlt.')
+      if (userId === authData.user.id) {
+        return json({ error: 'Das aktuell angemeldete Admin-Konto kann nicht gelöscht werden.' }, 409)
+      }
+
+      const authBefore = await admin.auth.admin.getUserById(userId)
+      const stateBefore = await readAccountState(admin, userId)
+      if (authBefore.error || !authBefore.data.user || !stateBefore.profile) {
+        return json({ error: 'Das zu löschende Konto wurde nicht vollständig gefunden. Es wurde nichts gelöscht.' }, 404)
+      }
+
+      const accessDelete = await admin.from('kompass_grade_access').delete().eq('user_id', userId)
+      if (accessDelete.error) throw new Error('Stufenrechte konnten nicht gelöscht werden: ' + accessDelete.error.message)
+
+      const profileDelete = await admin.from('kompass_profiles').delete().eq('id', userId)
+      if (profileDelete.error) throw new Error('KOMPASS-Profil konnte nicht gelöscht werden: ' + profileDelete.error.message)
+
+      const authDelete = await admin.auth.admin.deleteUser(userId)
+      if (authDelete.error) {
+        // Profil und Rechte wiederherstellen, wenn das Auth-Konto nicht gelöscht werden konnte.
+        const oldGradeAccess = Object.fromEntries((stateBefore.access || []).map((r: any) => [String(r.grade), r.access_level]))
+        await writeAccountState(admin, {
+          userId,
+          name: stateBefore.profile.display_name,
+          role: stateBefore.profile.role,
+          active: stateBefore.profile.active,
+          gradeAccess: oldGradeAccess,
+          coachTeams: stateBefore.profile.coach_teams || {},
+          coachingGroups: stateBefore.profile.coaching_groups || {},
+        })
+        throw new Error('Auth-Konto konnte nicht gelöscht werden; Profil und Rechte wurden wiederhergestellt: ' + authDelete.error.message)
+      }
+
+      const authCheck = await admin.auth.admin.getUserById(userId)
+      const profileCheck = await admin.from('kompass_profiles').select('id').eq('id', userId).maybeSingle()
+      const accessCheck = await admin.from('kompass_grade_access').select('user_id').eq('user_id', userId)
+      if (!authCheck.error || profileCheck.data || (accessCheck.data || []).length) {
+        throw new Error('Nachkontrolle: Das Konto wurde nicht vollständig entfernt.')
+      }
+
+      return json({ ok: true, verified: true, deleted: true, mutation: true, userId })
     }
 
     return json({ error: 'Unbekannte Konto-Aktion: ' + action }, 400)

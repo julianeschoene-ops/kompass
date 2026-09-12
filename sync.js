@@ -69,14 +69,14 @@ const Sync={
     // nur damit der Browser anschließend merkt, dass sie alt war.
     if(!skipPreflight&&!this.accountApiChecked&&payload?.action!=='ping'){
       const ping=await call({action:'ping'});
-      if(ping?.apiVersion!=='8.5.1'||ping?.mutation!==false){
-        throw new Error('Die Supabase-Kontofunktion ist nicht auf KOMPASS 8.5.1 aktualisiert. Es wurde nichts verändert.');
+      if(ping?.apiVersion!=='8.5.2'||ping?.mutation!==false){
+        throw new Error('Die Supabase-Kontofunktion ist nicht auf KOMPASS 8.5.2 aktualisiert. Es wurde nichts verändert.');
       }
       this.accountApiChecked=true;
     }
 
     const data=await call(payload);
-    if(data?.apiVersion!=='8.5.1')throw new Error('Versionskonflikt der Kontofunktion. Es wurde keine weitere Aktion ausgeführt.');
+    if(data?.apiVersion!=='8.5.2')throw new Error('Versionskonflikt der Kontofunktion. Es wurde keine weitere Aktion ausgeführt.');
     return data;
   },
   async createCloudUser({name,email,password,role='teacher',gradeAccess={},coachTeams={},coachingGroups={}}){
@@ -89,6 +89,12 @@ const Sync={
     const data=await this.adminAccountAction({action:'saveAccount',userId,name,role,active,gradeAccess,coachTeams,coachingGroups});
     if(data?.verified!==true)throw new Error('Die Kontoänderungen wurden serverseitig nicht bestätigt.');
     Store.log('Cloud-Benutzer gespeichert',{target:userId,name,role,active,gradeAccess,coachTeams,coachingGroups});
+    return data;
+  },
+  async deleteCloudAccount({userId}){
+    const data=await this.adminAccountAction({action:'deleteAccount',userId});
+    if(data?.verified!==true||data?.deleted!==true)throw new Error('Das Löschen wurde serverseitig nicht vollständig bestätigt.');
+    Store.log('Cloud-Benutzer gelöscht',{target:userId});
     return data;
   }
 
