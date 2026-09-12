@@ -1,6 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const API_VERSION = '8.5.0'
+const API_VERSION = '8.5.1'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -155,9 +155,52 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}))
     const action = String(body.action || 'ping')
 
-    // Wichtig: Versionsprüfung ist ab 8.5.0 eine eigene, NICHT verändernde Anfrage.
-    if (action === 'ping') {
-      return json({ ok: true, verified: true, mutation: false })
+    // Wichtig: Versionsprüfung ist ab 8.5.1 eine eigene, NICHT verändernde Anfrage.
+    if (action === 'ping' || action === 'version') {
+      return json({ ok: true, verified: true, mutation: false, version: API_VERSION })
+    }
+
+    // Kontenliste ausschließlich serverseitig laden. So sieht der Admin auch
+    // gesperrte Konten zuverlässig und die zugehörige Auth-E-Mail ist eindeutig sichtbar.
+    if (action === 'listAccounts') {
+      const [{ data: profiles, error: profilesErr }, { data: access, error: accessErr }] = await Promise.all([
+        admin.from('kompass_profiles')
+          .select('id,display_name,role,active,coach_teams,coaching_groups,created_at')
+          .order('display_name'),
+        admin.from('kompass_grade_access')
+          .select('user_id,grade,access_level'),
+      ])
+      if (profilesErr) throw new Error('Kontenliste konnte nicht geladen werden: ' + profilesErr.message)
+      if (accessErr) throw new Error('Stufenrechte konnten nicht geladen werden: ' + accessErr.message)
+
+      const authById = new Map<string, any>()
+      let page = 1
+      const perPage = 200
+      for (;;) {
+        const { data, error } = await admin.auth.admin.listUsers({ page, perPage })
+        if (error) throw new Error('Auth-Konten konnten nicht geladen werden: ' + error.message)
+        const users = data?.users || []
+        for (const user of users) authById.set(user.id, user)
+        if (users.length < perPage) break
+        page += 1
+        if (page > 50) break
+      }
+
+      const accounts = (profiles || []).map((profile: any) => {
+        const authUser = authById.get(profile.id)
+        const gradeAccess = Object.fromEntries(
+          (access || [])
+            .filter((row: any) => row.user_id === profile.id)
+            .map((row: any) => [String(row.grade), row.access_level])
+        )
+        return {
+          ...profile,
+          email: authUser?.email || '',
+          gradeAccess,
+        }
+      })
+
+      return json({ ok: true, verified: true, mutation: false, accounts })
     }
 
     if (action === 'create') {

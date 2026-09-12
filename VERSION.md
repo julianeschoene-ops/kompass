@@ -1,3 +1,3 @@
-# KOMPASS 8.5.0
+# KOMPASS 8.5.1
 
-Kontenverwaltung neu aufgebaut: sichere Vorab-Versionsprüfung, Reparatur liegen gebliebener gesperrter Konten und atomar wirkendes Speichern bestehender Konten über eine einzige serverseitige Aktion.
+Kontenliste serverseitig abgesichert: inaktive Konten und Auth-E-Mail werden zuverlässig in der Admin-Ansicht angezeigt.

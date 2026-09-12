@@ -37,7 +37,7 @@ const Sync={
   },
   async pushAudit(){const u=Auth.currentUser();const rows=(Store.auditLog||[]).slice(-40).map(l=>({id:l.id,at:l.at,user_id:u?.id||null,user_name:l.user||u?.name||'',action:l.action||'Änderung gespeichert',details:l.details||{},sections:l.sections||[]}));if(!rows.length)return;const {error}=await Auth.cloudClient.from('kompass_audit_log').upsert(rows,{onConflict:'id',ignoreDuplicates:true});if(error&&error.code!=='42501')console.warn('Audit sync',error)},
   async pullAudit(){const {data,error}=await Auth.cloudClient.from('kompass_audit_log').select('id,at,user_id,user_name,action,details,sections').order('at',{ascending:false}).limit(500);if(error)throw error;Store.data.auditLog=(data||[]).reverse().map(x=>({id:x.id,at:x.at,userId:x.user_id,user:x.user_name,action:x.action,details:x.details||{},sections:x.sections||[]}));},
-  async cloudProfiles(){if(!this.enabled())return[];const [{data:profiles,error:pErr},{data:access,error:aErr}]=await Promise.all([Auth.cloudClient.from('kompass_profiles').select('id,display_name,role,active,coach_teams,coaching_groups,created_at').order('display_name'),Auth.cloudClient.from('kompass_grade_access').select('user_id,grade,access_level')]);if(pErr)throw pErr;if(aErr)throw aErr;return (profiles||[]).map(p=>({...p,gradeAccess:Object.fromEntries((access||[]).filter(a=>a.user_id===p.id).map(a=>[a.grade,a.access_level]))}));},
+  async cloudProfiles(){if(!this.enabled())return[];const data=await this.adminAccountAction({action:'listAccounts'});return Array.isArray(data?.accounts)?data.accounts:[];},
   accountApiChecked:false,
   async adminAccountAction(payload,{skipPreflight=false}={}){
     if(!this.enabled()||!Auth.isAdmin())throw new Error('Nur ein angemeldeter Admin kann Konten verwalten.');
@@ -69,14 +69,14 @@ const Sync={
     // nur damit der Browser anschließend merkt, dass sie alt war.
     if(!skipPreflight&&!this.accountApiChecked&&payload?.action!=='ping'){
       const ping=await call({action:'ping'});
-      if(ping?.apiVersion!=='8.5.0'||ping?.mutation!==false){
-        throw new Error('Die Supabase-Kontofunktion ist nicht auf KOMPASS 8.5.0 aktualisiert. Es wurde nichts verändert.');
+      if(ping?.apiVersion!=='8.5.1'||ping?.mutation!==false){
+        throw new Error('Die Supabase-Kontofunktion ist nicht auf KOMPASS 8.5.1 aktualisiert. Es wurde nichts verändert.');
       }
       this.accountApiChecked=true;
     }
 
     const data=await call(payload);
-    if(data?.apiVersion!=='8.5.0')throw new Error('Versionskonflikt der Kontofunktion. Es wurde keine weitere Aktion ausgeführt.');
+    if(data?.apiVersion!=='8.5.1')throw new Error('Versionskonflikt der Kontofunktion. Es wurde keine weitere Aktion ausgeführt.');
     return data;
   },
   async createCloudUser({name,email,password,role='teacher',gradeAccess={},coachTeams={},coachingGroups={}}){

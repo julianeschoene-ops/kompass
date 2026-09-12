@@ -1,3 +1,9 @@
+## 8.5.1
+- Kontenliste wird serverseitig über die geschützte Edge Function geladen.
+- Gesperrte/inaktive Konten erscheinen zuverlässig in der Admin-Ansicht.
+- Auth-E-Mail wird in jeder Kontokarte angezeigt, damit gleichnamige Konten unterscheidbar sind.
+- Liste wird nach dem Anlegen automatisch neu geladen.
+
 ## 8.5.0
 
 - Kritischen Versionsprüfungsfehler aus 8.4.1 behoben: API-Version wird jetzt vor jeder Mutation geprüft.
@@ -6,7 +12,7 @@
 - Kontoänderungen werden jetzt gesammelt über „Änderungen speichern“ übertragen statt durch mehrere konkurrierende `onchange`-Requests.
 - Serverseitige Nachkontrolle für Profil, Status, Stufenrechte, Farbteam und Coachinggruppe.
 - Rollback auf den vorherigen Stand bei Fehlern an bestehenden Konten.
-- Cache-Busting und sichtbare Version auf 8.5.0 aktualisiert.
+- Cache-Busting und sichtbare Version auf 8.5.1 aktualisiert.
 
 ## 8.4.1
 - Falsche Browser-Nachkontrolle nach erfolgreicher Kontoanlage entfernt.

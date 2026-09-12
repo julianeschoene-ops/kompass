@@ -1,10 +1,14 @@
-# KOMPASS 8.5.0
+# KOMPASS 8.5.1
+
+## Kontenliste zuverlässig + E-Mail sichtbar
+
+Die Kontenverwaltung lädt Profile, Stufenrechte und die zugehörige Supabase-Auth-E-Mail jetzt gemeinsam über die geschützte Edge Function. Dadurch werden auch gesperrte Konten eindeutig angezeigt; mehrere Konten mit demselben Anzeigenamen sind anhand der E-Mail unterscheidbar.
 
 ## Wichtig: Kontenverwaltung neu aufgebaut
 
-8.5.0 behebt den Versionsfehler aus 8.4.1: Dort wurde die Version der Edge Function erst **nach** einer schreibenden Aktion geprüft. Dadurch konnte ein Konto bereits angelegt worden sein, obwohl der Browser anschließend meldete, die Function sei veraltet.
+8.5.1 behebt den Versionsfehler aus 8.4.1: Dort wurde die Version der Edge Function erst **nach** einer schreibenden Aktion geprüft. Dadurch konnte ein Konto bereits angelegt worden sein, obwohl der Browser anschließend meldete, die Function sei veraltet.
 
-In 8.5.0 erfolgt die Versionsprüfung immer zuerst über eine nicht verändernde `ping`-Anfrage. Ein bereits liegen gebliebenes gesperrtes Konto wird beim erneuten Anlegen repariert und mit dem eingegebenen Startpasswort sowie den ausgewählten Rechten vervollständigt. Aktive Konten werden nicht überschrieben.
+In 8.5.1 erfolgt die Versionsprüfung immer zuerst über eine nicht verändernde `ping`-Anfrage. Ein bereits liegen gebliebenes gesperrtes Konto wird beim erneuten Anlegen repariert und mit dem eingegebenen Startpasswort sowie den ausgewählten Rechten vervollständigt. Aktive Konten werden nicht überschrieben.
 
 Bestehende Konten werden nicht mehr Feld für Feld per `onchange` gespeichert. Stattdessen gibt es pro Konto einen Button **„Änderungen speichern“**. Rolle, Status, Stufenrechte, Farbteam und Coachinggruppe werden in einer serverseitigen Aktion gespeichert und geprüft.
 
