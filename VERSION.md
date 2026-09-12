@@ -1,3 +1,3 @@
-# KOMPASS 8.4.1
+# KOMPASS 8.5.0
 
-Kontenverwaltung stabilisiert: serverseitige Verifikation ohne fehleranfällige Browser-Nachkontrolle, robuste Bereinigung bei fehlgeschlagenen Kontoanlagen und eindeutige API-Versionsprüfung.
+Kontenverwaltung neu aufgebaut: sichere Vorab-Versionsprüfung, Reparatur liegen gebliebener gesperrter Konten und atomar wirkendes Speichern bestehender Konten über eine einzige serverseitige Aktion.

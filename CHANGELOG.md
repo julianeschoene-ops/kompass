@@ -1,3 +1,13 @@
+## 8.5.0
+
+- Kritischen Versionsprüfungsfehler aus 8.4.1 behoben: API-Version wird jetzt vor jeder Mutation geprüft.
+- Bereits vorhandene, aber gesperrte/unvollständige Auth-Konten können sicher repariert werden; keine Lösch-Schleife mehr nötig.
+- Bereits aktive Konten werden bei „Konto anlegen“ geschützt und nicht überschrieben.
+- Kontoänderungen werden jetzt gesammelt über „Änderungen speichern“ übertragen statt durch mehrere konkurrierende `onchange`-Requests.
+- Serverseitige Nachkontrolle für Profil, Status, Stufenrechte, Farbteam und Coachinggruppe.
+- Rollback auf den vorherigen Stand bei Fehlern an bestehenden Konten.
+- Cache-Busting und sichtbare Version auf 8.5.0 aktualisiert.
+
 ## 8.4.1
 - Falsche Browser-Nachkontrolle nach erfolgreicher Kontoanlage entfernt.
 - Kontoanlage wird vollständig serverseitig verifiziert.

@@ -38,62 +38,58 @@ const Sync={
   async pushAudit(){const u=Auth.currentUser();const rows=(Store.auditLog||[]).slice(-40).map(l=>({id:l.id,at:l.at,user_id:u?.id||null,user_name:l.user||u?.name||'',action:l.action||'Änderung gespeichert',details:l.details||{},sections:l.sections||[]}));if(!rows.length)return;const {error}=await Auth.cloudClient.from('kompass_audit_log').upsert(rows,{onConflict:'id',ignoreDuplicates:true});if(error&&error.code!=='42501')console.warn('Audit sync',error)},
   async pullAudit(){const {data,error}=await Auth.cloudClient.from('kompass_audit_log').select('id,at,user_id,user_name,action,details,sections').order('at',{ascending:false}).limit(500);if(error)throw error;Store.data.auditLog=(data||[]).reverse().map(x=>({id:x.id,at:x.at,userId:x.user_id,user:x.user_name,action:x.action,details:x.details||{},sections:x.sections||[]}));},
   async cloudProfiles(){if(!this.enabled())return[];const [{data:profiles,error:pErr},{data:access,error:aErr}]=await Promise.all([Auth.cloudClient.from('kompass_profiles').select('id,display_name,role,active,coach_teams,coaching_groups,created_at').order('display_name'),Auth.cloudClient.from('kompass_grade_access').select('user_id,grade,access_level')]);if(pErr)throw pErr;if(aErr)throw aErr;return (profiles||[]).map(p=>({...p,gradeAccess:Object.fromEntries((access||[]).filter(a=>a.user_id===p.id).map(a=>[a.grade,a.access_level]))}));},
-  async adminAccountAction(payload){
+  accountApiChecked:false,
+  async adminAccountAction(payload,{skipPreflight=false}={}){
     if(!this.enabled()||!Auth.isAdmin())throw new Error('Nur ein angemeldeter Admin kann Konten verwalten.');
     const {data:sessionData,error:sessionErr}=await Auth.cloudClient.auth.getSession();
     if(sessionErr)throw new Error('Admin-Sitzung konnte nicht gelesen werden: '+(sessionErr.message||String(sessionErr)));
     const token=sessionData?.session?.access_token;
     if(!token)throw new Error('Keine aktive Supabase-Anmeldung gefunden. Bitte einmal neu anmelden.');
 
-    let response;
-    try{
-      response=await fetch(Auth.cloud.url+'/functions/v1/create-kompass-user',{
-        method:'POST',
-        headers:{
-          'Authorization':'Bearer '+token,
-          'apikey':Auth.cloud.anonKey,
-          'Content-Type':'application/json'
-        },
-        body:JSON.stringify(payload)
-      });
-    }catch(e){
-      throw new Error('Die Kontofunktion konnte nicht erreicht werden: '+(e?.message||String(e)));
+    const call=async(body)=>{
+      let response;
+      try{
+        response=await fetch(Auth.cloud.url+'/functions/v1/create-kompass-user',{
+          method:'POST',
+          headers:{'Authorization':'Bearer '+token,'apikey':Auth.cloud.anonKey,'Content-Type':'application/json'},
+          body:JSON.stringify(body)
+        });
+      }catch(e){throw new Error('Die Kontofunktion konnte nicht erreicht werden: '+(e?.message||String(e)));}
+      const raw=await response.text();
+      let data=null;
+      try{data=raw?JSON.parse(raw):null}catch(_e){}
+      if(!response.ok||data?.error){
+        const detail=data?.error||data?.message||raw||('HTTP '+response.status);
+        throw new Error(detail+' (HTTP '+response.status+')');
+      }
+      return data||{};
+    };
+
+    // 8.5.0: Versionscheck IMMER vor einer schreibenden Aktion. Eine alte Function darf nichts mehr verändern,
+    // nur damit der Browser anschließend merkt, dass sie alt war.
+    if(!skipPreflight&&!this.accountApiChecked&&payload?.action!=='ping'){
+      const ping=await call({action:'ping'});
+      if(ping?.apiVersion!=='8.5.0'||ping?.mutation!==false){
+        throw new Error('Die Supabase-Kontofunktion ist nicht auf KOMPASS 8.5.0 aktualisiert. Es wurde nichts verändert.');
+      }
+      this.accountApiChecked=true;
     }
 
-    const raw=await response.text();
-    let data=null;
-    try{data=raw?JSON.parse(raw):null}catch(_e){}
-
-    if(!response.ok||data?.error){
-      const detail=data?.error||data?.message||raw||('HTTP '+response.status);
-      throw new Error(detail+' (HTTP '+response.status+')');
-    }
-    if(data?.apiVersion!=='8.4.1'){
-      throw new Error('Die Supabase-Kontofunktion ist noch nicht auf KOMPASS 8.4.1 aktualisiert. Bitte die mitgelieferte Edge Function einmal neu deployen.');
-    }
-    return data||{};
+    const data=await call(payload);
+    if(data?.apiVersion!=='8.5.0')throw new Error('Versionskonflikt der Kontofunktion. Es wurde keine weitere Aktion ausgeführt.');
+    return data;
   },
   async createCloudUser({name,email,password,role='teacher',gradeAccess={},coachTeams={},coachingGroups={}}){
-    const data=await this.adminAccountAction({
-      action:'create',
-      name,email,password,role,gradeAccess,coachTeams,coachingGroups
-    });
-    if(!data?.user?.id||data?.verified!==true){
-      throw new Error('Das Konto wurde serverseitig nicht vollständig bestätigt.');
-    }
-    Store.log('Cloud-Benutzer angelegt',{target:name,email,role,gradeAccess,coachTeams,coachingGroups});
+    const data=await this.adminAccountAction({action:'create',name,email,password,role,gradeAccess,coachTeams,coachingGroups});
+    if(!data?.user?.id||data?.verified!==true)throw new Error('Das Konto wurde serverseitig nicht vollständig bestätigt.');
+    Store.log(data.repairedExisting?'Cloud-Benutzer repariert':'Cloud-Benutzer angelegt',{target:name,email,role,gradeAccess,coachTeams,coachingGroups});
     return data;
   },
-  async updateCloudProfile(id,patch){
-    const data=await this.adminAccountAction({action:'updateProfile',userId:id,patch});
-    if(data?.verified!==true)throw new Error('Die Änderung wurde serverseitig nicht bestätigt.');
-    Store.log('Cloud-Benutzer geändert',{target:id,...patch});
-    return data;
-  },
-  async updateCloudGradeAccess(userId,grade,level){
-    const data=await this.adminAccountAction({action:'updateGradeAccess',userId,grade:Number(grade),level:level||null});
-    if(data?.verified!==true)throw new Error('Das Stufenrecht wurde serverseitig nicht bestätigt.');
-    Store.log('Stufenrecht geändert',{target:userId,grade:Number(grade),level:level||'kein Zugriff'});
+  async saveCloudAccount({userId,name,role='teacher',active=false,gradeAccess={},coachTeams={},coachingGroups={}}){
+    const data=await this.adminAccountAction({action:'saveAccount',userId,name,role,active,gradeAccess,coachTeams,coachingGroups});
+    if(data?.verified!==true)throw new Error('Die Kontoänderungen wurden serverseitig nicht bestätigt.');
+    Store.log('Cloud-Benutzer gespeichert',{target:userId,name,role,active,gradeAccess,coachTeams,coachingGroups});
     return data;
   }
+
 };
