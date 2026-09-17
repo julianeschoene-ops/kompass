@@ -25,4 +25,11 @@ function dashboard(){const ps=filteredPupils(),assignments=(Store.assignments||[
 function backup(){shell(header('Datensicherung','Daten sichern oder eine bestehende Sicherung einspielen.')+`<div class="grid2"><div class="card"><h2>Sicherung herunterladen</h2><p>Enthält alle Schülerdaten, Bewertungen, Historien und Einteilungen.</p><button class="chip dark" onclick="downloadBackup()">Datensicherung herunterladen</button></div><div class="card"><h2>Sicherung einspielen</h2><input type="file" accept="application/json" onchange="restoreBackup(this.files[0])"></div></div>`)}
 function downloadBackup(){const b=new Blob([JSON.stringify(Store.exportData(),null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`KOMPASS_8_3_5_${new Date().toISOString().slice(0,10)}.json`;a.click();}
 function restoreBackup(f){if(!f)return;const r=new FileReader();r.onload=()=>{try{if(Store.importData(JSON.parse(r.result))){toast('Sicherung eingespielt');render()}}catch(e){alert('Datei konnte nicht gelesen werden.')}};r.readAsText(f);}
+
+function renderKeepingFocus(id){
+  const old=document.getElementById(id),start=old?.selectionStart,end=old?.selectionEnd;
+  render();
+  const next=document.getElementById(id);
+  if(next){next.focus({preventScroll:true});try{next.setSelectionRange(start??next.value.length,end??next.value.length)}catch(_e){}}
+}
 function render(){if(!Auth.isLoggedIn())return loginScreen();if(State.view==='dashboard')return dashboard();if(State.view==='calendar')return calendar();if(State.view==='students')return students();if(State.view==='teams')return teamManagement();if(State.view==='planner')return planner();if(State.view==='timetable')return timetable();if(State.view==='workshop')return workshop();if(State.view==='core')return coreSubjects();if(State.view==='activities')return activities();if(State.view==='behaviour')return behaviour();if(State.view==='leb')return leb();if(State.view==='admin')return admin();if(State.view==='logs')return logs();if(State.view==='backup')return backup();dashboard();}

@@ -1,1 +1,1 @@
-# KOMPASS 8.5.2
+KOMPASS 8.5.3

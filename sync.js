@@ -29,10 +29,13 @@ const Sync={
   async push(force=false){
     if(!this.enabled())return;this.busy=true;
     try{
-      const now=new Date().toISOString(),years=Auth.allowedGrades();
-      for(const grade of years){const {error}=await Auth.cloudClient.from('kompass_grade_state').upsert({grade,payload:this.gradePayload(grade),updated_at:now});if(error)throw error;}
-      if(Auth.isAdmin()){const {error}=await Auth.cloudClient.from('kompass_shared_state').upsert({id:'school',payload:this.sharedPayload(),updated_at:now});if(error)throw error;}
-      await this.pushAudit();this.lastPull=now;
+      const now=new Date().toISOString(),years=Auth.allowedGrades(),failures=[];let saved=0;
+      for(const grade of years){const {error}=await Auth.cloudClient.from('kompass_grade_state').upsert({grade,payload:this.gradePayload(grade),updated_at:now});if(error){failures.push({part:'grade',grade,error});console.warn('Cloud grade sync',grade,error);}else saved++;}
+      if(Auth.isAdmin()){const {error}=await Auth.cloudClient.from('kompass_shared_state').upsert({id:'school',payload:this.sharedPayload(),updated_at:now});if(error){failures.push({part:'shared',error});console.warn('Cloud shared sync',error);}else saved++;}
+      await this.pushAudit();
+      if(!saved&&failures.length)throw failures[0].error;
+      if(failures.length)console.warn('Cloud partially synced; successful writes retained',failures);
+      this.lastPull=now;
     }catch(e){console.error('Cloud push',e);toast('Cloud-Speicherung fehlgeschlagen')}finally{this.busy=false}
   },
   async pushAudit(){const u=Auth.currentUser();const rows=(Store.auditLog||[]).slice(-40).map(l=>({id:l.id,at:l.at,user_id:u?.id||null,user_name:l.user||u?.name||'',action:l.action||'Änderung gespeichert',details:l.details||{},sections:l.sections||[]}));if(!rows.length)return;const {error}=await Auth.cloudClient.from('kompass_audit_log').upsert(rows,{onConflict:'id',ignoreDuplicates:true});if(error&&error.code!=='42501')console.warn('Audit sync',error)},

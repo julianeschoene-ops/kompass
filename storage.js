@@ -55,7 +55,12 @@ const Store = {
     d.coaching=d.coaching||{};
     d.teamConfig=d.teamConfig||{};
     d.projectTemplates=d.projectTemplates||clone(SEED.projectTemplates);
-    d.creativeRooms=d.creativeRooms||clone(SEED.creativeRooms);
+    // 8.5.3: Kreativband-Angebote zentral auf die verbindliche Liste bringen.
+    // Stabile IDs bleiben erhalten, damit bestehende Besuchseinträge zugeordnet bleiben.
+    d.creativeRooms=clone(SEED.creativeRooms);
+    const creativeById=Object.fromEntries(d.creativeRooms.map(r=>[r.id,r]));
+    d.activities=(d.activities||[]).filter(a=>a.type!=='Kreativband'||creativeById[a.id]);
+    d.activities.forEach(a=>{if(a.type==='Kreativband'&&creativeById[a.id])Object.assign(a,clone(creativeById[a.id]),{type:'Kreativband',year:a.year,lebEnabled:a.lebEnabled!==false,maxCount:a.maxCount||39});});
     d.workshopPaths=d.workshopPaths||{};
     d.clubMemberships=d.clubMemberships||{};
     // Neue Datenbereiche aus KOMPASS 6.0 müssen auch bei bestehenden

@@ -5,11 +5,13 @@ const LEVELS = ['G','M','E'];
 const DEFAULT_SCORE_CONFIG = { redMax:24, yellowMax:74 };
 const CREATIVE_ROOMS = [
  {id:'room_garden',name:'Schulgarten',icon:'🌱',licenses:['Hochbeet-Führerschein','Aussaat-Führerschein','Kompost-Führerschein']},
- {id:'room_science',name:'NW-Labor',icon:'🧪',licenses:['Mikroskopführerschein','Laborführerschein','Experimentierführerschein']},
- {id:'room_creative',name:'Kreativwerkstatt',icon:'🎨',licenses:['Nähmaschinenführerschein','Plotterführerschein','Textildruck-Führerschein']},
- {id:'room_tech',name:'Technikwerkstatt',icon:'🛠️',licenses:['Werkzeugführerschein','Bohrmaschinenführerschein','Lötführerschein']},
- {id:'room_music',name:'Musicroom',icon:'🎵',licenses:['Keyboard-Basis','Cajón-Basis','Ukulele-Basis']},
- {id:'room_it',name:'IT-Room',icon:'💻',licenses:['Scratch-Programmierschein','Micro:bit-Programmierschein','iPad-Basis']}
+ {id:'room_it',name:'IT-Studio',icon:'💻',licenses:['Scratch-Programmierschein','Micro:bit-Programmierschein','iPad-Basis']},
+ {id:'room_cook',name:'Kochstudio',icon:'🍳',licenses:[]},
+ {id:'room_sewing',name:'Nähstudio',icon:'🧵',licenses:['Nähmaschinenführerschein']},
+ {id:'room_creative',name:'Kunstatelier',icon:'🎨',licenses:['Plotterführerschein','Textildruck-Führerschein']},
+ {id:'room_music',name:'Musikatelier',icon:'🎵',licenses:['Keyboard-Basis','Cajón-Basis','Ukulele-Basis']},
+ {id:'room_science',name:'Naturwissenschaftliches Labor',icon:'🧪',licenses:['Mikroskopführerschein','Laborführerschein','Experimentierführerschein']},
+ {id:'room_tech',name:'Technikwerkstatt',icon:'🛠️',licenses:['Werkzeugführerschein','Bohrmaschinenführerschein','Lötführerschein']}
 ];
 const PROJECT_TEMPLATES = [
  {id:'project_school',name:'Gemeinsam starten – Wir entdecken unsere Schule',labs:['GeoLab','MediaLab','TechLab','FutureFoodLab','HistoryLab','Bildende Kunst','Musik']},
@@ -24,7 +26,7 @@ const ENGLISH_5 = [
  ['Verstehen – Leseverstehen','U1','Ich kann kurze Anleitungen und Erklärungen verstehen.'],['Verstehen – Leseverstehen','U1','Ich kann einfachen Texten Informationen entnehmen.'],['Verstehen – Leseverstehen','U2','Ich kann kurze Mitteilungen und Alltagstexte verstehen.'],['Verstehen – Leseverstehen','U2','Ich kann einen Lesetext verstehen.'],['Verstehen – Leseverstehen','U3','Ich kann kurze Szenen verstehen.'],['Verstehen – Leseverstehen','U4','Ich kann sagen, worum es in einem kurzen Text geht.'],['Verstehen – Leseverstehen','U5','Ich kann eine kurze Geschichte verstehen.'],
  ['Sprechen','U1','Ich kann begrüßen, mich verabschieden und vorstellen.'],['Sprechen','U1','Ich kann über meine Schule und meinen Unterricht sprechen.'],['Sprechen','U2','Ich kann über meine Familie sprechen und Fragen beantworten.'],['Sprechen','U2','Ich kann in Sätzen über mich und mein Zuhause sprechen.'],['Sprechen','U3','Ich kann über meinen Tagesablauf und meine Freizeit sprechen.'],['Sprechen','U4','Ich kann einen Weg beschreiben.'],['Sprechen','U5','Ich kann längere Gespräche über mein Umfeld führen.'],
  ['Schreiben','U1','Ich kann Wörter und kurze Sätze richtig schreiben.'],['Schreiben','U1','Ich kann über mich schreiben.'],['Schreiben','U2','Ich kann über meine Familie und mein Zuhause schreiben.'],['Schreiben','U2','Ich kann einfache Fragen schriftlich beantworten.'],['Schreiben','U3','Ich kann über meinen Alltag und meine Freizeit schreiben.'],
- ['Sprachmittlung','U1','Ich kann bekannte englische Wörter auf Deutsch beschreiben.'],['Sprachmittlung','U2','Ich kann kurze englische Aussagen auf Deutsch wiedergeben.'],['Sprachmittlung','U2','Ich kann einzelne bekannte deutsche Wörter auf Englisch sagen.'],['Sprachmittlung','U3','Ich kann einfache deutsche Aussagen auf Englisch wiedergeben.'],['Sprachmittlung','U4','Ich kann einfache Informationen für andere verständlich machen.']
+ ['Sprachmittlung','U1-M/E','Ich kann bekannte englische Wörter auf Deutsch beschreiben.'],['Sprachmittlung','U2','Ich kann kurze englische Aussagen auf Deutsch wiedergeben.'],['Sprachmittlung','U2','Ich kann einzelne bekannte deutsche Wörter auf Englisch sagen.'],['Sprachmittlung','U3','Ich kann einfache deutsche Aussagen auf Englisch wiedergeben.'],['Sprachmittlung','U4','Ich kann einfache Informationen für andere verständlich machen.']
 ];
 function english5Competencies(){return ENGLISH_5.map((x,i)=>({id:'eng5_'+i,type:'core',year:5,sprint:null,subject:'Englisch',category:x[0],area:x[0],unit:x[1],level:'G/M/E',text:x[2],includeInLeb:true,order:(i+1)*10,maxPoints:null,scoreConfig:{...DEFAULT_SCORE_CONFIG},note:''}));}
 function seedTeamColor(t){const x=String(t||'').toLowerCase();if(x.includes('blau'))return'blue';if(x.includes('rot')||x.includes('pink'))return'rose';if(x.includes('gelb'))return'amber';if(x.includes('lila')||x.includes('violett'))return'violet';return'mint';}

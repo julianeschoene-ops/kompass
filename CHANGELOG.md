@@ -1,3 +1,10 @@
+## 8.5.3 – 17.09.2026
+- Cloud-Synchronisation: erfolgreiche Teil-Speicherungen werden nicht mehr pauschal als komplett fehlgeschlagen gemeldet.
+- Kreativband: verbindliche acht Angebote.
+- Weitere Angebote: Schwimmen ergänzt.
+- Namenssuche: Fokus bleibt beim Tippen erhalten.
+- Englisch 5: Kompetenzraster U1–U5 vollständig im System.
+
 ## 8.5.2
 - Angelegte Konten werden kompakt als Liste dargestellt.
 - Bearbeitungsformular öffnet sich erst über „Bearbeiten“.
