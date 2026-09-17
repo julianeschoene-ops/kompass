@@ -30,7 +30,19 @@ const Sync={
     if(!this.enabled())return;this.busy=true;
     try{
       const now=new Date().toISOString(),years=Auth.allowedGrades(),failures=[];let saved=0;
-      for(const grade of years){const {error}=await Auth.cloudClient.from('kompass_grade_state').upsert({grade,payload:this.gradePayload(grade),updated_at:now});if(error){failures.push({part:'grade',grade,error});console.warn('Cloud grade sync',grade,error);}else saved++;}
+      for(const grade of years){
+        const row={grade,payload:this.gradePayload(grade),updated_at:now};
+        // Bestehende Stufen werden bewusst per UPDATE gespeichert. Ein UPSERT prüft in
+        // Postgres auch den INSERT-Pfad und kann deshalb trotz erlaubtem UPDATE an der
+        // strengeren INSERT-Policy für Lehrkräfte scheitern.
+        const {data:updated,error:updateError}=await Auth.cloudClient.from('kompass_grade_state').update({payload:row.payload,updated_at:now}).eq('grade',grade).select('grade');
+        let error=updateError;
+        if(!error&&(!updated||updated.length===0)){
+          const inserted=await Auth.cloudClient.from('kompass_grade_state').insert(row);
+          error=inserted.error;
+        }
+        if(error){failures.push({part:'grade',grade,error});console.warn('Cloud grade sync',grade,error);}else saved++;
+      }
       if(Auth.isAdmin()){const {error}=await Auth.cloudClient.from('kompass_shared_state').upsert({id:'school',payload:this.sharedPayload(),updated_at:now});if(error){failures.push({part:'shared',error});console.warn('Cloud shared sync',error);}else saved++;}
       await this.pushAudit();
       if(!saved&&failures.length)throw failures[0].error;

@@ -4,9 +4,13 @@ const CLOUD_KEY='kompass81_cloud_config';
 const Auth={
   session:null,cloud:null,cloudClient:null,
   load(){
-    try{this.cloud=JSON.parse(localStorage.getItem(CLOUD_KEY)||'null')}catch(e){this.cloud=null}
+    // KOMPASS ist fest mit der gemeinsamen Schul-Cloud verbunden.
+    // Dadurch landen neue Geräte/Browser direkt beim Login statt bei "Ersten Admin anlegen".
+    this.cloud={
+      url:'https://gexhcpyzwzybrpuygqmf.supabase.co',
+      anonKey:'sb_publishable_U7Dp3SXHADswPjg4Vj7mzw_kG27owvK'
+    };
     try{this.session=JSON.parse(sessionStorage.getItem(SESSION_KEY)||'null')}catch(e){this.session=null}
-    if(!this.cloudConfigured())this.ensureLocalBootstrap();
   },
   cloudConfigured(){return !!(this.cloud?.url&&this.cloud?.anonKey&&window.supabase)},
   ensureLocalBootstrap(){let db;try{db=JSON.parse(localStorage.getItem(AUTH_KEY)||'null')}catch(e){db=null}if(!db||!Array.isArray(db.users)){db={users:[],createdAt:new Date().toISOString()};localStorage.setItem(AUTH_KEY,JSON.stringify(db));}},
