@@ -1,3 +1,8 @@
+## 8.5.6
+- Cloud-Fehler zeigt jetzt den konkreten Supabase-Fehler und den betroffenen Jahrgang/Teilbereich an.
+- Kompetenzbewertungen können vollständig aus dem aktuellen Stand entfernt werden.
+- Entfernen bleibt als eigener Eintrag im Verlauf dokumentiert.
+
 ## 8.5.3 – 17.09.2026
 - Cloud-Synchronisation: erfolgreiche Teil-Speicherungen werden nicht mehr pauschal als komplett fehlgeschlagen gemeldet.
 - Kreativband: verbindliche acht Angebote.
@@ -98,3 +103,14 @@
 - Hotfix: leere/noch nicht geladene Schülerliste führt nicht mehr zum Absturz nach Login.
 
 - Benutzerverwaltung: automatische Schul-E-Mail nach dem Schema vorname.nachname@jbgms-sha.de und gemeinsames Erstpasswort für neue Kollegiumskonten.
+
+
+## 8.5.5
+- Basis ist 8.5.4 LOGIN FIX.
+- Cloud-Speicherung von Jahrgangsdaten: UPDATE für vorhandene Stufen, INSERT nur bei fehlender Stufe.
+- Login-Fix und alle übrigen Dateien der gelieferten 8.5.4 bleiben erhalten.
+
+## 8.5.7
+- Kompetenzraster Deutsch Klasse 7 ergänzt (Lesen/Literatur verstehen, Schreiben, Rechtschreiben, Sprechen/Zuhören, Sprache untersuchen; LT1–LT6).
+- Schüler*innen-Ansicht öffnet für Lerncoaches stufenweit mit „alle Teams“; Farbteams bleiben als freiwilliger Filter.
+- Kreativband: Jahrgangsauswahl 5/6/7 unabhängig von der eigenen Coach-Stufe vorbereitet.

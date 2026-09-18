@@ -29,6 +29,47 @@ const ENGLISH_5 = [
  ['Sprachmittlung','U1-M/E','Ich kann bekannte englische Wörter auf Deutsch beschreiben.'],['Sprachmittlung','U2','Ich kann kurze englische Aussagen auf Deutsch wiedergeben.'],['Sprachmittlung','U2','Ich kann einzelne bekannte deutsche Wörter auf Englisch sagen.'],['Sprachmittlung','U3','Ich kann einfache deutsche Aussagen auf Englisch wiedergeben.'],['Sprachmittlung','U4','Ich kann einfache Informationen für andere verständlich machen.']
 ];
 function english5Competencies(){return ENGLISH_5.map((x,i)=>({id:'eng5_'+i,type:'core',year:5,sprint:null,subject:'Englisch',category:x[0],area:x[0],unit:x[1],level:'G/M/E',text:x[2],includeInLeb:true,order:(i+1)*10,maxPoints:null,scoreConfig:{...DEFAULT_SCORE_CONFIG},note:''}));}
+
+const DEUTSCH_7 = [
+ ['Lesen / Literatur verstehen','LT1','Sachtext erschließen'],
+ ['Lesen / Literatur verstehen','LT1','(Sach-)Text untersuchen (Merkmale Sachtext – literarischer Text)'],
+ ['Lesen / Literatur verstehen','LT2','Sich und andere informieren'],
+ ['Lesen / Literatur verstehen','LT3','Aufbau eines Argumentes verstehen'],
+ ['Lesen / Literatur verstehen','LT4','Bericht erschließen / untersuchen'],
+ ['Lesen / Literatur verstehen','LT5','Ballade erschließen / untersuchen'],
+ ['Lesen / Literatur verstehen','LT5','Merkmale von Lyrik, Epik und Dramatik'],
+ ['Lesen / Literatur verstehen','LT6','Jugendbuch erschließen / untersuchen'],
+ ['Schreiben','LT1','Sachtext zusammenfassen'],
+ ['Schreiben','LT2','Stichwortzettel'],
+ ['Schreiben','LT3','Argument(e) formulieren'],
+ ['Schreiben','LT4','Bericht verfassen'],
+ ['Schreiben','LT5','Ballade zusammenfassen (Inhaltsangabe)'],
+ ['Schreiben','LT5/6','Kreatives Schreiben – Ballade / Jugendbuch'],
+ ['Rechtschreiben','LT1','Rechtschreibstrategien'],
+ ['Rechtschreiben','LT2','Rechtschreibregeln'],
+ ['Rechtschreiben','LT3','Zeichensetzung'],
+ ['Rechtschreiben','','Texte überarbeiten'],
+ ['Sprechen / Zuhören','LT2','Über Texte sprechen'],
+ ['Sprechen / Zuhören','LT2','Inhalte präsentieren'],
+ ['Sprechen / Zuhören','LT2','Adressatengerecht sprechen'],
+ ['Sprechen / Zuhören','LT3','Aktiv zuhören'],
+ ['Sprechen / Zuhören','LT3','Gesprächsregeln einhalten'],
+ ['Sprechen / Zuhören','LT3','Argumentieren'],
+ ['Sprechen / Zuhören','LT4','Über Ereignisse berichten'],
+ ['Sprechen / Zuhören','LT5','Ballade (auswendig) vortragen'],
+ ['Sprechen / Zuhören','','Texte flüssig vorlesen'],
+ ['Sprechen / Zuhören','','Texte sinngestaltend vorlesen'],
+ ['Sprache untersuchen','LT1','Wortarten'],
+ ['Sprache untersuchen','LT2','Verben / Zeitformen'],
+ ['Sprache untersuchen','LT3','Haupt- und Nebensätze'],
+ ['Sprache untersuchen','LT4','Verben – aktiv / passiv'],
+ ['Sprache untersuchen','LT5','Verben – indirekte Rede'],
+ ['Sprache untersuchen','LT5','Reim, Strophe, Vers'],
+ ['Sprache untersuchen','LT5/6','Sprachliche Bilder'],
+ ['Sprache untersuchen','LT6','Feldermodell / Satzglieder']
+];
+function deutsch7Competencies(){return DEUTSCH_7.map((x,i)=>({id:'deu7_'+i,type:'core',year:7,sprint:null,subject:'Deutsch',category:x[0],area:x[0],unit:x[1],level:'G/M/E',text:x[2],includeInLeb:true,order:(i+1)*10,maxPoints:null,scoreConfig:{...DEFAULT_SCORE_CONFIG},note:''}));}
+
 function seedTeamColor(t){const x=String(t||'').toLowerCase();if(x.includes('blau'))return'blue';if(x.includes('rot')||x.includes('pink'))return'rose';if(x.includes('gelb'))return'amber';if(x.includes('lila')||x.includes('violett'))return'violet';return'mint';}
 const SEED = {
  version:'8.3.4', subjects:[...WORKSHOP_SUBJECTS], coreSubjects:[...CORE_SUBJECTS], projectTemplates:PROJECT_TEMPLATES, creativeRooms:CREATIVE_ROOMS,
@@ -409,7 +450,7 @@ const SEED = {
   {id:'p7_dunkelgrun_12',first:'Sarah',last:'Häußler',short:'Sarah H.',className:'7e',year:7,team:'Grün',coachingGroup:'Dunkelgrün',color:seedTeamColor('Grün'),coach:''},
   {id:'p7_dunkelgrun_13',first:'Taylor',last:'Dohm',short:'Taylor D.',className:'7e',year:7,team:'Grün',coachingGroup:'Dunkelgrün',color:seedTeamColor('Grün'),coach:''},
  ],
- competencies:[...english5Competencies(),
+ competencies:[...english5Competencies(),...deutsch7Competencies(),
  {id:'w_school_geo',type:'workshop',year:5,sprint:1,projectId:'project_school',phase:'base',lab:'GeoLab',subject:'Geographie',category:'Orientierung',area:'Orientierung',level:'G/M/E',text:'Ich kann Lagepläne und Karten nutzen, um mich sicher zu orientieren.',includeInLeb:true,order:10,maxPoints:null,scoreConfig:{...DEFAULT_SCORE_CONFIG},note:''},
  {id:'w_school_media',type:'workshop',year:5,sprint:1,projectId:'project_school',phase:'base',lab:'MediaLab',subject:'Informatik & Medienbildung',category:'Digitale Werkzeuge',area:'Digitale Werkzeuge',level:'G/M/E',text:'Ich kann digitale Werkzeuge zur Recherche, Dokumentation und Präsentation verantwortungsvoll nutzen.',includeInLeb:true,order:20,maxPoints:null,scoreConfig:{...DEFAULT_SCORE_CONFIG},note:''},
  {id:'w_school_history',type:'workshop',year:5,sprint:1,projectId:'project_school',phase:'base',lab:'HistoryLab',subject:'Geschichte',category:'Quellen',area:'Quellen',level:'G/M/E',text:'Ich kann Informationen aus einfachen historischen Quellen gewinnen und dokumentieren.',includeInLeb:true,order:30,maxPoints:null,scoreConfig:{...DEFAULT_SCORE_CONFIG},note:''},
