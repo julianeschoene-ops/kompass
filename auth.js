@@ -37,7 +37,8 @@ const Auth={
     this.session={mode:'cloud',user:{id:data.id,name:data.display_name||s.user.email,username:s.user.email,role:data.role||'teacher',gradeAccess,coachTeams:data.coach_teams||{},coachingGroups:data.coaching_groups||{}}};
     sessionStorage.setItem(SESSION_KEY,JSON.stringify(this.session));State.teacher=this.session.user.name;State.role=this.session.user.role;
     const years=this.allowedGrades();if(years.length&&!years.includes(State.year))State.year=years[0];
-    if(window.Sync)await Sync.pull();render();
+    State.cloudLoadError=null;
+    if(window.Sync){try{await Sync.pull()}catch(e){State.cloudLoadError=e?.message||String(e);render();return;}}render();
   },
   async cloudLogin(email,password){const {data,error}=await this.cloudClient.auth.signInWithPassword({email,password});if(error)throw error;await this.applyCloudSession(data.session)},
   async cloudSignup(name,email,password){const {data,error}=await this.cloudClient.auth.signUp({email,password,options:{data:{display_name:name}}});if(error)throw error;return data},
