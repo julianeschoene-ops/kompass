@@ -55,7 +55,10 @@ const Sync={
       ]);
       if(se)throw se;if(ge)throw ge;
       const hasCloud=!!shared?.payload||(grades||[]).length>0;
-      if(!hasCloud&&Auth.isAdmin()){this.busy=false;await this.push(true);return;}
+      if(!hasCloud&&Auth.isAdmin()){
+        if(!(Store.data.pupils||[]).length)throw new Error('In der Cloud wurde kein KOMPASS-Datenbestand gefunden. Zum Schutz wird kein leerer Stand hochgeladen.');
+        this.busy=false;await this.push(true);return;
+      }
       if(hasCloud){const merged=this.blankFromShared(shared?.payload||{});this.baseGrades={};for(const row of (grades||[])){this.baseGrades[row.grade]=clone(row.payload||{});this.mergeGrade(merged,row.payload||{});}Store.data=merged;Store._rosterChanged=false;Store.migrate();if(Auth.isAdmin())await this.pullAudit();Store.saveLocalOnly();this.lastPull=new Date().toISOString();if(Auth.isAdmin()&&Store._rosterChanged){this.busy=false;await this.push(true);return;}}
     }catch(e){console.error('Cloud pull',e);throw e}finally{this.busy=false}
   },
