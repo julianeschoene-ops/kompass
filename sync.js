@@ -59,7 +59,11 @@ const Sync={
         if(!(Store.data.pupils||[]).length)throw new Error('In der Cloud wurde kein KOMPASS-Datenbestand gefunden. Zum Schutz wird kein leerer Stand hochgeladen.');
         this.busy=false;await this.push(true);return;
       }
-      if(hasCloud){const merged=this.blankFromShared(shared?.payload||{});this.baseGrades={};for(const row of (grades||[])){this.baseGrades[row.grade]=clone(row.payload||{});this.mergeGrade(merged,row.payload||{});}Store.data=merged;Store._rosterChanged=false;Store.migrate();if(Auth.isAdmin())await this.pullAudit();Store.saveLocalOnly();this.lastPull=new Date().toISOString();if(Auth.isAdmin()&&Store._rosterChanged){this.busy=false;await this.push(true);return;}}
+      if(hasCloud){
+        const emptyGrades=years.filter(grade=>{const row=(grades||[]).find(x=>Number(x.grade)===Number(grade));return !row||!Array.isArray(row?.payload?.pupils)||row.payload.pupils.length===0;});
+        if(emptyGrades.length)throw new Error('Der Cloudbestand für Jahrgang '+emptyGrades.join(', ')+' enthält 0 Schüler*innen. Ein möglicherweise vorhandener lokaler Stand bleibt geschützt und wird nicht überschrieben.');
+        const merged=this.blankFromShared(shared?.payload||{});this.baseGrades={};for(const row of (grades||[])){this.baseGrades[row.grade]=clone(row.payload||{});this.mergeGrade(merged,row.payload||{});}Store.data=merged;Store._rosterChanged=false;Store.migrate();if(Auth.isAdmin())await this.pullAudit();Store.saveLocalOnly();this.lastPull=new Date().toISOString();if(Auth.isAdmin()&&Store._rosterChanged){this.busy=false;await this.push(true);return;}
+      }
     }catch(e){console.error('Cloud pull',e);throw e}finally{this.busy=false}
   },
   async push(force=false){
