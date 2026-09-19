@@ -1,7 +1,13 @@
 const STORAGE_KEY = 'kompass41_data';
 const LEGACY_KEYS = ['kompass33_sprints','kompass33_subjects','kompass33_pupils','kompass33_competencies','kompass33_records','kompass33_lebDrafts','kompass33_metadata'];
 
-function clone(obj){ return JSON.parse(JSON.stringify(obj)); }
+// JSON values may legitimately be absent while two independently edited cloud
+// states are being merged. JSON.stringify(undefined) returns undefined (not the
+// string "undefined"), so passing that result to JSON.parse crashes in Safari.
+function clone(obj){
+  if(obj===undefined)return undefined;
+  return JSON.parse(JSON.stringify(obj));
+}
 function uid(prefix='id'){ return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7); }
 
 const Store = {
