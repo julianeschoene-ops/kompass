@@ -1,3 +1,8 @@
+## 8.5.8 – 19.09.2026
+- Mathematik-Kompetenzraster Klasse 7 mit 46 Kompetenzen aus acht Themenbereichen ergänzt.
+- In den Kernfächern sind Schülerstufe und Kompetenzstufe getrennt filterbar.
+- Lerncoaches können dadurch für ihre eigene Lerngruppe auch Kompetenzen der Stufen 5, 6 oder 7 auswählen und bewerten.
+
 ## 8.5.6
 - Cloud-Fehler zeigt jetzt den konkreten Supabase-Fehler und den betroffenen Jahrgang/Teilbereich an.
 - Kompetenzbewertungen können vollständig aus dem aktuellen Stand entfernt werden.
