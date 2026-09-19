@@ -27,7 +27,11 @@ const Sync={
         }
         return out;
       }
-      return clone(local);
+      const signature=v=>JSON.stringify(v),baseSet=new Set(base.map(signature)),localSet=new Set(local.map(signature));
+      const out=remote.filter(v=>!baseSet.has(signature(v))||localSet.has(signature(v))).map(clone);
+      const outSet=new Set(out.map(signature));
+      for(const value of local)if(!baseSet.has(signature(value))&&!outSet.has(signature(value))){out.push(clone(value));outSet.add(signature(value));}
+      return out;
     }
     if(local&&base&&remote&&typeof local==='object'&&typeof base==='object'&&typeof remote==='object'){
       const out=clone(remote);
