@@ -91,16 +91,23 @@ const Sync={
     try{
       const now=new Date().toISOString(),years=Auth.allowedGrades(),failures=[];let saved=0;
       for(const grade of years){
-        const localPayload=this.gradePayload(grade),base=clone(this.baseGrades[grade]||localPayload);let done=false,error=null;
+        const localPayload=this.gradePayload(grade),base=clone(this.baseGrades[grade]||localPayload);let done=false,error=null,persistedPayload=null;
+        // Never allow a damaged or freshly emptied browser state to erase a
+        // complete grade in the cloud. Deliberate roster changes remain possible
+        // as long as at least one pupil is present.
+        if(!Array.isArray(localPayload.pupils)||localPayload.pupils.length===0){
+          failures.push({part:'grade',grade,error:new Error('Schutz aktiv: Ein leerer Jahrgang wird nicht in der Cloud gespeichert.')});
+          continue;
+        }
         for(let attempt=0;attempt<3&&!done;attempt++){
           const current=await Auth.cloudClient.from('kompass_grade_state').select('payload,updated_at').eq('grade',grade).maybeSingle();
           if(current.error){error=current.error;break;}
-          if(!current.data){const inserted=await Auth.cloudClient.from('kompass_grade_state').insert({grade,payload:localPayload,updated_at:new Date().toISOString()}).select('grade');error=inserted.error;done=!error;break;}
+          if(!current.data){const inserted=await Auth.cloudClient.from('kompass_grade_state').insert({grade,payload:localPayload,updated_at:new Date().toISOString()}).select('grade');error=inserted.error;done=!error;if(done)persistedPayload=localPayload;break;}
           const merged=this.mergeConcurrent(base,localPayload,current.data.payload||{}),stamp=new Date().toISOString();
           const updated=await Auth.cloudClient.from('kompass_grade_state').update({payload:merged,updated_at:stamp}).eq('grade',grade).eq('updated_at',current.data.updated_at).select('grade');
-          error=updated.error;if(!error&&updated.data?.length)done=true;
+          error=updated.error;if(!error&&updated.data?.length){done=true;persistedPayload=merged;}
         }
-        if(!done){error=error||new Error('Gleichzeitige Änderung konnte nach drei Versuchen nicht zusammengeführt werden.');failures.push({part:'grade',grade,error});console.warn('Cloud grade sync',grade,error);}else{this.baseGrades[grade]=clone(localPayload);saved++;}
+        if(!done){error=error||new Error('Gleichzeitige Änderung konnte nach drei Versuchen nicht zusammengeführt werden.');failures.push({part:'grade',grade,error});console.warn('Cloud grade sync',grade,error);}else{this.baseGrades[grade]=clone(persistedPayload||localPayload);saved++;}
       }
       if(Auth.isAdmin()){const {error}=await Auth.cloudClient.from('kompass_shared_state').upsert({id:'school',payload:this.sharedPayload(),updated_at:now});if(error){failures.push({part:'shared',error});console.warn('Cloud shared sync',error);}else saved++;}
       await this.pushAudit();
