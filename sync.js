@@ -1,5 +1,5 @@
 const Sync={
-  timer:null,busy:false,lastPull:null,
+  timer:null,busy:false,dirty:false,lastPull:null,baseGrades:{},
   enabled(){return Auth.session?.mode==='cloud'&&!!Auth.cloudClient},
   gradeOf(p){return Number(p?.year||String(p?.className||'').charAt(0))||0},
   filterObject(obj,pred){return Object.fromEntries(Object.entries(obj||{}).filter(([k,v])=>pred(k,v)))},
@@ -11,7 +11,36 @@ const Sync={
   },
   mergeGrade(base,g){if(!g)return;base.sprints.push(...(g.sprints||[]));base.pupils.push(...(g.pupils||[]));base.activities.push(...(g.activities||[]));for(const key of ['records','lebDrafts','activityRecords','behaviour','coaching','workshopPaths','clubMemberships','sprintHistory','clubHistory','dailyCreativeVisits'])Object.assign(base[key],g[key]||{});base.assignments.push(...(g.assignments||[]));base.choiceImports.push(...(g.choiceImports||[]));base.calendarEvents.push(...(g.calendarEvents||[]));base.teamConfig=base.teamConfig||{};base.teamConfig[g.grade]=g.teamConfig||{};},
   blankFromShared(shared={}){const d=clone(Store.data);Object.assign(d,shared||{});d.sprints=[];d.pupils=[];d.activities=[...((shared||{}).activities||[])];d.records={};d.lebDrafts={};d.activityRecords={};d.behaviour={};d.coaching={};d.workshopPaths={};d.clubMemberships={};d.assignments=[];d.choiceImports=[];d.sprintHistory={};d.clubHistory={};d.dailyCreativeVisits={};d.calendarEvents=[...((shared||{}).calendarEvents||[])];d.auditLog=[];d.teamConfig={};return d;},
-  schedule(){if(!this.enabled()||this.busy)return;clearTimeout(this.timer);this.timer=setTimeout(()=>this.push(),700)},
+  same(a,b){return JSON.stringify(a)===JSON.stringify(b)},
+  mergeConcurrent(base,local,remote){
+    if(this.same(local,base))return clone(remote);
+    if(this.same(remote,base))return clone(local);
+    if(Array.isArray(local)&&Array.isArray(base)&&Array.isArray(remote)){
+      const keyed=x=>x.every(v=>v&&typeof v==='object'&&!Array.isArray(v)&&v.id!=null);
+      if(keyed(local)&&keyed(base)&&keyed(remote)){
+        const b=new Map(base.map(x=>[String(x.id),x])),l=new Map(local.map(x=>[String(x.id),x])),r=new Map(remote.map(x=>[String(x.id),x])),out=[];
+        for(const id of new Set([...r.keys(),...l.keys(),...b.keys()])){
+          if(b.has(id)&&!l.has(id))continue;
+          if(!l.has(id)){out.push(clone(r.get(id)));continue;}
+          if(!b.has(id)){out.push(clone(l.get(id)));continue;}
+          out.push(this.mergeConcurrent(b.get(id),l.get(id),r.get(id)??b.get(id)));
+        }
+        return out;
+      }
+      return clone(local);
+    }
+    if(local&&base&&remote&&typeof local==='object'&&typeof base==='object'&&typeof remote==='object'){
+      const out=clone(remote);
+      for(const key of new Set([...Object.keys(base),...Object.keys(local)])){
+        if(Object.prototype.hasOwnProperty.call(base,key)&&!Object.prototype.hasOwnProperty.call(local,key)){delete out[key];continue;}
+        if(!Object.prototype.hasOwnProperty.call(local,key))continue;
+        out[key]=this.mergeConcurrent(base[key],local[key],remote[key]);
+      }
+      return out;
+    }
+    return clone(local);
+  },
+  schedule(delay=0){if(!this.enabled())return;this.dirty=true;clearTimeout(this.timer);this.timer=setTimeout(()=>this.push(),delay)},
   async pull(){
     if(!this.enabled())return;this.busy=true;
     try{
@@ -23,25 +52,24 @@ const Sync={
       if(se)throw se;if(ge)throw ge;
       const hasCloud=!!shared?.payload||(grades||[]).length>0;
       if(!hasCloud&&Auth.isAdmin()){this.busy=false;await this.push(true);return;}
-      if(hasCloud){const merged=this.blankFromShared(shared?.payload||{});for(const row of (grades||[]))this.mergeGrade(merged,row.payload||{});Store.data=merged;Store._rosterChanged=false;Store.migrate();if(Auth.isAdmin())await this.pullAudit();Store.saveLocalOnly();this.lastPull=new Date().toISOString();if(Auth.isAdmin()&&Store._rosterChanged){this.busy=false;await this.push(true);return;}}
+      if(hasCloud){const merged=this.blankFromShared(shared?.payload||{});this.baseGrades={};for(const row of (grades||[])){this.baseGrades[row.grade]=clone(row.payload||{});this.mergeGrade(merged,row.payload||{});}Store.data=merged;Store._rosterChanged=false;Store.migrate();if(Auth.isAdmin())await this.pullAudit();Store.saveLocalOnly();this.lastPull=new Date().toISOString();if(Auth.isAdmin()&&Store._rosterChanged){this.busy=false;await this.push(true);return;}}
     }catch(e){console.error('Cloud pull',e);throw e}finally{this.busy=false}
   },
   async push(force=false){
-    if(!this.enabled())return;this.busy=true;
+    if(!this.enabled())return;if(this.busy){this.dirty=true;return;}this.busy=true;this.dirty=false;
     try{
       const now=new Date().toISOString(),years=Auth.allowedGrades(),failures=[];let saved=0;
       for(const grade of years){
-        const row={grade,payload:this.gradePayload(grade),updated_at:now};
-        // Bestehende Stufen werden bewusst per UPDATE gespeichert. Ein UPSERT prüft in
-        // Postgres auch den INSERT-Pfad und kann deshalb trotz erlaubtem UPDATE an der
-        // strengeren INSERT-Policy für Lehrkräfte scheitern.
-        const {data:updated,error:updateError}=await Auth.cloudClient.from('kompass_grade_state').update({payload:row.payload,updated_at:now}).eq('grade',grade).select('grade');
-        let error=updateError;
-        if(!error&&(!updated||updated.length===0)){
-          const inserted=await Auth.cloudClient.from('kompass_grade_state').insert(row);
-          error=inserted.error;
+        const localPayload=this.gradePayload(grade),base=clone(this.baseGrades[grade]||localPayload);let done=false,error=null;
+        for(let attempt=0;attempt<3&&!done;attempt++){
+          const current=await Auth.cloudClient.from('kompass_grade_state').select('payload,updated_at').eq('grade',grade).maybeSingle();
+          if(current.error){error=current.error;break;}
+          if(!current.data){const inserted=await Auth.cloudClient.from('kompass_grade_state').insert({grade,payload:localPayload,updated_at:new Date().toISOString()}).select('grade');error=inserted.error;done=!error;break;}
+          const merged=this.mergeConcurrent(base,localPayload,current.data.payload||{}),stamp=new Date().toISOString();
+          const updated=await Auth.cloudClient.from('kompass_grade_state').update({payload:merged,updated_at:stamp}).eq('grade',grade).eq('updated_at',current.data.updated_at).select('grade');
+          error=updated.error;if(!error&&updated.data?.length)done=true;
         }
-        if(error){failures.push({part:'grade',grade,error});console.warn('Cloud grade sync',grade,error);}else saved++;
+        if(!done){error=error||new Error('Gleichzeitige Änderung konnte nach drei Versuchen nicht zusammengeführt werden.');failures.push({part:'grade',grade,error});console.warn('Cloud grade sync',grade,error);}else{this.baseGrades[grade]=clone(localPayload);saved++;}
       }
       if(Auth.isAdmin()){const {error}=await Auth.cloudClient.from('kompass_shared_state').upsert({id:'school',payload:this.sharedPayload(),updated_at:now});if(error){failures.push({part:'shared',error});console.warn('Cloud shared sync',error);}else saved++;}
       await this.pushAudit();
@@ -52,8 +80,8 @@ const Sync={
         toast('Cloud-Fehler ('+where+'): '+raw,7000);
         return;
       }
-      this.lastPull=now;
-    }catch(e){console.error('Cloud push',e);toast('Cloud-Fehler: '+(e?.message||String(e)),7000)}finally{this.busy=false}
+      this.lastPull=now;toast('In der Cloud gespeichert',1800);
+    }catch(e){console.error('Cloud push',e);toast('Cloud-Fehler: '+(e?.message||String(e)),7000)}finally{this.busy=false;if(this.dirty)this.schedule(0)}
   },
   async pushAudit(){const u=Auth.currentUser();const rows=(Store.auditLog||[]).slice(-40).map(l=>({id:l.id,at:l.at,user_id:u?.id||null,user_name:l.user||u?.name||'',action:l.action||'Änderung gespeichert',details:l.details||{},sections:l.sections||[]}));if(!rows.length)return;const {error}=await Auth.cloudClient.from('kompass_audit_log').upsert(rows,{onConflict:'id',ignoreDuplicates:true});if(error&&error.code!=='42501')console.warn('Audit sync',error)},
   async pullAudit(){const {data,error}=await Auth.cloudClient.from('kompass_audit_log').select('id,at,user_id,user_name,action,details,sections').order('at',{ascending:false}).limit(500);if(error)throw error;Store.data.auditLog=(data||[]).reverse().map(x=>({id:x.id,at:x.at,userId:x.user_id,user:x.user_name,action:x.action,details:x.details||{},sections:x.sections||[]}));},
