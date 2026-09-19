@@ -1,3 +1,10 @@
+## 8.5.12 – 19.09.2026
+- Eine Cloud-Stufe mit insgesamt 0 Schüler*innen darf lokale Schülerdaten nicht mehr überschreiben.
+- Bei leerem Cloudbestand bleibt ein vorhandener lokaler Stand unangetastet.
+- Die Schutzansicht bietet bei gefundenen lokalen Schülerdaten sofort einen Notfall-Backup-Download an.
+- Jede freigegebene Stufe wird einzeln auf einen vollständigen Schülerbestand geprüft.
+- Ein Datenbank-Trigger blockiert leere Jahrgangsstände und archiviert vor jeder Änderung automatisch die vorherige Version.
+
 ## 8.5.11 – 19.09.2026
 - Fehlende Supabase-Tabellenrechte für berechtigte Kollegiumskonten werden mit einer idempotenten SQL-Reparatur ergänzt; die stufenbezogenen RLS-Regeln bleiben aktiv.
 - Bei einem Cloud-Ladefehler zeigt KOMPASS keinen irreführenden leeren Datenbestand mehr an.
