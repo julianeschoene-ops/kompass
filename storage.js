@@ -100,7 +100,7 @@ const Store = {
     // EINMAL vollständig durch die geprüfte Startliste ersetzt. So können bereits
     // vorhandene 6er nicht doppelt vorkommen. Danach wird nie wieder automatisch
     // zurückgesetzt; alle neuen Einträge werden regulär gespeichert und synchronisiert.
-    if(!d.metadata.cleanStart2026_27_v1){
+    if(!d.metadata.cleanStart2026_27_v1&&SEED.pupils.length){
       d.pupils=clone(SEED.pupils);
       d.records={};
       d.lebDrafts={};
