@@ -1,3 +1,9 @@
+## 8.5.11 – 19.09.2026
+- Fehlende Supabase-Tabellenrechte für berechtigte Kollegiumskonten werden mit einer idempotenten SQL-Reparatur ergänzt; die stufenbezogenen RLS-Regeln bleiben aktiv.
+- Bei einem Cloud-Ladefehler zeigt KOMPASS keinen irreführenden leeren Datenbestand mehr an.
+- Ein leerer Browser darf keinen leeren Stand automatisch in eine ebenfalls leere Cloud schreiben.
+- Die Cloud-Fehleransicht kann den Abruf nach einer Rechtekorrektur direkt wiederholen.
+
 ## 8.5.10 – 19.09.2026
 - Safari-Cache wird durch neue Dateiversionen zuverlässig umgangen.
 - HTML-Dokument fordert eine vollständige Neuladung statt zwischengespeicherter Mischstände an.
