@@ -1,3 +1,8 @@
+## 8.5.13 – 19.09.2026
+- Admins können einen geprüften Notfallbestand direkt über eine JSON-Datei wiederherstellen; langes SQL-Kopieren entfällt.
+- Alle drei Jahrgänge werden mit einer einzigen Cloud-Operation geschrieben und anschließend einzeln nachgezählt.
+- Erst nach erfolgreicher Kontrollprüfung wird der geschützte Cloudbestand wieder normal angezeigt.
+
 ## 8.5.12 – 19.09.2026
 - Eine Cloud-Stufe mit insgesamt 0 Schüler*innen darf lokale Schülerdaten nicht mehr überschreiben.
 - Bei leerem Cloudbestand bleibt ein vorhandener lokaler Stand unangetastet.
