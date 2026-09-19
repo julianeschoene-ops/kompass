@@ -1,3 +1,6 @@
+## 8.5.14 – 19.09.2026
+- Die geprüfte Notfall-Wiederherstellung ist für Admins zusätzlich direkt unter Datensicherung sichtbar.
+
 ## 8.5.13 – 19.09.2026
 - Admins können einen geprüften Notfallbestand direkt über eine JSON-Datei wiederherstellen; langes SQL-Kopieren entfällt.
 - Alle drei Jahrgänge werden mit einer einzigen Cloud-Operation geschrieben und anschließend einzeln nachgezählt.
