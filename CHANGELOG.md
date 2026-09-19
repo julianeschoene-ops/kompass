@@ -1,3 +1,8 @@
+## 8.5.10 – 19.09.2026
+- Safari-Cache wird durch neue Dateiversionen zuverlässig umgangen.
+- HTML-Dokument fordert eine vollständige Neuladung statt zwischengespeicherter Mischstände an.
+- Startfehler werden sichtbar angezeigt, statt eine vollständig weiße Seite zu hinterlassen.
+
 ## 8.5.9 – 19.09.2026
 - Gleichzeitige Änderungen verschiedener Lehrkräfte werden vor dem Cloud-Update zusammengeführt.
 - Cloud-Updates verwenden eine Versionsprüfung und wiederholen kollidierende Schreibvorgänge sicher.
