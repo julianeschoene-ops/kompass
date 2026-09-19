@@ -66,6 +66,26 @@ const Sync={
       }
     }catch(e){console.error('Cloud pull',e);throw e}finally{this.busy=false}
   },
+  async restoreBackupData(data){
+    if(!this.enabled()||!Auth.isAdmin())throw new Error('Die Wiederherstellung ist nur mit dem angemeldeten Admin-Konto möglich.');
+    if(!data||!Array.isArray(data.pupils))throw new Error('Die ausgewählte Datei ist keine KOMPASS-Wiederherstellung.');
+    const oldData=clone(Store.data),expected={};
+    for(const grade of [5,6,7])expected[grade]=data.pupils.filter(p=>this.gradeOf(p)===grade).length;
+    if(Object.values(expected).some(n=>n===0))throw new Error('Die Wiederherstellungsdatei enthält nicht alle drei Jahrgänge.');
+    this.busy=true;this.dirty=false;clearTimeout(this.timer);
+    try{
+      Store.data=clone(data);Store._rosterChanged=false;Store.migrate();
+      const now=new Date().toISOString(),rows=[5,6,7].map(grade=>({grade,payload:this.gradePayload(grade),updated_at:now}));
+      const saved=await Auth.cloudClient.from('kompass_grade_state').upsert(rows,{onConflict:'grade'}).select('grade,payload');
+      if(saved.error)throw saved.error;
+      const actual={};for(const row of (saved.data||[]))actual[row.grade]=Array.isArray(row?.payload?.pupils)?row.payload.pupils.length:0;
+      for(const grade of [5,6,7])if(actual[grade]!==expected[grade])throw new Error('Kontrollprüfung für Jahrgang '+grade+' fehlgeschlagen. Erwartet: '+expected[grade]+', gespeichert: '+(actual[grade]??0)+'.');
+      this.baseGrades=Object.fromEntries(rows.map(row=>[row.grade,clone(row.payload)]));
+      Store.saveLocalOnly();this.lastPull=now;
+    }catch(e){Store.data=oldData;Store.saveLocalOnly();throw e}finally{this.busy=false}
+    await this.pull();
+    return expected;
+  },
   async push(force=false){
     if(!this.enabled())return;if(this.busy){this.dirty=true;return;}this.busy=true;this.dirty=false;
     try{
