@@ -1,3 +1,11 @@
+## 8.5.9 – 19.09.2026
+- Gleichzeitige Änderungen verschiedener Lehrkräfte werden vor dem Cloud-Update zusammengeführt.
+- Cloud-Updates verwenden eine Versionsprüfung und wiederholen kollidierende Schreibvorgänge sicher.
+- Während der Übertragung und nach bestätigter Cloud-Speicherung erscheinen unterschiedliche Statusmeldungen.
+- Ausstehende Änderungen werden ohne künstliche Wartezeit übertragen und nach einem laufenden Vorgang zuverlässig nachgesendet.
+- Unit-/Lernteil-Filter in den Kernfächern wiederhergestellt.
+- Schüler-Stammliste aus dem öffentlich ausgelieferten Quelltext entfernt; produktive Daten werden ausschließlich aus der Cloud geladen.
+
 ## 8.5.8 – 19.09.2026
 - Mathematik-Kompetenzraster Klasse 7 mit 46 Kompetenzen aus acht Themenbereichen ergänzt.
 - In den Kernfächern sind Schülerstufe und Kompetenzstufe getrennt filterbar.
