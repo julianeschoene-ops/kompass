@@ -64,10 +64,15 @@ const Auth={
   },
   async cloudLogin(email,password){const {data,error}=await this.cloudClient.auth.signInWithPassword({email:String(email||'').trim().toLowerCase(),password});if(error){if(String(error.message||'').toLowerCase().includes('invalid login credentials'))throw new Error('E-Mail oder Passwort ist nicht korrekt.');throw error;}await this.applyCloudSession(data.session)},
   async verifyCloudPassword(email,password){
-    const verifier=window.supabase.createClient(this.cloud.url,this.cloud.anonKey,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
-    const {data,error}=await verifier.auth.signInWithPassword({email:String(email||'').trim().toLowerCase(),password:String(password||'')});
-    const ok=!error&&data?.user?.id===this.currentUser()?.id;
-    try{if(data?.session)await verifier.auth.signOut({scope:'local'})}catch(_e){}
+    let response;
+    try{
+      response=await fetch(this.cloud.url+'/auth/v1/token?grant_type=password',{method:'POST',headers:{apikey:this.cloud.anonKey,'Content-Type':'application/json'},body:JSON.stringify({email:String(email||'').trim().toLowerCase(),password:String(password||'')})});
+    }catch(_e){return false;}
+    if(!response.ok)return false;
+    const data=await response.json().catch(()=>null),ok=data?.user?.id===this.currentUser()?.id;
+    // Die reine Prüfsitzung wird serverseitig beendet. Da hier kein zweiter
+    // Supabase-Client verwendet wird, bleibt die echte KOMPASS-Sitzung aktiv.
+    if(data?.access_token){try{await fetch(this.cloud.url+'/auth/v1/logout?scope=local',{method:'POST',headers:{apikey:this.cloud.anonKey,Authorization:'Bearer '+data.access_token}})}catch(_e){}}
     return ok;
   },
   async changeOwnPassword(currentPassword,newPassword){
@@ -76,7 +81,10 @@ const Auth={
     if(String(newPassword||'').length<10)throw new Error('Das neue Passwort muss mindestens 10 Zeichen lang sein.');
     if(currentPassword===newPassword)throw new Error('Das neue Passwort muss sich vom bisherigen Passwort unterscheiden.');
     const email=this.currentUser()?.username;
-    if(!await this.verifyCloudPassword(email,currentPassword))throw new Error('Das bisherige Passwort ist nicht korrekt. Es wurde nichts geändert.');
+    // Erneut am echten Client anmelden: So ist auch nach längerer Nutzung oder
+    // einem Safari-Sitzungswechsel garantiert eine gültige Auth-Sitzung da.
+    const reauth=await this.cloudClient.auth.signInWithPassword({email:String(email||'').trim().toLowerCase(),password:String(currentPassword||'')});
+    if(reauth.error||reauth.data?.user?.id!==this.currentUser()?.id)throw new Error('Das bisherige Passwort ist nicht korrekt. Es wurde nichts geändert.');
     const changedAt=new Date().toISOString();
     const {data,error}=await this.cloudClient.auth.updateUser({password:newPassword,data:{kompass_password_changed_at:changedAt}});
     if(error)throw error;
