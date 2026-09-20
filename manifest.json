@@ -1,0 +1,13 @@
+{
+  "name": "KOMPASS",
+  "short_name": "KOMPASS",
+  "description": "Kompetenzdokumentation der Johannes-Brenz-Gemeinschaftsschule",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f6fb",
+  "theme_color": "#24344f",
+  "icons": [
+    {"src": "kompass-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
+  ]
+}
