@@ -100,6 +100,7 @@ const Store = {
     });
     SEED.competencies.forEach(c=>{ if(!d.competencies.some(x=>x.id===c.id)) d.competencies.push(clone(c)); });
     d.subjects=WORKSHOP_SUBJECTS.slice();
+    d.coreSubjects=CORE_SUBJECTS.slice();
     SEED.sprints.forEach(s=>{ if(!d.sprints.some(x=>x.year===s.year&&x.number===s.number)) d.sprints.push(clone(s)); });
     // Sauberer Produktivstart 2026/27: Alle bisherigen Einträge waren Testdaten.
     // Beim ersten Start von 8.3.2 wird deshalb der Datenbestand der Stufen 5–7
