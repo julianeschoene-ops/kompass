@@ -17,7 +17,9 @@ const Auth={
   localDb(){try{return JSON.parse(localStorage.getItem(AUTH_KEY)||'{"users":[]}')}catch(e){return {users:[]}}},
   saveLocalDb(db){localStorage.setItem(AUTH_KEY,JSON.stringify(db))},
   currentUser(){return this.session?.user||null},isLoggedIn(){return !!this.currentUser()},isAdmin(){return this.currentUser()?.role==='admin'},
-  needsPasswordChange(){return this.session?.mode==='cloud'&&!this.currentUser()?.passwordChangedAt},
+  // Passwortwechsel bleiben freiwillig. Ein Konto darf niemals allein wegen
+  // eines fehlenden Metadaten-Merkers gesperrt werden.
+  needsPasswordChange(){return false},
   allowedGrades(){if(this.isAdmin())return [5,6,7];if(this.session?.mode==='cloud')return Object.keys(this.currentUser()?.gradeAccess||{}).map(Number).filter(x=>[5,6,7].includes(x)).sort();return [5,6,7]},
   canAccessGrade(grade){return this.isAdmin()||this.session?.mode!=='cloud'||!!this.currentUser()?.gradeAccess?.[grade]},
   canLead(grade=State?.year){if(this.isAdmin())return true;if(this.session?.mode==='cloud')return this.currentUser()?.gradeAccess?.[grade]==='leitung';return this.currentUser()?.role==='leitung'},
@@ -58,16 +60,32 @@ const Auth={
     sessionStorage.setItem(SESSION_KEY,JSON.stringify(this.session));State.teacher=this.session.user.name;State.role=this.session.user.role;
     const years=this.allowedGrades();if(years.length&&!years.includes(State.year))State.year=years[0];
     State.cloudLoadError=null;
-    if(window.Sync){try{await Sync.pull()}catch(e){State.cloudLoadError=e?.message||String(e);render();return;}}if(this.needsPasswordChange())State.dialog={mode:'password',required:true};render();
+    if(window.Sync){try{await Sync.pull()}catch(e){State.cloudLoadError=e?.message||String(e);render();return;}}render();
   },
   async cloudLogin(email,password){const {data,error}=await this.cloudClient.auth.signInWithPassword({email:String(email||'').trim().toLowerCase(),password});if(error){if(String(error.message||'').toLowerCase().includes('invalid login credentials'))throw new Error('E-Mail oder Passwort ist nicht korrekt.');throw error;}await this.applyCloudSession(data.session)},
-  async changeOwnPassword(password){
+  async verifyCloudPassword(email,password){
+    const verifier=window.supabase.createClient(this.cloud.url,this.cloud.anonKey,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+    const {data,error}=await verifier.auth.signInWithPassword({email:String(email||'').trim().toLowerCase(),password:String(password||'')});
+    const ok=!error&&data?.user?.id===this.currentUser()?.id;
+    try{if(data?.session)await verifier.auth.signOut({scope:'local'})}catch(_e){}
+    return ok;
+  },
+  async changeOwnPassword(currentPassword,newPassword){
     if(this.session?.mode!=='cloud'||!this.cloudClient)throw new Error('Die Passwortänderung ist nur im Cloud-Konto möglich.');
-    if(String(password||'').length<10)throw new Error('Das neue Passwort muss mindestens 10 Zeichen lang sein.');
+    if(!currentPassword)throw new Error('Bitte zuerst das bisherige Passwort eingeben.');
+    if(String(newPassword||'').length<10)throw new Error('Das neue Passwort muss mindestens 10 Zeichen lang sein.');
+    if(currentPassword===newPassword)throw new Error('Das neue Passwort muss sich vom bisherigen Passwort unterscheiden.');
+    const email=this.currentUser()?.username;
+    if(!await this.verifyCloudPassword(email,currentPassword))throw new Error('Das bisherige Passwort ist nicht korrekt. Es wurde nichts geändert.');
     const changedAt=new Date().toISOString();
-    const {data,error}=await this.cloudClient.auth.updateUser({password,data:{kompass_password_changed_at:changedAt}});
+    const {data,error}=await this.cloudClient.auth.updateUser({password:newPassword,data:{kompass_password_changed_at:changedAt}});
     if(error)throw error;
     if(data?.user?.id!==this.currentUser()?.id)throw new Error('Die Passwortänderung konnte nicht bestätigt werden.');
+    if(!await this.verifyCloudPassword(email,newPassword)){
+      const rollback=await this.cloudClient.auth.updateUser({password:currentPassword});
+      if(!rollback.error&&await this.verifyCloudPassword(email,currentPassword))throw new Error('Das neue Passwort konnte nicht bestätigt werden. Das bisherige Passwort bleibt gültig.');
+      throw new Error('Die Passwortprüfung ist fehlgeschlagen. Bitte angemeldet bleiben und einen Admin informieren.');
+    }
     this.session.user.passwordChangedAt=changedAt;sessionStorage.setItem(SESSION_KEY,JSON.stringify(this.session));
     return true;
   },
