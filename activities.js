@@ -1,7 +1,7 @@
 const ACTIVITY_TYPES=['Kreativband','Club','Besonderes Angebot'];
 const COUNTABLE_ACTIVITY_TYPES=new Set(['Kreativband','Besonderes Angebot']);
 const ACTIVITY_MAX_COUNT=39;
-const DEFAULT_SPECIAL_OFFERS=['QUOP','Lesen','Kopfrechenübungen','Schwimmen'];
+const DEFAULT_SPECIAL_OFFERS=['QUOP','Lesen','Kopfrechenübungen','Schwimmen','Sport'];
 let activityType='Kreativband',activitySelected=null,activitySearch='',activityTeam='alle',activityVisitDate=new Date().toISOString().slice(0,10);
 
 function activityTeamsForGrade(year=State.year){
@@ -19,7 +19,7 @@ function ensureCreativeRooms(){
 function ensureSpecialOffers(){
   for(const year of [5,6,7])for(const name of DEFAULT_SPECIAL_OFFERS){
     if(!Store.activities.some(a=>a.type==='Besonderes Angebot'&&Number(a.year)===year&&String(a.name).toLowerCase()===name.toLowerCase())){
-      Store.activities.push({id:`special_${year}_${name.toLowerCase().replace(/[^a-z0-9äöüß]+/gi,'_')}`,type:'Besonderes Angebot',year,name,icon:'✨',lebEnabled:true,maxCount:ACTIVITY_MAX_COUNT});
+      Store.activities.push({id:`special_${year}_${name.toLowerCase().replace(/[^a-z0-9äöüß]+/gi,'_')}`,type:'Besonderes Angebot',year,name,icon:name==='Sport'?'🏃':'✨',lebEnabled:true,maxCount:ACTIVITY_MAX_COUNT});
     }
   }
 }
@@ -38,9 +38,9 @@ function activityAttendancePill(activityId,pupilId){const a=activityAttendance(a
 function activities(){
   ensureActivityDefaults();ensureActivityDefaultTeam();
   const offers=Store.activities.filter(a=>a.type===activityType&&(a.type==='Kreativband'||Number(a.year)===Number(State.year))).sort((a,b)=>a.name.localeCompare(b.name,'de'));
-  let content=header('Angebote','Kreativband und besondere Angebote zählen jeden Besuch. 39 Besuche entsprechen 100 %.');
-  content+=`<div class="toolbar formgrid"><div><label>Jahrgang</label><select onchange="State.year=Number(this.value);activitySelected=null;activityTeam=currentCoachTeam(State.year)||'alle';render()">${(activityType==='Kreativband'?[5,6,7]:visibleYears()).map(y=>`<option value="${y}" ${State.year===y?'selected':''}>Jahrgang ${y}</option>`).join('')}</select></div><div><label>Bereich</label><select onchange="activityType=this.value;activitySelected=null;render()">${ACTIVITY_TYPES.map(t=>`<option ${activityType===t?'selected':''}>${t}</option>`).join('')}</select></div></div>`;
-  if(activityType==='Besonderes Angebot'&&canEdit())content+=`<button class="chip dark" onclick="openActivityEditor()">+ Besonderes Angebot</button>`;
+  let content=header('Angebote','Kreativband und weitere Angebote zählen jeden Besuch. 39 Besuche entsprechen 100 %.');
+  content+=`<div class="toolbar formgrid"><div><label>Jahrgang</label><select onchange="State.year=Number(this.value);activitySelected=null;activityTeam=currentCoachTeam(State.year)||'alle';render()">${(activityType==='Kreativband'?[5,6,7]:visibleYears()).map(y=>`<option value="${y}" ${State.year===y?'selected':''}>Jahrgang ${y}</option>`).join('')}</select></div><div><label>Bereich</label><select onchange="activityType=this.value;activitySelected=null;render()">${ACTIVITY_TYPES.map(t=>`<option value="${t}" ${activityType===t?'selected':''}>${t==='Besonderes Angebot'?'Weitere Angebote':t}</option>`).join('')}</select></div></div>`;
+  if(activityType==='Besonderes Angebot'&&canEdit())content+=`<button class="chip dark" onclick="openActivityEditor()">+ Weiteres Angebot</button>`;
   if(activityType==='Club'&&canEdit())content+=`<button class="chip dark" onclick="openActivityEditor()">+ Club anlegen</button>`;
   content+=activitySelected?renderActivityDetail(activitySelected):`<div class="offerGrid">${offers.map(a=>`<div class="tile activityTile" onclick="activitySelected='${a.id}';render()"><span class="activityIcon">${a.icon||activityIcon(a.type)}</span><b>${esc(a.name)}</b><span>${isCountableActivity(a)?'Besuche erfassen':activityMemberCount(a.id)+' Teilnehmende'}</span></div>`).join('')||'<div class="card empty">Noch keine Einträge.</div>'}</div>`;
   shell(content);
