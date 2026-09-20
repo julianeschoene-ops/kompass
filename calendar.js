@@ -9,7 +9,6 @@ function calTeamsForGrade(grade){
   return (teams.length?teams:TEAMS).sort((a,b)=>String(a).localeCompare(String(b),'de'));
 }
 function ensureCalendarDefaults(){
-  if(!Auth.isAdmin())return;
   let changed=false;
   for(const [n,start,end] of QUOP_WINDOWS_2026_27){
     const id=`preset_quop_2026_27_${n}`;
@@ -17,7 +16,12 @@ function ensureCalendarDefaults(){
       Store.calendarEvents.push({id,title:`QUOP · Test ${n}`,date:start,endDate:end,time:'',endTime:'',category:'Besonderes Angebot',offerName:'QUOP',location:'',notes:'QUOP-Testzeitraum',visibility:'all',grade:'all',targetTeam:'all',reminder:true,preset:true,createdAt:new Date().toISOString(),createdBy:'KOMPASS'});changed=true;
     }
   }
-  if(changed)Store.save('QUOP-Zeiträume ergänzt');
+  if(changed){
+    // Die festen QUOP-Zeiträume müssen auch beim ersten Start eines normalen
+    // Kollegiumskontos sichtbar sein. Nur ein Admin synchronisiert sie zentral;
+    // alle anderen ergänzen sie gefahrlos in ihrer lokalen Ansicht.
+    if(Auth.isAdmin())Store.save('QUOP-Zeiträume ergänzt');else Store.saveLocalOnly();
+  }
 }
 function calendarCanManage(e=null){
   if(Auth.isAdmin())return true;
