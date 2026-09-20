@@ -1,5 +1,5 @@
-const CORE_SUBJECTS = ['Deutsch','Mathematik','Englisch'];
-const WORKSHOP_SUBJECTS = ['Geographie','Geschichte','Informatik & Medienbildung','Bildende Kunst','Musik','Biologie','Physik','Technik','AES','WBS','Gemeinschaftskunde'];
+const CORE_SUBJECTS = ['Deutsch','Mathematik','Englisch','Religion'];
+const WORKSHOP_SUBJECTS = ['Geographie','Geschichte','Informatik & Medienbildung','Bildende Kunst','Musik','Biologie','Physik','Technik','AES','WBS','Gemeinschaftskunde','Ethik'];
 const TEAMS = ['Blau','Rot','Gelb','Violett','Grün','Lila','Pink'];
 const LEVELS = ['G','M','E'];
 const DEFAULT_SCORE_CONFIG = { redMax:24, yellowMax:74 };
