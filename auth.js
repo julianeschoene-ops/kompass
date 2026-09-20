@@ -17,6 +17,7 @@ const Auth={
   localDb(){try{return JSON.parse(localStorage.getItem(AUTH_KEY)||'{"users":[]}')}catch(e){return {users:[]}}},
   saveLocalDb(db){localStorage.setItem(AUTH_KEY,JSON.stringify(db))},
   currentUser(){return this.session?.user||null},isLoggedIn(){return !!this.currentUser()},isAdmin(){return this.currentUser()?.role==='admin'},
+  needsPasswordChange(){return this.session?.mode==='cloud'&&!this.currentUser()?.passwordChangedAt},
   allowedGrades(){if(this.isAdmin())return [5,6,7];if(this.session?.mode==='cloud')return Object.keys(this.currentUser()?.gradeAccess||{}).map(Number).filter(x=>[5,6,7].includes(x)).sort();return [5,6,7]},
   canAccessGrade(grade){return this.isAdmin()||this.session?.mode!=='cloud'||!!this.currentUser()?.gradeAccess?.[grade]},
   canLead(grade=State?.year){if(this.isAdmin())return true;if(this.session?.mode==='cloud')return this.currentUser()?.gradeAccess?.[grade]==='leitung';return this.currentUser()?.role==='leitung'},
@@ -53,13 +54,23 @@ const Auth={
       const {data:ga,error:gaErr}=await this.cloudClient.from('kompass_grade_access').select('grade,access_level').eq('user_id',s.user.id);
       if(gaErr)throw gaErr;(ga||[]).forEach(x=>gradeAccess[x.grade]=x.access_level);
     }else{gradeAccess={5:'leitung',6:'leitung',7:'leitung'};}
-    this.session={mode:'cloud',user:{id:data.id,name:data.display_name||s.user.email,username:s.user.email,role:data.role||'teacher',gradeAccess,coachTeams:data.coach_teams||{},coachingGroups:data.coaching_groups||{}}};
+    this.session={mode:'cloud',user:{id:data.id,name:data.display_name||s.user.email,username:s.user.email,role:data.role||'teacher',gradeAccess,coachTeams:data.coach_teams||{},coachingGroups:data.coaching_groups||{},passwordChangedAt:s.user.user_metadata?.kompass_password_changed_at||null}};
     sessionStorage.setItem(SESSION_KEY,JSON.stringify(this.session));State.teacher=this.session.user.name;State.role=this.session.user.role;
     const years=this.allowedGrades();if(years.length&&!years.includes(State.year))State.year=years[0];
     State.cloudLoadError=null;
-    if(window.Sync){try{await Sync.pull()}catch(e){State.cloudLoadError=e?.message||String(e);render();return;}}render();
+    if(window.Sync){try{await Sync.pull()}catch(e){State.cloudLoadError=e?.message||String(e);render();return;}}if(this.needsPasswordChange())State.dialog={mode:'password',required:true};render();
   },
   async cloudLogin(email,password){const {data,error}=await this.cloudClient.auth.signInWithPassword({email:String(email||'').trim().toLowerCase(),password});if(error){if(String(error.message||'').toLowerCase().includes('invalid login credentials'))throw new Error('E-Mail oder Passwort ist nicht korrekt.');throw error;}await this.applyCloudSession(data.session)},
+  async changeOwnPassword(password){
+    if(this.session?.mode!=='cloud'||!this.cloudClient)throw new Error('Die Passwortänderung ist nur im Cloud-Konto möglich.');
+    if(String(password||'').length<10)throw new Error('Das neue Passwort muss mindestens 10 Zeichen lang sein.');
+    const changedAt=new Date().toISOString();
+    const {data,error}=await this.cloudClient.auth.updateUser({password,data:{kompass_password_changed_at:changedAt}});
+    if(error)throw error;
+    if(data?.user?.id!==this.currentUser()?.id)throw new Error('Die Passwortänderung konnte nicht bestätigt werden.');
+    this.session.user.passwordChangedAt=changedAt;sessionStorage.setItem(SESSION_KEY,JSON.stringify(this.session));
+    return true;
+  },
   async cloudSignup(name,email,password){const {data,error}=await this.cloudClient.auth.signUp({email,password,options:{data:{display_name:name}}});if(error)throw error;return data},
   async saveCloudConfig(url,anonKey){this.cloud={url:url.trim().replace(/\/$/,''),anonKey:anonKey.trim()};localStorage.setItem(CLOUD_KEY,JSON.stringify(this.cloud));location.reload()},
   localUsers(){return this.localDb().users.map(({passwordHash,...u})=>u)},
