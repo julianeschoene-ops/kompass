@@ -49,7 +49,7 @@ function activeCoachReminders(grade=State.year){
 }
 function coachReminderHtml(grade=State.year){
   const rows=activeCoachReminders(grade);if(!rows.length)return'';
-  return `<div class="card"><h2>Erinnerungen für deine Lerngruppe</h2><div class="quickList">${rows.map(e=>`<div class="quickRow"><div><b>${esc(e.title)}</b><div class="mini">${new Date(e.date+'T12:00:00').toLocaleDateString('de-DE')} – ${new Date((e.endDate||e.date)+'T12:00:00').toLocaleDateString('de-DE')}${e.targetTeam&&e.targetTeam!=='all'?' · '+esc(e.targetTeam):''}</div>${e.notes?`<div class="mini">${esc(e.notes)}</div>`:''}</div><span class="statusPill status-yellow">fällig</span></div>`).join('')}</div></div>`;
+  return `<div class="card"><h2>Erinnerungen für deine Lerngruppe</h2><div class="quickList">${rows.map(e=>`<div class="quickRow"><div><b>${esc(e.title)}</b><div class="mini">${new Date(e.date+'T12:00:00').toLocaleDateString('de-DE')} – ${new Date((e.endDate||e.date)+'T12:00:00').toLocaleDateString('de-DE')}${e.targetTeam&&e.targetTeam!=='all'?' · '+esc(e.targetTeam):''}</div>${e.notes?`<div class="mini">${esc(e.notes)}</div>`:''}</div><div><span class="statusPill status-yellow">fällig</span>${calendarCanManage(e)?` <button class="chip" onclick="openCalendarEvent('${e.id}','${e.date}')">Bearbeiten</button>`:''}</div></div>`).join('')}</div></div>`;
 }
 function calendar(){
   ensureCalendarDefaults();
