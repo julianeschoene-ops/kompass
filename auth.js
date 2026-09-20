@@ -24,8 +24,27 @@ const Auth={
   async createFirstAdmin(name,username,password){const db=this.localDb();if(db.users.length)throw new Error('Es existiert bereits ein Konto.');const u={id:uid('user'),name:name.trim(),username:username.trim().toLowerCase(),passwordHash:await this.hash(password),role:'admin',active:true,createdAt:new Date().toISOString()};db.users.push(u);this.saveLocalDb(db);await this.localLogin(username,password);return u;},
   async createLocalUser({name,username,password,role}){const db=this.localDb();username=username.trim().toLowerCase();if(db.users.some(u=>u.username===username))throw new Error('Benutzername existiert bereits.');const u={id:uid('user'),name:name.trim(),username,passwordHash:await this.hash(password),role:role||'teacher',active:true,createdAt:new Date().toISOString()};db.users.push(u);this.saveLocalDb(db);Store.log('Benutzerkonto angelegt',{target:u.name,role:u.role});return u;},
   async localLogin(username,password){const db=this.localDb(),hash=await this.hash(password);const u=db.users.find(x=>x.active!==false&&x.username===username.trim().toLowerCase()&&x.passwordHash===hash);if(!u)throw new Error('Benutzername oder Passwort ist nicht korrekt.');this.session={mode:'local',user:{id:u.id,name:u.name,username:u.username,role:u.role,gradeAccess:{5:u.role==='leitung'?'leitung':'teacher',6:u.role==='leitung'?'leitung':'teacher',7:u.role==='leitung'?'leitung':'teacher'},coachTeams:u.coachTeams||{}}};sessionStorage.setItem(SESSION_KEY,JSON.stringify(this.session));return this.session.user;},
-  logout(){this.session=null;sessionStorage.removeItem(SESSION_KEY);if(this.cloudClient)this.cloudClient.auth.signOut().catch(()=>{});render();},
-  async initCloud(){if(!this.cloudConfigured())return false;this.cloudClient=window.supabase.createClient(this.cloud.url,this.cloud.anonKey);const {data}=await this.cloudClient.auth.getSession();if(data?.session)await this.applyCloudSession(data.session);this.cloudClient.auth.onAuthStateChange(async(_e,s)=>{if(s)await this.applyCloudSession(s);else{this.session=null;sessionStorage.removeItem(SESSION_KEY);render()}});return true;},
+  async logout(){const client=this.cloudClient;this.session=null;sessionStorage.removeItem(SESSION_KEY);render();if(client){try{await client.auth.signOut({scope:'local'})}catch(e){console.warn('Lokale Abmeldung',e)}}},
+  async handleCloudAuthChange(s){
+    if(s?.user?.id){
+      // signInWithPassword applies the profile itself. The auth event must not
+      // start a second simultaneous pull for the same account.
+      if(this.session?.mode==='cloud'&&this.currentUser()?.id===s.user.id)return;
+      await this.applyCloudSession(s);return;
+    }
+    this.session=null;sessionStorage.removeItem(SESSION_KEY);render();
+  },
+  async initCloud(){
+    if(!this.cloudConfigured())return false;
+    // Older releases stored the Supabase refresh token browser-wide. That made
+    // a shared iPad reopen the account of the person who used it before.
+    localStorage.removeItem('sb-gexhcpyzwzybrpuygqmf-auth-token');
+    this.cloudClient=window.supabase.createClient(this.cloud.url,this.cloud.anonKey,{auth:{storage:sessionStorage,persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+    const {data,error}=await this.cloudClient.auth.getSession();if(error)throw error;
+    if(data?.session)await this.applyCloudSession(data.session);else if(this.session?.mode==='cloud'){this.session=null;sessionStorage.removeItem(SESSION_KEY);}
+    this.cloudClient.auth.onAuthStateChange((_e,s)=>setTimeout(()=>this.handleCloudAuthChange(s).catch(e=>{console.error('Cloud-Authentifizierung',e);loginErr?.(e)}),0));
+    return true;
+  },
   async applyCloudSession(s){
     const {data,error}=await this.cloudClient.from('kompass_profiles').select('id,display_name,role,active,coach_teams,coaching_groups').eq('id',s.user.id).single();
     if(error){await this.cloudClient.auth.signOut();throw new Error('KOMPASS-Profil konnte nicht geladen werden: '+(error.message||String(error)));}if(!data){await this.cloudClient.auth.signOut();throw new Error('Für dieses Konto wurde kein KOMPASS-Profil gefunden.');}if(data.active===false){await this.cloudClient.auth.signOut();throw new Error('Dieses KOMPASS-Konto ist noch nicht freigeschaltet.');}
@@ -40,7 +59,7 @@ const Auth={
     State.cloudLoadError=null;
     if(window.Sync){try{await Sync.pull()}catch(e){State.cloudLoadError=e?.message||String(e);render();return;}}render();
   },
-  async cloudLogin(email,password){const {data,error}=await this.cloudClient.auth.signInWithPassword({email,password});if(error)throw error;await this.applyCloudSession(data.session)},
+  async cloudLogin(email,password){const {data,error}=await this.cloudClient.auth.signInWithPassword({email:String(email||'').trim().toLowerCase(),password});if(error){if(String(error.message||'').toLowerCase().includes('invalid login credentials'))throw new Error('E-Mail oder Passwort ist nicht korrekt.');throw error;}await this.applyCloudSession(data.session)},
   async cloudSignup(name,email,password){const {data,error}=await this.cloudClient.auth.signUp({email,password,options:{data:{display_name:name}}});if(error)throw error;return data},
   async saveCloudConfig(url,anonKey){this.cloud={url:url.trim().replace(/\/$/,''),anonKey:anonKey.trim()};localStorage.setItem(CLOUD_KEY,JSON.stringify(this.cloud));location.reload()},
   localUsers(){return this.localDb().users.map(({passwordHash,...u})=>u)},
