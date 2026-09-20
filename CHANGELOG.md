@@ -160,3 +160,7 @@
 - Installierbare Web-App ergänzt (Manifest, App-Symbol und fester Startpunkt).
 # 8.5.17
 - Aktive Erinnerungen auf der Übersicht haben für Admins und zuständige Stufenleitungen einen sichtbaren Bearbeiten-Button.
+# 8.5.18
+- Kollegiumskonten müssen das gemeinsame Startpasswort beim nächsten Login durch ein persönliches Passwort ersetzen.
+- Das persönliche Passwort wird direkt im eigenen Supabase-Konto geändert und nicht in KOMPASS-Daten gespeichert.
+- Im Kontobereich steht anschließend dauerhaft „Passwort ändern“ zur Verfügung.
