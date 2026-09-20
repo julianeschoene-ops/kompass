@@ -158,3 +158,5 @@
 - Cloud-Anmeldungen werden nur noch für die aktuelle Browsersitzung gespeichert; ein altes Konto wird auf gemeinsam genutzten Geräten nicht mehr browserweit übernommen.
 - Konto und Schul-E-Mail sind sichtbar, „Konto wechseln“ meldet nur dieses Gerät ab.
 - Installierbare Web-App ergänzt (Manifest, App-Symbol und fester Startpunkt).
+# 8.5.17
+- Aktive Erinnerungen auf der Übersicht haben für Admins und zuständige Stufenleitungen einen sichtbaren Bearbeiten-Button.
