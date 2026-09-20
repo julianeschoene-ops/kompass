@@ -177,6 +177,34 @@ const Sync={
     Store.log('Cloud-Benutzer gespeichert',{target:userId,name,role,active,gradeAccess,coachTeams,coachingGroups});
     return data;
   },
+  async resetCloudAccountPassword({account,password}){
+    if(!account?.id)throw new Error('Das Konto wurde nicht gefunden.');
+    if(account.id===Auth.currentUser()?.id)throw new Error('Das eigene Passwort wird links im Kontobereich über „Passwort ändern“ geändert.');
+    if(String(password||'').length<10)throw new Error('Das neue Startpasswort muss mindestens 10 Zeichen lang sein.');
+    const snapshot={
+      userId:account.id,
+      name:account.display_name||account.email,
+      role:account.role||'teacher',
+      active:Boolean(account.active),
+      gradeAccess:account.gradeAccess||{},
+      coachTeams:account.coach_teams||{},
+      coachingGroups:account.coaching_groups||{}
+    };
+    let temporarilyLocked=false;
+    try{
+      if(snapshot.active){await this.saveCloudAccount({...snapshot,active:false});temporarilyLocked=true;}
+      const repaired=await this.adminAccountAction({action:'create',name:snapshot.name,email:account.email,password,role:snapshot.role,gradeAccess:snapshot.gradeAccess,coachTeams:snapshot.coachTeams,coachingGroups:snapshot.coachingGroups});
+      if(repaired?.verified!==true||repaired?.user?.id!==account.id)throw new Error('Die Passwortänderung wurde serverseitig nicht bestätigt.');
+      if(snapshot.active)await this.saveCloudAccount(snapshot);
+      Store.log('Cloud-Passwort durch Admin zurückgesetzt',{target:account.id,name:snapshot.name});
+      return true;
+    }catch(e){
+      if(temporarilyLocked){
+        try{await this.saveCloudAccount(snapshot)}catch(restoreError){throw new Error((e?.message||String(e))+' Das Konto konnte danach nicht automatisch wieder aktiviert werden: '+(restoreError?.message||String(restoreError)));}
+      }
+      throw e;
+    }
+  },
   async deleteCloudAccount({userId}){
     const data=await this.adminAccountAction({action:'deleteAccount',userId});
     if(data?.verified!==true||data?.deleted!==true)throw new Error('Das Löschen wurde serverseitig nicht vollständig bestätigt.');
