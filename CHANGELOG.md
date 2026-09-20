@@ -153,3 +153,8 @@
 - Kompetenzraster Deutsch Klasse 7 ergänzt (Lesen/Literatur verstehen, Schreiben, Rechtschreiben, Sprechen/Zuhören, Sprache untersuchen; LT1–LT6).
 - Schüler*innen-Ansicht öffnet für Lerncoaches stufenweit mit „alle Teams“; Farbteams bleiben als freiwilliger Filter.
 - Kreativband: Jahrgangsauswahl 5/6/7 unabhängig von der eigenen Coach-Stufe vorbereitet.
+# 8.5.16
+- QUOP-Zeiträume werden für jedes berechtigte Kollegiumskonto angezeigt, auch wenn dieses Konto sie erstmals lädt.
+- Cloud-Anmeldungen werden nur noch für die aktuelle Browsersitzung gespeichert; ein altes Konto wird auf gemeinsam genutzten Geräten nicht mehr browserweit übernommen.
+- Konto und Schul-E-Mail sind sichtbar, „Konto wechseln“ meldet nur dieses Gerät ab.
+- Installierbare Web-App ergänzt (Manifest, App-Symbol und fester Startpunkt).
