@@ -45,6 +45,18 @@ function laSetHelp(id,enabled){
  p.laNeedsHelp=!!enabled;Store.save('Hilfehand geändert',{pupilId:p.id});render();
 }
 
+async function laExitStudentPreview(){
+ const user=Auth.currentUser();
+ if(!user)return;
+ if(Auth.session?.mode!=='cloud'){alert('Die geschützte Rückkehr benötigt ein Cloud-Lehrkraftkonto.');return;}
+ const password=prompt('Lehrkraft-Passwort eingeben, um die Schülersicht zu verlassen:');
+ if(password===null)return;
+ try{
+  const ok=await Auth.verifyCloudPassword(user.username,password);
+  if(!ok){alert('Passwort nicht korrekt. Die Schülersicht bleibt geöffnet.');return;}
+  laViewMode='teacher';laPreviewPupilId='';render();
+ }catch(e){alert('Überprüfung fehlgeschlagen: '+(e?.message||String(e)));}
+}
 function laStudentPreview(){
  if(!Auth.canAccessGrade(6))return;
  const pupils=laPupils().filter(p=>laRoom(p)===laSelectedRoom);
@@ -53,7 +65,7 @@ function laStudentPreview(){
  const noise=Store.data.settings?.laNoise?.[laSelectedRoom]||'green';
  const noiseData={green:['🟢','Leise sprechen'],yellow:['🟡','Flüstern'],red:['🔴','Ruhe']}[noise];
  let html=header('Mein Lernatelier','Schülersicht · Vorschau im Lehrkraftkonto');
- html+='<div class="toolbar"><button class="chip" onclick="laViewMode=\'teacher\';render()">← Lehrkraftsicht</button><div class="mini">Vorschau: Die Auswahl des Kindes erfolgt durch die Lehrkraft. Dies ist noch kein Schülerlogin.</div>';
+ html+='<div class="toolbar"><button class="chip" onclick="laExitStudentPreview()">🔒 Lehrkraftmodus entsperren</button><div class="mini">Geschützte Vorschau · Zurück nur mit Lehrkraft-Passwort</div>';
  html+='<label for="laPreviewSelect">Schüler*in für Vorschau auswählen</label><select id="laPreviewSelect" onchange="laPreviewPupilId=this.value;render()">';
  html+=pupils.map(x=>'<option value="'+esc(x.id)+'" '+(String(x.id)===String(laPreviewPupilId)?'selected':'')+'>'+esc(x.short||x.first+' '+x.last)+'</option>').join('');
  html+='</select></div>';
@@ -73,9 +85,8 @@ function laStudentPreview(){
  if(req?.status==='pending')html+='<div class="card"><b>⏳ Deine Anfrage für '+esc(req.place)+' wartet auf eine Entscheidung.</b></div>';
  else if(req?.status==='denied')html+='<div class="card"><b>Deine letzte Anfrage wurde nicht genehmigt.</b></div>';
  html+='<p class="mini">Lehrkraft-Vorschau: Aktionen werden im angemeldeten Lehrkraftkonto gespeichert. Die Schüler-Anmeldung und automatische Prüfung der Bewegungsrechte folgen separat.</p>';
- shell(html);
+ document.getElementById('app').innerHTML='<main class="laStudentFullscreen">'+html+'</main>';
 }
-function learningAtelier(){
   if(!Auth.canAccessGrade(6)){shell(header('Lernatelier')+'<div class="card">Kein Zugriff auf Jahrgang 6.</div>');return;}
   if(laViewMode==='student')return laStudentPreview();
   const all=laPupils(),current=all.filter(p=>laRoom(p)===laSelectedRoom);
