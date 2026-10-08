@@ -60,6 +60,7 @@ async function laExitStudentPreview(){
 function laStudentPreview(){
  if(!Auth.canAccessGrade(6))return;
  const all=laPupils();
+ if(!all.some(p=>laRoom(p)===laSelectedRoom)){const first=LA_ROOMS.find(room=>all.some(p=>laRoom(p)===room));if(first)laSelectedRoom=first;}
  const pupils=all.filter(p=>laRoom(p)===laSelectedRoom);
  if(!pupils.some(p=>String(p.id)===String(laPreviewPupilId)))laPreviewPupilId=pupils[0]?.id||'';
  const p=pupils.find(x=>String(x.id)===String(laPreviewPupilId));
