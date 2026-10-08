@@ -16,6 +16,16 @@ function laUpdate(id,key,value){
   if(key==='learningPlace'&&!LA_PLACES.includes(value))return;
   p[key]=value;Store.save();render();
 }
+function laAssignUnassigned(room){
+ if(!Auth.canLead(6)&&!Auth.isAdmin())return;
+ if(!LA_ROOMS.includes(room))return;
+ const pupils=laPupils().filter(p=>!laRoom(p));
+ if(!pupils.length){toast('Alle SuS sind bereits zugeordnet.');return;}
+ if(!confirm(pupils.length+' noch nicht zugeordnete SuS aus Stufe 6 in '+room+' eintragen? Bestehende Zuordnungen bleiben erhalten.'))return;
+ pupils.forEach(p=>p.learningAtelier=room);
+ Store.save('Lernatelier-Sammelzuordnung',{room,count:pupils.length});
+ laSelectedRoom=room;render();
+}
 function laNoise(room,value){
   if(!Auth.canLead(6)&&!Auth.isAdmin())return;
   if(!LA_ROOMS.includes(room)||!['green','yellow','red'].includes(value))return;
@@ -101,6 +111,7 @@ function learningAtelier(){
   let html=header('Lernatelier','Jahrgang 6 · alle Farbteams gemeinsam · Lehrkraftansicht');
   html+='<div class="toolbar"><button class="chip dark" onclick="laViewMode=\'student\';render()">👩‍🎓 Zur Schülersicht wechseln</button></div>';
   html+='<div class="toolbar"><div class="laTabs">'+LA_ROOMS.map(r=>`<button class="chip ${laSelectedRoom===r?'dark':''}" onclick="laSelectedRoom='${r}';laPreviewPupilId='';render()">${r} · ${all.filter(p=>laRoom(p)===r).length}</button>`).join('')+'</div><p class="mini">Die Zuordnung zum Lernatelier bleibt auch bei einem Standortwechsel bestehen.</p></div>';
+  if(unknown.length&&can)html+='<div class="card"><b>Sammelzuordnung</b><p class="mini">Noch nicht zugeordnet: '+unknown.length+' SuS aus Stufe 6. Bestehende Lernatelier-Zuordnungen bleiben unverändert.</p><button class="chip dark" onclick="laAssignUnassigned(\'LA 1\')">Alle noch nicht zugeordneten SuS → LA 1</button></div>';
   if(unknown.length)html+='<div class="card"><b>Hinweis: '+unknown.length+' SuS sind noch keinem Lernatelier zugeordnet.</b><p class="mini">Bitte unten im Bereich „Noch keinem Lernatelier zugeordnet“ die Zuordnung vornehmen. Die bisherige Auswahl wurde möglicherweise wegen eines Fehlers nicht gespeichert.</p></div>';
   html+=`<div class="card"><h2>Lärmampel · ${esc(laSelectedRoom)}</h2><div class="laLights">${[['green','🟢','Leise sprechen'],['yellow','🟡','Flüstern'],['red','🔴','Ruhe']].map(([v,i,l])=>`<button class="chip ${noise===v?'dark':''}" ${can?'':'disabled'} onclick="laNoise(laSelectedRoom,'${v}')">${i} ${l}</button>`).join('')}</div></div>`;
   const pending=current.filter(p=>p.laRequest?.status==='pending');
