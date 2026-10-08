@@ -59,13 +59,16 @@ async function laExitStudentPreview(){
 }
 function laStudentPreview(){
  if(!Auth.canAccessGrade(6))return;
- const pupils=laPupils().filter(p=>laRoom(p)===laSelectedRoom);
+ const all=laPupils();
+ const pupils=all.filter(p=>laRoom(p)===laSelectedRoom);
  if(!pupils.some(p=>String(p.id)===String(laPreviewPupilId)))laPreviewPupilId=pupils[0]?.id||'';
  const p=pupils.find(x=>String(x.id)===String(laPreviewPupilId));
  const noise=Store.data.settings?.laNoise?.[laSelectedRoom]||'green';
  const noiseData={green:['🟢','Leise sprechen'],yellow:['🟡','Flüstern'],red:['🔴','Ruhe']}[noise];
  let html=header('Mein Lernatelier','Schülersicht · Vorschau im Lehrkraftkonto');
- html+='<div class="toolbar"><button class="chip" onclick="laExitStudentPreview()">🔒 Lehrkraftmodus entsperren</button><div class="mini">Geschützte Vorschau · Zurück nur mit Lehrkraft-Passwort</div>';
+ html+='<div class="toolbar"><button class="chip" onclick="laExitStudentPreview()">🔒 Lehrkraftmodus entsperren</button><div class="mini">Geschützte Vorschau · Zurück nur mit Lehrkraft-Passwort</div></div>';
+ html+='<div class="toolbar"><div class="laTabs">'+LA_ROOMS.map(room=>'<button class="chip '+(room===laSelectedRoom?'dark':'')+'" onclick="laSelectedRoom=\''+room+'\';laPreviewPupilId=\'\';render()">'+room+' · '+all.filter(p=>laRoom(p)===room).length+'</button>').join('')+'</div></div>';
+ html+='<div class="toolbar">';
  html+='<label for="laPreviewSelect">Schüler*in für Vorschau auswählen</label><select id="laPreviewSelect" onchange="laPreviewPupilId=this.value;render()">';
  html+=pupils.map(x=>'<option value="'+esc(x.id)+'" '+(String(x.id)===String(laPreviewPupilId)?'selected':'')+'>'+esc(x.short||x.first+' '+x.last)+'</option>').join('');
  html+='</select></div>';
