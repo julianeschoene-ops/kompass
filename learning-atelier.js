@@ -69,7 +69,7 @@ function laStudentPreview(){
  html+='<label for="laPreviewSelect">Schüler*in für Vorschau auswählen</label><select id="laPreviewSelect" onchange="laPreviewPupilId=this.value;render()">';
  html+=pupils.map(x=>'<option value="'+esc(x.id)+'" '+(String(x.id)===String(laPreviewPupilId)?'selected':'')+'>'+esc(x.short||x.first+' '+x.last)+'</option>').join('');
  html+='</select></div>';
- if(!p){shell(html+'<div class="card">In diesem Lernatelier sind noch keine SuS zugeordnet.</div>');return;}
+ if(!p){document.getElementById('app').innerHTML='<main class="laStudentFullscreen">'+html+'<div class="card">In diesem Lernatelier sind noch keine SuS zugeordnet.</div></main>';return;}
  const place=p.learningPlace||'Lernatelier',req=p.laRequest;
  html+='<div class="laStudentHero"><div class="mini">Hallo!</div><h2>'+esc(p.first||p.short)+'</h2><div>🧗 '+esc(p.graduation||'Hiker')+' · '+esc(laSelectedRoom)+'</div></div>';
  html+='<div class="laStudentGrid"><div class="card"><div class="mini">Mein aktueller Lernort</div><h2>📍 '+esc(place)+'</h2><p>Hier bist du gerade eingetragen.</p></div>';
@@ -87,6 +87,7 @@ function laStudentPreview(){
  html+='<p class="mini">Lehrkraft-Vorschau: Aktionen werden im angemeldeten Lehrkraftkonto gespeichert. Die Schüler-Anmeldung und automatische Prüfung der Bewegungsrechte folgen separat.</p>';
  document.getElementById('app').innerHTML='<main class="laStudentFullscreen">'+html+'</main>';
 }
+function learningAtelier(){
   if(!Auth.canAccessGrade(6)){shell(header('Lernatelier')+'<div class="card">Kein Zugriff auf Jahrgang 6.</div>');return;}
   if(laViewMode==='student')return laStudentPreview();
   const all=laPupils(),current=all.filter(p=>laRoom(p)===laSelectedRoom);
