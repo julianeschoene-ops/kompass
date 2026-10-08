@@ -7,7 +7,7 @@ let laViewMode='teacher';
 let laPreviewPupilId='';
 function laPupils(){return (Store.pupils||[]).filter(p=>!p.archived&&Number(p.year||String(p.className||'').charAt(0))===6);}
 function laRoom(p){return LA_ROOMS.includes(p.learningAtelier)?p.learningAtelier:'';}
-function laSafeId(id){return JSON.stringify(String(id)).replace(/"/g,'&quot;');}
+function laSafeId(id){return esc(String(id));}
 function laUpdate(id,key,value){
   if(!Auth.canLead(6)&&!Auth.isAdmin()){toast('Nur Stufenleitung darf diese Zuordnung ändern.');return;}
   const p=laPupils().find(x=>String(x.id)===String(id));if(!p)return;
@@ -101,6 +101,7 @@ function learningAtelier(){
   let html=header('Lernatelier','Jahrgang 6 · alle Farbteams gemeinsam · Lehrkraftansicht');
   html+='<div class="toolbar"><button class="chip dark" onclick="laViewMode=\'student\';render()">👩‍🎓 Zur Schülersicht wechseln</button></div>';
   html+='<div class="toolbar"><div class="laTabs">'+LA_ROOMS.map(r=>`<button class="chip ${laSelectedRoom===r?'dark':''}" onclick="laSelectedRoom='${r}';laPreviewPupilId='';render()">${r} · ${all.filter(p=>laRoom(p)===r).length}</button>`).join('')+'</div><p class="mini">Die Zuordnung zum Lernatelier bleibt auch bei einem Standortwechsel bestehen.</p></div>';
+  if(unknown.length)html+='<div class="card"><b>Hinweis: '+unknown.length+' SuS sind noch keinem Lernatelier zugeordnet.</b><p class="mini">Bitte unten im Bereich „Noch keinem Lernatelier zugeordnet“ die Zuordnung vornehmen. Die bisherige Auswahl wurde möglicherweise wegen eines Fehlers nicht gespeichert.</p></div>';
   html+=`<div class="card"><h2>Lärmampel · ${esc(laSelectedRoom)}</h2><div class="laLights">${[['green','🟢','Leise sprechen'],['yellow','🟡','Flüstern'],['red','🔴','Ruhe']].map(([v,i,l])=>`<button class="chip ${noise===v?'dark':''}" ${can?'':'disabled'} onclick="laNoise(laSelectedRoom,'${v}')">${i} ${l}</button>`).join('')}</div></div>`;
   const pending=current.filter(p=>p.laRequest?.status==='pending');
   const help=current.filter(p=>p.laNeedsHelp);
