@@ -3,6 +3,8 @@ const LA_ROOMS=['LA 1','LA 2','LA 3'];
 const LA_PLACES=['Lernatelier','Stichgang','Marktplatz','Bibliothek','Input','Coaching'];
 const LA_LEVELS=['Hiker','Climber','Free-Climber'];
 let laSelectedRoom='LA 1';
+let laViewMode='teacher';
+let laPreviewPupilId='';
 function laPupils(){return (Store.pupils||[]).filter(p=>!p.archived&&Number(p.year||String(p.className||'').charAt(0))===6);}
 function laRoom(p){return LA_ROOMS.includes(p.learningAtelier)?p.learningAtelier:'';}
 function laSafeId(id){return JSON.stringify(String(id)).replace(/"/g,'&quot;');}
@@ -42,14 +44,47 @@ function laSetHelp(id,enabled){
  const p=laPupils().find(x=>String(x.id)===String(id));if(!p)return;
  p.laNeedsHelp=!!enabled;Store.save('Hilfehand geändert',{pupilId:p.id});render();
 }
+
+function laStudentPreview(){
+ if(!Auth.canAccessGrade(6))return;
+ const pupils=laPupils().filter(p=>laRoom(p)===laSelectedRoom);
+ if(!pupils.some(p=>String(p.id)===String(laPreviewPupilId)))laPreviewPupilId=pupils[0]?.id||'';
+ const p=pupils.find(x=>String(x.id)===String(laPreviewPupilId));
+ const noise=Store.data.settings?.laNoise?.[laSelectedRoom]||'green';
+ const noiseData={green:['🟢','Leise sprechen'],yellow:['🟡','Flüstern'],red:['🔴','Ruhe']}[noise];
+ let html=header('Mein Lernatelier','Schülersicht · Vorschau im Lehrkraftkonto');
+ html+='<div class="toolbar"><button class="chip" onclick="laViewMode=\'teacher\';render()">← Lehrkraftsicht</button><div class="mini">Vorschau: Die Auswahl des Kindes erfolgt durch die Lehrkraft. Dies ist noch kein Schülerlogin.</div>';
+ html+='<label for="laPreviewSelect">Schüler*in für Vorschau auswählen</label><select id="laPreviewSelect" onchange="laPreviewPupilId=this.value;render()">';
+ html+=pupils.map(x=>'<option value="'+esc(x.id)+'" '+(String(x.id)===String(laPreviewPupilId)?'selected':'')+'>'+esc(x.short||x.first+' '+x.last)+'</option>').join('');
+ html+='</select></div>';
+ if(!p){shell(html+'<div class="card">In diesem Lernatelier sind noch keine SuS zugeordnet.</div>');return;}
+ const place=p.learningPlace||'Lernatelier',req=p.laRequest;
+ html+='<div class="laStudentHero"><div class="mini">Hallo!</div><h2>'+esc(p.first||p.short)+'</h2><div>🧗 '+esc(p.graduation||'Hiker')+' · '+esc(laSelectedRoom)+'</div></div>';
+ html+='<div class="laStudentGrid"><div class="card"><div class="mini">Mein aktueller Lernort</div><h2>📍 '+esc(place)+'</h2><p>Hier bist du gerade eingetragen.</p></div>';
+ html+='<div class="card"><div class="mini">Lärmampel</div><h2>'+noiseData[0]+' '+noiseData[1]+'</h2><p>Bitte halte dich an die Regeln deines Lernateliers.</p></div></div>';
+ html+='<div class="card laHelpCard"><h2>✋ Brauchst du Hilfe?</h2><p>Dein Lerncoach sieht, dass du Unterstützung brauchst.</p><button class="chip dark laHelpButton" onclick="laSetHelp(\''+esc(p.id)+'\','+(!p.laNeedsHelp)+')">'+(p.laNeedsHelp?'✓ Hilfe angefragt – zurücknehmen':'✋ Ich brauche Hilfe')+'</button></div>';
+ html+='<div class="section">Mein Lernort</div><div class="laStudentPlaces">';
+ for(const target of LA_PLACES){
+  const isHere=place===target;
+  const isPending=req?.status==='pending'&&req.place===target;
+  html+='<button class="laPlaceButton" '+(isHere||isPending?'disabled':'')+' onclick="laRequestPlace(\''+esc(p.id)+'\',\''+esc(target)+'\')"><strong>'+esc(target)+'</strong><small>'+(isHere?'✓ Du bist hier':isPending?'⏳ Anfrage läuft':target==='Lernatelier'?'Stamm-Lernort':'Genehmigung anfragen')+'</small></button>';
+ }
+ html+='</div>';
+ if(req?.status==='pending')html+='<div class="card"><b>⏳ Deine Anfrage für '+esc(req.place)+' wartet auf eine Entscheidung.</b></div>';
+ else if(req?.status==='denied')html+='<div class="card"><b>Deine letzte Anfrage wurde nicht genehmigt.</b></div>';
+ html+='<p class="mini">Lehrkraft-Vorschau: Aktionen werden im angemeldeten Lehrkraftkonto gespeichert. Die Schüler-Anmeldung und automatische Prüfung der Bewegungsrechte folgen separat.</p>';
+ shell(html);
+}
 function learningAtelier(){
   if(!Auth.canAccessGrade(6)){shell(header('Lernatelier')+'<div class="card">Kein Zugriff auf Jahrgang 6.</div>');return;}
+  if(laViewMode==='student')return laStudentPreview();
   const all=laPupils(),current=all.filter(p=>laRoom(p)===laSelectedRoom);
   const unknown=all.filter(p=>!laRoom(p));
   const noise=Store.data.settings?.laNoise?.[laSelectedRoom]||'green';
   const can=Auth.canLead(6)||Auth.isAdmin();
   let html=header('Lernatelier','Jahrgang 6 · alle Farbteams gemeinsam · Lehrkraftansicht');
-  html+='<div class="toolbar"><div class="laTabs">'+LA_ROOMS.map(r=>`<button class="chip ${laSelectedRoom===r?'dark':''}" onclick="laSelectedRoom='${r}';render()">${r} · ${all.filter(p=>laRoom(p)===r).length}</button>`).join('')+'</div><p class="mini">Die Zuordnung zum Lernatelier bleibt auch bei einem Standortwechsel bestehen.</p></div>';
+  html+='<div class="toolbar"><button class="chip dark" onclick="laViewMode=\'student\';render()">👩‍🎓 Zur Schülersicht wechseln</button></div>';
+  html+='<div class="toolbar"><div class="laTabs">'+LA_ROOMS.map(r=>`<button class="chip ${laSelectedRoom===r?'dark':''}" onclick="laSelectedRoom='${r}';laPreviewPupilId='';render()">${r} · ${all.filter(p=>laRoom(p)===r).length}</button>`).join('')+'</div><p class="mini">Die Zuordnung zum Lernatelier bleibt auch bei einem Standortwechsel bestehen.</p></div>';
   html+=`<div class="card"><h2>Lärmampel · ${esc(laSelectedRoom)}</h2><div class="laLights">${[['green','🟢','Leise sprechen'],['yellow','🟡','Flüstern'],['red','🔴','Ruhe']].map(([v,i,l])=>`<button class="chip ${noise===v?'dark':''}" ${can?'':'disabled'} onclick="laNoise(laSelectedRoom,'${v}')">${i} ${l}</button>`).join('')}</div></div>`;
   const pending=current.filter(p=>p.laRequest?.status==='pending');
   const help=current.filter(p=>p.laNeedsHelp);
