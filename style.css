@@ -118,3 +118,19 @@
 .laBoardFoot{margin:20px 0}
 @media(max-width:900px){.laBoardStatus{grid-template-columns:1fr 1fr}.laBoardStatus>div:last-child{grid-column:1/-1}.laPublicBoard{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.laBoardStatus,.laPublicBoard,.laActionPlaces{grid-template-columns:1fr}.laBoardStatus>div:last-child{grid-column:auto}.laKioskBoard{padding:14px}}
+
+/* Teamstar je Kind und iPad-Verschieben */
+.laPublicName{position:relative;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;min-height:58px}
+.laPublicName.laDragging{opacity:.48;cursor:grabbing}
+.laNameLine{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.laPupilStars{display:flex;gap:2px;min-height:13px;line-height:13px;margin-left:15px}
+.laStar{font-size:15px;font-weight:900;line-height:1}
+.laStar-red,.laStarRed{color:#d83b47}
+.laStar-yellow,.laStarYellow{color:#d5a600}
+.laStar-blue,.laStarBlue{color:#3076d7}
+.laStarLegend{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;font-weight:700}
+.laPublicPlace.laDropTarget{outline:4px solid #3c8bdb;outline-offset:-4px;background:#eef7ff}
+.laStarControls{display:flex;gap:6px;align-items:center}
+.laStarToggle{border:1px solid #d5dce7;background:#f4f5f8;border-radius:9px;padding:5px 9px;font-size:20px;opacity:.35;cursor:pointer}
+.laStarToggle.selected{opacity:1;background:#eaf0f8;border-color:currentColor}
+.laStarToggle:disabled{cursor:default}
