@@ -134,3 +134,24 @@
 .laStarToggle{border:1px solid #d5dce7;background:#f4f5f8;border-radius:9px;padding:5px 9px;font-size:20px;opacity:.35;cursor:pointer}
 .laStarToggle.selected{opacity:1;background:#eaf0f8;border-color:currentColor}
 .laStarToggle:disabled{cursor:default}
+
+/* Lernatelier 8.5.33: kompakte Tafel und sofort sichtbare Standortwahl */
+.laKioskBoard .laBoardTop{align-items:center}
+.laTopActions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.laCompactNoise{font-size:16px;font-weight:700;border:1px solid #e0e5ee;background:#fff;border-radius:24px;padding:10px 16px;white-space:nowrap}
+.laKioskBoard .laRoomSwitcher{margin:10px 0}
+.laKioskBoard .laBoardInstructions{margin:10px 0;font-size:13px;color:#667085}
+.laKioskBoard .laPublicBoard{gap:10px}
+.laKioskBoard .laPublicPlace{padding:12px;min-height:110px}
+.laKioskBoard .laPublicPlace h2{font-size:17px;margin-bottom:10px}
+.laKioskBoard .laPublicNames{gap:6px}
+.laKioskBoard .laPublicName{min-height:48px;padding:7px 9px;font-size:13px}
+.laKioskBoard .laPupilStars{min-height:10px}
+.laKioskBoard .laActionPanel{position:fixed;z-index:1000;bottom:16px;left:50%;transform:translateX(-50%);width:min(1000px,calc(100vw - 32px));max-height:72vh;overflow-y:auto;margin:0;padding:18px;box-shadow:0 16px 65px #17223866;background:#fff}
+.laKioskBoard .laActionPlaces{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.laKioskBoard .laActionPlaces .laPlaceButton{min-height:50px;padding:10px;font-size:13px;border-radius:12px}
+.laKioskBoard .laActionPlaces .laPlaceButton strong{font-size:14px}
+.laDutyControls{display:flex;gap:4px;flex-wrap:wrap}
+.laDutyToggle{border:1px solid #dce2eb;background:#f6f7fa;border-radius:9px;padding:5px 7px;font-size:18px;opacity:.35;cursor:pointer}
+.laDutyToggle.selected{opacity:1;background:#e9f4ec;border-color:#76a58a}
+@media(max-width:700px){.laKioskBoard .laActionPlaces{grid-template-columns:repeat(2,minmax(0,1fr))}.laTopActions{justify-content:flex-end}}
