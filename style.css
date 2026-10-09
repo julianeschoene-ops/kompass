@@ -155,3 +155,14 @@
 .laDutyToggle{border:1px solid #dce2eb;background:#f6f7fa;border-radius:9px;padding:5px 7px;font-size:18px;opacity:.35;cursor:pointer}
 .laDutyToggle.selected{opacity:1;background:#e9f4ec;border-color:#76a58a}
 @media(max-width:700px){.laKioskBoard .laActionPlaces{grid-template-columns:repeat(2,minmax(0,1fr))}.laTopActions{justify-content:flex-end}}
+
+/* Kiosk layout: die Stammgruppe bleibt kompakt, freie Felder wachsen nicht auf ihre Höhe */
+.laKioskBoard .laCompactBoard{display:grid;grid-template-columns:minmax(0,1.45fr) repeat(2,minmax(0,1fr));gap:10px;align-items:start}
+.laKioskBoard .laCompactBoard .laHomePlace{grid-column:1;grid-row:span 5;min-height:0}
+.laKioskBoard .laCompactBoard .laPublicPlace:not(.laHomePlace){min-height:74px}
+.laKioskBoard .laCompactBoard .laPublicPlace.laEmpty{background:#f8fafc;border-style:dashed}
+.laKioskBoard .laCompactBoard .laPublicPlace.laEmpty .laPublicNames>p{display:none}
+.laKioskBoard .laCompactBoard .laPublicPlace.laEmpty h2{margin-bottom:0}
+.laKioskBoard .laCompactBoard .laPublicPlace.laOccupied{border-color:#bdcfe4}
+@media(max-width:900px){.laKioskBoard .laCompactBoard{grid-template-columns:repeat(2,minmax(0,1fr))}.laKioskBoard .laCompactBoard .laHomePlace{grid-column:1/-1;grid-row:auto}}
+@media(max-width:520px){.laKioskBoard .laCompactBoard{grid-template-columns:1fr}.laKioskBoard .laCompactBoard .laHomePlace{grid-column:1}}
