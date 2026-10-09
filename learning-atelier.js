@@ -12,7 +12,7 @@ function laPlaces(room=laSelectedRoom){
 function laSavePlaces(){
  if(!Auth.canLead(6)&&!Auth.isAdmin())return;
  const input=document.getElementById('laPlaceEditor');if(!input)return;
- const names=[...new Set(input.value.split(/\\n/).map(x=>x.trim()).filter(Boolean))].slice(0,40);
+ const names=[...new Set(input.value.split(/\n/).map(x=>x.trim()).filter(Boolean))].slice(0,40);
  if(!names.length){alert('Bitte mindestens einen Lernort eingeben.');return;}
  Store.data.settings=Store.data.settings||{};
  Store.data.settings.laPlaces=Store.data.settings.laPlaces||{};
