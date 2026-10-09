@@ -90,3 +90,31 @@
 .laPlaceButton strong{font-size:18px}.laPlaceButton small{color:#667085;font-size:13px}
 .laPlaceButton:disabled{background:#edf3fa;cursor:default}
 @media(max-width:700px){.laStudentGrid{grid-template-columns:1fr}.laStudentPlaces{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Gemeinsame Lernatelier-Schülertafel */
+.laKioskBoard{max-width:1500px;margin:0 auto;padding:24px}
+.laBoardTop{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.laBoardTop h1{font-size:34px;margin:5px 0}
+.laRoomSwitcher{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}
+.laBoardStatus{display:grid;grid-template-columns:1fr 1fr 1.5fr;gap:14px;margin:18px 0}
+.laBoardStatus>div{background:#fff;border:1px solid #e1e5ed;border-radius:20px;padding:20px;min-width:0}
+.laBoardStatus h2{font-size:23px;margin:7px 0}
+.laStatusNoise{display:flex;gap:12px;align-items:center}
+.laStatusEmoji{font-size:38px}
+.laDutiesText{white-space:pre-line;line-height:1.5}
+.laBoardInstructions{font-size:16px;margin:22px 0 12px}
+.laPublicBoard{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
+.laPublicPlace{background:#fff;border:1px solid #e1e5ed;border-radius:22px;padding:18px;min-height:160px}
+.laPublicPlace h2{font-size:20px;margin:0 0 15px}
+.laPublicPlace h2 span{font-size:14px;color:#667085}
+.laPublicNames{display:flex;flex-wrap:wrap;gap:9px}
+.laPublicName{border:1px solid #d9e1ed;border-radius:13px;background:#f7f9fc;color:#24324a;padding:11px 13px;display:flex;align-items:center;gap:8px;font-size:15px;cursor:pointer;min-height:48px}
+.laPublicName.laChosen{border:2px solid #24344f;background:#e6ecf6}
+.laActionPanel{position:sticky;bottom:12px;z-index:20;background:#fff;border:2px solid #24344f;border-radius:22px;box-shadow:0 8px 32px #16243a33;padding:20px;margin:24px 0}
+.laActionHead{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.laActionHead h2{margin:6px 0}
+.laActionPlaces{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:15px 0}
+.laActionPlaces .laPlaceButton{min-height:75px;padding:14px}
+.laBoardFoot{margin:20px 0}
+@media(max-width:900px){.laBoardStatus{grid-template-columns:1fr 1fr}.laBoardStatus>div:last-child{grid-column:1/-1}.laPublicBoard{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.laBoardStatus,.laPublicBoard,.laActionPlaces{grid-template-columns:1fr}.laBoardStatus>div:last-child{grid-column:auto}.laKioskBoard{padding:14px}}
