@@ -188,10 +188,10 @@ function laStudentPreview(){
  html+='<div class="laRoomSwitcher">'+LA_ROOMS.map(room=>'<button class="chip '+(room===laSelectedRoom?'dark':'')+'" onclick="laSelectedRoom=\''+room+'\';laBoardSelectedId=\'\';render()">'+room+' · '+all.filter(p=>laRoom(p)===room).length+'</button>').join('')+'</div>';
  
  html+='<p class="laBoardInstructions">Namen antippen oder mit dem Finger in einen anderen Bereich ziehen.</p>';
- html+='<div class="laPublicBoard">';
+ html+='<div class="laPublicBoard laCompactBoard">';
  for(const place of laPlaces()){
   const group=pupils.filter(p=>(p.learningPlace||'Lernatelier')===place);
-  html+='<section class="laPublicPlace" data-place="'+esc(place)+'"><h2>'+esc(place)+' <span>'+group.length+'</span></h2><div class="laPublicNames">';
+  html+='<section class="laPublicPlace '+(place==='Lernatelier'?'laHomePlace':'')+' '+(group.length?'laOccupied':'laEmpty')+'" data-place="'+esc(place)+'"><h2>'+esc(place)+' <span>'+group.length+'</span></h2><div class="laPublicNames">';
   html+=group.map(p=>'<button type="button" data-pupil="'+esc(p.id)+'" class="laPublicName '+(String(p.id)===String(laBoardSelectedId)?'laChosen':'')+'" onclick="laSelectBoardPupil(\''+esc(p.id)+'\',this)"><span class="laPupilStars">'+LA_STAR_SUBJECTS.filter(x=>laStars(p).includes(x[0])).map(x=>'<span class="laStar laStar-'+x[2]+'" title="Teamstar '+x[1]+'">★</span>').join('')+'</span><span class="laNameLine"><span class="dot '+teamColor(p.team)+'"></span><span>'+esc(p.short||p.first+' '+p.last)+'</span>'+(p.laNeedsHelp?' <span title="Braucht Hilfe">✋</span>':'')+LA_DUTIES.filter(x=>laDuties(p).includes(x[0])).map(x=>'<span title="'+x[2]+'">'+x[1]+'</span>').join('')+'</span></button>').join('')||'<p class="mini">Hier ist gerade niemand.</p>';
   html+='</div></section>';
  }
