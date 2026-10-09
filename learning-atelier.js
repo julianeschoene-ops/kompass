@@ -67,39 +67,60 @@ async function laExitStudentPreview(){
   laViewMode='teacher';laPreviewPupilId='';render();
  }catch(e){alert('Überprüfung fehlgeschlagen: '+(e?.message||String(e)));}
 }
+
+let laBoardSelectedId='';
+function laBoardMove(id,place){
+ if(!Auth.canAccessGrade(6)||!LA_PLACES.includes(place))return;
+ const p=laPupils().find(x=>String(x.id)===String(id));
+ if(!p||laRoom(p)!==laSelectedRoom)return;
+ // This remains a teacher-authenticated kiosk preview, not a public student login.
+ p.learningPlace=place;
+ p.laRequest=null;
+ Store.save('Standorttafel: Lernort gewechselt',{pupilId:p.id,place});
+ laBoardSelectedId='';render();
+}
+function laSetRoomInfo(kind,value){
+ if(!Auth.canLead(6)&&!Auth.isAdmin())return;
+ if(!LA_ROOMS.includes(laSelectedRoom)||!['duties','star'].includes(kind))return;
+ Store.data.settings=Store.data.settings||{};
+ Store.data.settings.laBoardInfo=Store.data.settings.laBoardInfo||{};
+ const info=Store.data.settings.laBoardInfo[laSelectedRoom]||{duties:'',star:''};
+ info[kind]=String(value||'').slice(0,500);
+ Store.data.settings.laBoardInfo[laSelectedRoom]=info;
+ Store.save('Lernatelier-Tafel aktualisiert',{room:laSelectedRoom,kind});render();
+}
 function laStudentPreview(){
  if(!Auth.canAccessGrade(6))return;
  const all=laPupils();
- if(!all.some(p=>laRoom(p)===laSelectedRoom)){const first=LA_ROOMS.find(room=>all.some(p=>laRoom(p)===room));if(first)laSelectedRoom=first;}
- const pupils=all.filter(p=>laRoom(p)===laSelectedRoom);
- if(!pupils.some(p=>String(p.id)===String(laPreviewPupilId)))laPreviewPupilId=pupils[0]?.id||'';
- const p=pupils.find(x=>String(x.id)===String(laPreviewPupilId));
+ if(!all.some(p=>laRoom(p)===laSelectedRoom)){
+  const first=LA_ROOMS.find(room=>all.some(p=>laRoom(p)===room));if(first)laSelectedRoom=first;
+ }
+ const pupils=all.filter(p=>laRoom(p)===laSelectedRoom).sort((a,b)=>String(a.first||a.short||'').localeCompare(String(b.first||b.short||''),'de'));
+ const selected=pupils.find(p=>String(p.id)===String(laBoardSelectedId));
  const noise=Store.data.settings?.laNoise?.[laSelectedRoom]||'green';
  const noiseData={green:['🟢','Leise sprechen'],yellow:['🟡','Flüstern'],red:['🔴','Ruhe']}[noise];
- let html=header('Mein Lernatelier','Schülersicht · Vorschau im Lehrkraftkonto');
- html+='<div class="toolbar"><button class="chip" onclick="laExitStudentPreview()">🔒 Lehrkraftmodus entsperren</button><div class="mini">Geschützte Vorschau · Zurück nur mit Lehrkraft-Passwort</div></div>';
- html+='<div class="toolbar"><div class="laTabs">'+LA_ROOMS.map(room=>'<button class="chip '+(room===laSelectedRoom?'dark':'')+'" onclick="laSelectedRoom=\''+room+'\';laPreviewPupilId=\'\';render()">'+room+' · '+all.filter(p=>laRoom(p)===room).length+'</button>').join('')+'</div></div>';
- html+='<div class="toolbar">';
- html+='<label for="laPreviewSelect">Schüler*in für Vorschau auswählen</label><select id="laPreviewSelect" onchange="laPreviewPupilId=this.value;render()">';
- html+=pupils.map(x=>'<option value="'+esc(x.id)+'" '+(String(x.id)===String(laPreviewPupilId)?'selected':'')+'>'+esc(x.short||x.first+' '+x.last)+'</option>').join('');
- html+='</select></div>';
- if(!p){document.getElementById('app').innerHTML='<main class="laStudentFullscreen">'+html+'<div class="card">In diesem Lernatelier sind noch keine SuS zugeordnet.</div></main>';return;}
- const place=p.learningPlace||'Lernatelier',req=p.laRequest;
- html+='<div class="laStudentHero"><div class="mini">Hallo!</div><h2>'+esc(p.first||p.short)+'</h2><div>🧗 '+esc(p.graduation||'Hiker')+' · '+esc(laSelectedRoom)+'</div></div>';
- html+='<div class="laStudentGrid"><div class="card"><div class="mini">Mein aktueller Lernort</div><h2>📍 '+esc(place)+'</h2><p>Hier bist du gerade eingetragen.</p></div>';
- html+='<div class="card"><div class="mini">Lärmampel</div><h2>'+noiseData[0]+' '+noiseData[1]+'</h2><p>Bitte halte dich an die Regeln deines Lernateliers.</p></div></div>';
- html+='<div class="card laHelpCard"><h2>✋ Brauchst du Hilfe?</h2><p>Dein Lerncoach sieht, dass du Unterstützung brauchst.</p><button class="chip dark laHelpButton" onclick="laSetHelp(\''+esc(p.id)+'\','+(!p.laNeedsHelp)+')">'+(p.laNeedsHelp?'✓ Hilfe angefragt – zurücknehmen':'✋ Ich brauche Hilfe')+'</button></div>';
- html+='<div class="section">Mein Lernort</div><div class="laStudentPlaces">';
- for(const target of LA_PLACES){
-  const isHere=place===target;
-  const isPending=req?.status==='pending'&&req.place===target;
-  html+='<button class="laPlaceButton" '+(isHere||isPending?'disabled':'')+' onclick="laRequestPlace(\''+esc(p.id)+'\',\''+esc(target)+'\')"><strong>'+esc(target)+'</strong><small>'+(isHere?'✓ Du bist hier':isPending?'⏳ Anfrage läuft':target==='Lernatelier'?'Stamm-Lernort':'Genehmigung anfragen')+'</small></button>';
+ const info=Store.data.settings?.laBoardInfo?.[laSelectedRoom]||{};
+ let html='<div class="laBoardTop"><div><div class="mini">KOMPASS · Jahrgang 6</div><h1>🏫 '+esc(laSelectedRoom)+'</h1><p>Unsere Lernatelier-Tafel · Wer ist wo?</p></div><button class="chip" onclick="laExitStudentPreview()">🔒 Lehrkraftmodus</button></div>';
+ html+='<div class="laRoomSwitcher">'+LA_ROOMS.map(room=>'<button class="chip '+(room===laSelectedRoom?'dark':'')+'" onclick="laSelectedRoom=\''+room+'\';laBoardSelectedId=\'\';render()">'+room+' · '+all.filter(p=>laRoom(p)===room).length+'</button>').join('')+'</div>';
+ html+='<div class="laBoardStatus"><div class="laStatusNoise"><span class="laStatusEmoji">'+noiseData[0]+'</span><div><span class="mini">Lärmampel</span><h2>'+noiseData[1]+'</h2></div></div><div><span class="mini">⭐ Teamstar</span><h2>'+esc(info.star||'Noch nicht eingetragen')+'</h2></div><div><span class="mini">🧹 Unsere Dienste</span><p class="laDutiesText">'+esc(info.duties||'Noch keine Dienste eingetragen')+'</p></div></div>';
+ html+='<p class="laBoardInstructions">Tippe auf deinen Namen und wähle dann deinen Lernort. ✋ bedeutet: Ich brauche Hilfe.</p>';
+ html+='<div class="laPublicBoard">';
+ for(const place of LA_PLACES){
+  const group=pupils.filter(p=>(p.learningPlace||'Lernatelier')===place);
+  html+='<section class="laPublicPlace"><h2>'+esc(place)+' <span>'+group.length+'</span></h2><div class="laPublicNames">';
+  html+=group.map(p=>'<button class="laPublicName '+(String(p.id)===String(laBoardSelectedId)?'laChosen':'')+'" onclick="laBoardSelectedId=\''+esc(p.id)+'\';render()"><span class="dot '+teamColor(p.team)+'"></span><span>'+esc(p.short||p.first+' '+p.last)+'</span>'+(p.laNeedsHelp?' <span title="Braucht Hilfe">✋</span>':'')+'</button>').join('')||'<p class="mini">Hier ist gerade niemand.</p>';
+  html+='</div></section>';
  }
  html+='</div>';
- if(req?.status==='pending')html+='<div class="card"><b>⏳ Deine Anfrage für '+esc(req.place)+' wartet auf eine Entscheidung.</b></div>';
- else if(req?.status==='denied')html+='<div class="card"><b>Deine letzte Anfrage wurde nicht genehmigt.</b></div>';
- html+='<p class="mini">Lehrkraft-Vorschau: Aktionen werden im angemeldeten Lehrkraftkonto gespeichert. Die Schüler-Anmeldung und automatische Prüfung der Bewegungsrechte folgen separat.</p>';
- document.getElementById('app').innerHTML='<main class="laStudentFullscreen">'+html+'</main>';
+ if(selected){
+  const here=selected.learningPlace||'Lernatelier';
+  html+='<div class="laActionPanel"><div class="laActionHead"><div><span class="mini">Ausgewählt</span><h2>'+esc(selected.short||selected.first+' '+selected.last)+'</h2><span class="mini">Aktuell: '+esc(here)+'</span></div><button class="chip" onclick="laBoardSelectedId=\'\';render()">✕ Schließen</button></div>';
+  html+='<div class="laActionPlaces">'+LA_PLACES.map(place=>'<button class="laPlaceButton" '+(place===here?'disabled':'')+' onclick="laBoardMove(\''+esc(selected.id)+'\',\''+esc(place)+'\')"><strong>'+esc(place)+'</strong><small>'+(place===here?'✓ Hier bin ich':'Hierhin wechseln')+'</small></button>').join('')+'</div>';
+  html+='<button class="chip dark laHelpButton" onclick="laSetHelp(\''+esc(selected.id)+'\','+(!selected.laNeedsHelp)+')">'+(selected.laNeedsHelp?'✓ Hilfehand zurücknehmen':'✋ Ich brauche Hilfe')+'</button>';
+  html+='</div>';
+ }
+ html+='<p class="mini laBoardFoot">Vorschau im angemeldeten Lehrkraftkonto. Die Standortwechsel sind hier direkt möglich; gesicherte Schülerzugänge und automatische Bewegungsrechte werden noch entwickelt.</p>';
+ document.getElementById('app').innerHTML='<main class="laStudentFullscreen laKioskBoard">'+html+'</main>';
 }
 function learningAtelier(){
   if(!Auth.canAccessGrade(6)){shell(header('Lernatelier')+'<div class="card">Kein Zugriff auf Jahrgang 6.</div>');return;}
@@ -113,6 +134,8 @@ function learningAtelier(){
   html+='<div class="toolbar"><div class="laTabs">'+LA_ROOMS.map(r=>`<button class="chip ${laSelectedRoom===r?'dark':''}" onclick="laSelectedRoom='${r}';laPreviewPupilId='';render()">${r} · ${all.filter(p=>laRoom(p)===r).length}</button>`).join('')+'</div><p class="mini">Die Zuordnung zum Lernatelier bleibt auch bei einem Standortwechsel bestehen.</p></div>';
   if(unknown.length&&can)html+='<div class="card"><b>Sammelzuordnung</b><p class="mini">Noch nicht zugeordnet: '+unknown.length+' SuS aus Stufe 6. Bestehende Lernatelier-Zuordnungen bleiben unverändert.</p><button class="chip dark" onclick="laAssignUnassigned(\'LA 1\')">Alle noch nicht zugeordneten SuS → LA 1</button></div>';
   if(unknown.length)html+='<div class="card"><b>Hinweis: '+unknown.length+' SuS sind noch keinem Lernatelier zugeordnet.</b><p class="mini">Bitte unten im Bereich „Noch keinem Lernatelier zugeordnet“ die Zuordnung vornehmen. Die bisherige Auswahl wurde möglicherweise wegen eines Fehlers nicht gespeichert.</p></div>';
+  const boardInfo=Store.data.settings?.laBoardInfo?.[laSelectedRoom]||{};
+  html+='<div class="card"><h2>⭐ Teamstar & 🧹 Lernatelier-Dienste</h2><p class="mini">Diese Informationen erscheinen oben auf der Schülertafel.</p><label>Teamstar</label><input id="laStarEdit" maxlength="150" value="'+esc(boardInfo.star||'')+'" placeholder="Name oder Team" '+(can?'':'disabled')+'><label>Dienste (z. B. Tafeldienst, Ordnungsdienst)</label><textarea id="laDutiesEdit" rows="3" '+(can?'':'disabled')+'>'+esc(boardInfo.duties||'')+'</textarea>'+(can?'<button class="chip dark" onclick="laSetRoomInfo(\'star\',document.getElementById(\'laStarEdit\').value);laSetRoomInfo(\'duties\',document.getElementById(\'laDutiesEdit\').value)">Dienste & Teamstar speichern</button>':'')+'</div>';
   html+=`<div class="card"><h2>Lärmampel · ${esc(laSelectedRoom)}</h2><div class="laLights">${[['green','🟢','Leise sprechen'],['yellow','🟡','Flüstern'],['red','🔴','Ruhe']].map(([v,i,l])=>`<button class="chip ${noise===v?'dark':''}" ${can?'':'disabled'} onclick="laNoise(laSelectedRoom,'${v}')">${i} ${l}</button>`).join('')}</div></div>`;
   const pending=current.filter(p=>p.laRequest?.status==='pending');
   const help=current.filter(p=>p.laNeedsHelp);
