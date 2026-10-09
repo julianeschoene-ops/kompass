@@ -2,6 +2,24 @@
 const LA_ROOMS=['LA 1','LA 2','LA 3'];
 const LA_PLACES=['Lernatelier','Stichgang','Marktplatz','Bibliothek','Input','Coaching'];
 const LA_LEVELS=['Hiker','Climber','Free-Climber'];
+const LA_DEFAULT_PLACES=['Lernatelier','Input Deutsch','Input Mathematik','Input Englisch','Stichgang','Bibliothek','Marktplatz','WC','Zu Hause','VKL','Chor / Bläserklasse','Sport','Club','SMV','Bäcker','Teamstunde','Coaching','Schülersozialarbeit','LA 3 / Extraraum'];
+function laPlaces(room=laSelectedRoom){
+ const configured=Store.data.settings?.laPlaces?.[room];
+ const names=Array.isArray(configured)&&configured.length?configured:LA_DEFAULT_PLACES;
+ const used=laPupils().filter(p=>laRoom(p)===room).map(p=>p.learningPlace).filter(Boolean);
+ return [...new Set(['Lernatelier',...names,...used])];
+}
+function laSavePlaces(){
+ if(!Auth.canLead(6)&&!Auth.isAdmin())return;
+ const input=document.getElementById('laPlaceEditor');if(!input)return;
+ const names=[...new Set(input.value.split(/\\n/).map(x=>x.trim()).filter(Boolean))].slice(0,40);
+ if(!names.length){alert('Bitte mindestens einen Lernort eingeben.');return;}
+ Store.data.settings=Store.data.settings||{};
+ Store.data.settings.laPlaces=Store.data.settings.laPlaces||{};
+ Store.data.settings.laPlaces[laSelectedRoom]=['Lernatelier',...names.filter(x=>x!=='Lernatelier')];
+ Store.save('Lernorte aktualisiert',{room:laSelectedRoom});render();
+}
+
 let laSelectedRoom='LA 1';
 let laViewMode='teacher';
 let laPreviewPupilId='';
@@ -13,7 +31,7 @@ function laUpdate(id,key,value){
   const p=laPupils().find(x=>String(x.id)===String(id));if(!p)return;
   if(key==='learningAtelier'&&!LA_ROOMS.includes(value))return;
   if(key==='graduation'&&!LA_LEVELS.includes(value))return;
-  if(key==='learningPlace'&&!LA_PLACES.includes(value))return;
+  if(key==='learningPlace'&&!laPlaces(laRoom(p)).includes(value))return;
   p[key]=value;Store.save();render();
 }
 function laAssignUnassigned(room){
@@ -36,7 +54,7 @@ function laNoise(room,value){
 }
 
 function laRequestPlace(id,place){
- if(!Auth.canAccessGrade(6)||!LA_PLACES.includes(place)||place==='Lernatelier')return;
+ if(!Auth.canAccessGrade(6)||!laPlaces(laSelectedRoom).includes(place)||place==='Lernatelier')return;
  const p=laPupils().find(x=>String(x.id)===String(id));if(!p||!laRoom(p))return;
  p.laRequest={place,status:'pending',at:new Date().toISOString()};
  Store.save('Lernort-Anfrage erstellt',{pupilId:p.id,place});render();
@@ -161,7 +179,7 @@ function laStudentPreview(){
  html+='<div class="laBoardStatus"><div class="laStatusNoise"><span class="laStatusEmoji">'+noiseData[0]+'</span><div><span class="mini">Lärmampel</span><h2>'+noiseData[1]+'</h2></div></div><div><span class="mini">⭐ Fach-Teamstars</span><p>Die Sterne stehen direkt über den Namen.</p><div class="laStarLegend"><span class="laStarRed">★ Englisch</span><span class="laStarYellow">★ Deutsch</span><span class="laStarBlue">★ Mathe</span></div></div><div><span class="mini">🧹 Unsere Dienste</span><p class="laDutiesText">'+esc(info.duties||'Noch keine Dienste eingetragen')+'</p></div></div>';
  html+='<p class="laBoardInstructions">Tippe auf deinen Namen und wähle dann deinen Lernort. ✋ bedeutet: Ich brauche Hilfe.</p>';
  html+='<div class="laPublicBoard">';
- for(const place of LA_PLACES){
+ for(const place of laPlaces()){
   const group=pupils.filter(p=>(p.learningPlace||'Lernatelier')===place);
   html+='<section class="laPublicPlace" data-place="'+esc(place)+'"><h2>'+esc(place)+' <span>'+group.length+'</span></h2><div class="laPublicNames">';
   html+=group.map(p=>'<button type="button" data-pupil="'+esc(p.id)+'" class="laPublicName '+(String(p.id)===String(laBoardSelectedId)?'laChosen':'')+'" onclick="laSelectBoardPupil(\''+esc(p.id)+'\',this)"><span class="laPupilStars">'+LA_STAR_SUBJECTS.filter(x=>laStars(p).includes(x[0])).map(x=>'<span class="laStar laStar-'+x[2]+'" title="Teamstar '+x[1]+'">★</span>').join('')+'</span><span class="laNameLine"><span class="dot '+teamColor(p.team)+'"></span><span>'+esc(p.short||p.first+' '+p.last)+'</span>'+(p.laNeedsHelp?' <span title="Braucht Hilfe">✋</span>':'')+'</span></button>').join('')||'<p class="mini">Hier ist gerade niemand.</p>';
@@ -171,7 +189,7 @@ function laStudentPreview(){
  if(selected){
   const here=selected.learningPlace||'Lernatelier';
   html+='<div class="laActionPanel"><div class="laActionHead"><div><span class="mini">Ausgewählt</span><h2>'+esc(selected.short||selected.first+' '+selected.last)+'</h2><span class="mini">Aktuell: '+esc(here)+'</span></div><button class="chip" onclick="laBoardSelectedId=\'\';render()">✕ Schließen</button></div>';
-  html+='<div class="laActionPlaces">'+LA_PLACES.map(place=>'<button class="laPlaceButton" '+(place===here?'disabled':'')+' onclick="laBoardMove(\''+esc(selected.id)+'\',\''+esc(place)+'\')"><strong>'+esc(place)+'</strong><small>'+(place===here?'✓ Hier bin ich':'Hierhin wechseln')+'</small></button>').join('')+'</div>';
+  html+='<div class="laActionPlaces">'+laPlaces().map(place=>'<button class="laPlaceButton" '+(place===here?'disabled':'')+' onclick="laBoardMove(\''+esc(selected.id)+'\',\''+esc(place)+'\')"><strong>'+esc(place)+'</strong><small>'+(place===here?'✓ Hier bin ich':'Hierhin wechseln')+'</small></button>').join('')+'</div>';
   html+='<button class="chip dark laHelpButton" onclick="laSetHelp(\''+esc(selected.id)+'\','+(!selected.laNeedsHelp)+')">'+(selected.laNeedsHelp?'✓ Hilfehand zurücknehmen':'✋ Ich brauche Hilfe')+'</button>';
   html+='</div>';
  }
@@ -191,6 +209,7 @@ function learningAtelier(){
   html+='<div class="toolbar"><div class="laTabs">'+LA_ROOMS.map(r=>`<button class="chip ${laSelectedRoom===r?'dark':''}" onclick="laSelectedRoom='${r}';laPreviewPupilId='';render()">${r} · ${all.filter(p=>laRoom(p)===r).length}</button>`).join('')+'</div><p class="mini">Die Zuordnung zum Lernatelier bleibt auch bei einem Standortwechsel bestehen.</p></div>';
   if(unknown.length&&can)html+='<div class="card"><b>Sammelzuordnung</b><p class="mini">Noch nicht zugeordnet: '+unknown.length+' SuS aus Stufe 6. Bestehende Lernatelier-Zuordnungen bleiben unverändert.</p><button class="chip dark" onclick="laAssignUnassigned(\'LA 1\')">Alle noch nicht zugeordneten SuS → LA 1</button></div>';
   if(unknown.length)html+='<div class="card"><b>Hinweis: '+unknown.length+' SuS sind noch keinem Lernatelier zugeordnet.</b><p class="mini">Bitte unten im Bereich „Noch keinem Lernatelier zugeordnet“ die Zuordnung vornehmen. Die bisherige Auswahl wurde möglicherweise wegen eines Fehlers nicht gespeichert.</p></div>';
+  html+='<div class="card"><h2>📍 Lernorte der Tafel</h2><p class="mini">Ein Standort pro Zeile. Du kannst Lernorte hinzufügen, umbenennen oder aus der Liste entfernen. Bereits belegte Standorte bleiben sichtbar, bis die Kinder umgezogen sind.</p><textarea id="laPlaceEditor" rows="8" '+(can?'':'disabled')+'>'+esc((Store.data.settings?.laPlaces?.[laSelectedRoom]||LA_DEFAULT_PLACES).join('\\n'))+'</textarea>'+(can?'<button class="chip dark" onclick="laSavePlaces()">Lernorte speichern</button>':'')+'</div>';
   const boardInfo=Store.data.settings?.laBoardInfo?.[laSelectedRoom]||{};
   html+='<div class="card"><h2>🧹 Lernatelier-Dienste</h2><p class="mini">Teamstars vergibst du jetzt pro Kind und Fach in der Schülerverwaltung.</p><label>Dienste (z. B. Tafeldienst, Ordnungsdienst)</label><textarea id="laDutiesEdit" rows="3" '+(can?'':'disabled')+'>'+esc(boardInfo.duties||'')+'</textarea>'+(can?'<button class="chip dark" onclick="laSaveRoomInfo()">Dienste & Teamstar speichern</button>':'')+'</div>';
   html+=`<div class="card"><h2>Lärmampel · ${esc(laSelectedRoom)}</h2><div class="laLights">${[['green','🟢','Leise sprechen'],['yellow','🟡','Flüstern'],['red','🔴','Ruhe']].map(([v,i,l])=>`<button class="chip ${noise===v?'dark':''}" ${can?'':'disabled'} onclick="laNoise(laSelectedRoom,'${v}')">${i} ${l}</button>`).join('')}</div></div>`;
@@ -209,7 +228,7 @@ function learningAtelier(){
   html+='<div class="card"><div class="laTableWrap"><table class="studentTable"><thead><tr><th>Name</th><th>Team</th><th>⭐ Fach-Teamstar</th><th>Graduierung</th><th>Standort</th><th>Stamm-LA</th><th>Aktionen</th></tr></thead><tbody>';
   for(const p of current){
     const id=laSafeId(p.id),sel=(key,values,currentValue)=>`<select aria-label="${esc(key)} für ${esc(p.short||p.first)}" ${can?'':'disabled'} onchange="laUpdate('${id}','${key}',this.value)">${values.map(v=>`<option value="${esc(v)}" ${currentValue===v?'selected':''}>${esc(v)}</option>`).join('')}</select>`;
-    html+=`<tr><td>${esc(p.short||p.first+' '+p.last)}</td><td>${esc(p.team||'')}</td><td><div class="laStarControls">${LA_STAR_SUBJECTS.map(([subject,label,color])=>`<button type="button" class="laStarToggle laStar-${color} ${laStars(p).includes(subject)?'selected':''}" ${can?'':'disabled'} title="Teamstar ${label}" onclick="laToggleStar('${id}','${subject}')">★</button>`).join('')}</div></td><td>${sel('graduation',LA_LEVELS,p.graduation||'Hiker')}</td><td>${sel('learningPlace',LA_PLACES,p.learningPlace||'Lernatelier')}</td><td>${sel('learningAtelier',LA_ROOMS,laRoom(p))}</td><td><select aria-label="Lernort anfragen" onchange="if(this.value)laRequestPlace('${id}',this.value)"><option value="">Anfrage erstellen …</option>${LA_PLACES.filter(v=>v!=='Lernatelier').map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('')}</select><button class="chip" onclick="laSetHelp('${id}',${!p.laNeedsHelp})">${p.laNeedsHelp?'Hilfe erledigt':'✋ Hilfe'}</button></td></tr>`;
+    html+=`<tr><td>${esc(p.short||p.first+' '+p.last)}</td><td>${esc(p.team||'')}</td><td><div class="laStarControls">${LA_STAR_SUBJECTS.map(([subject,label,color])=>`<button type="button" class="laStarToggle laStar-${color} ${laStars(p).includes(subject)?'selected':''}" ${can?'':'disabled'} title="Teamstar ${label}" onclick="laToggleStar('${id}','${subject}')">★</button>`).join('')}</div></td><td>${sel('graduation',LA_LEVELS,p.graduation||'Hiker')}</td><td>${sel('learningPlace',laPlaces(laRoom(p)),p.learningPlace||'Lernatelier')}</td><td>${sel('learningAtelier',LA_ROOMS,laRoom(p))}</td><td><select aria-label="Lernort anfragen" onchange="if(this.value)laRequestPlace('${id}',this.value)"><option value="">Anfrage erstellen …</option>${LA_PLACES.filter(v=>v!=='Lernatelier').map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('')}</select><button class="chip" onclick="laSetHelp('${id}',${!p.laNeedsHelp})">${p.laNeedsHelp?'Hilfe erledigt':'✋ Hilfe'}</button></td></tr>`;
   }
   html+='</tbody></table></div></div>';
   if(unknown.length)html+=`<div class="section">Noch keinem Lernatelier zugeordnet · ${unknown.length}</div><div class="card"><p class="mini">Diese SuS sind bereits in Kompass vorhanden und müssen nur einem Lernatelier zugeordnet werden.</p><div class="laTableWrap"><table class="studentTable"><tbody>${unknown.map(p=>`<tr><td>${esc(p.short||p.first+' '+p.last)}</td><td>${esc(p.team||'')}</td><td><select ${can?'':'disabled'} onchange="laUpdate('${laSafeId(p.id)}','learningAtelier',this.value)"><option value="">Bitte wählen</option>${LA_ROOMS.map(r=>`<option value="${r}">${r}</option>`).join('')}</select></td></tr>`).join('')}</tbody></table></div></div>`;
