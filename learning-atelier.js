@@ -81,7 +81,7 @@ function laBoardMove(id,place){
 }
 function laSaveRoomInfo(){
  if(!Auth.canLead(6)&&!Auth.isAdmin())return;
- const star=document.getElementById('laStarEdit')?.value||'';
+ const star=Store.data.settings?.laBoardInfo?.[laSelectedRoom]?.star||'';
  const duties=document.getElementById('laDutiesEdit')?.value||'';
  Store.data.settings=Store.data.settings||{};
  Store.data.settings.laBoardInfo=Store.data.settings.laBoardInfo||{};
@@ -98,6 +98,53 @@ function laSetRoomInfo(kind,value){
  Store.data.settings.laBoardInfo[laSelectedRoom]=info;
  Store.save('Lernatelier-Tafel aktualisiert',{room:laSelectedRoom,kind});render();
 }
+const LA_STAR_SUBJECTS=[['en','Englisch','red'],['de','Deutsch','yellow'],['ma','Mathematik','blue']];
+function laStars(p){return Array.isArray(p.laStars)?p.laStars:[];}
+function laToggleStar(id,subject){
+ if(!Auth.canLead(6)&&!Auth.isAdmin())return;
+ if(!LA_STAR_SUBJECTS.some(x=>x[0]===subject))return;
+ const p=laPupils().find(x=>String(x.id)===String(id));if(!p)return;
+ const old=laStars(p);
+ p.laStars=old.includes(subject)?old.filter(x=>x!==subject):[...old,subject];
+ Store.save('Fach-Teamstar geändert',{pupilId:p.id,subject});render();
+}
+function laInitDrag(){
+ const root=document.querySelector('.laKioskBoard');if(!root)return;
+ let drag=null;
+ root.querySelectorAll('.laPublicName[data-pupil]').forEach(node=>{
+  node.addEventListener('pointerdown',e=>{
+   if(e.button!==0)return;
+   drag={id:node.dataset.pupil,x:e.clientX,y:e.clientY,node,active:false,pointer:e.pointerId};
+   node.setPointerCapture(e.pointerId);
+  });
+  node.addEventListener('pointermove',e=>{
+   if(!drag||drag.pointer!==e.pointerId||drag.node!==node)return;
+   if(!drag.active&&Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>9){
+    drag.active=true;node.classList.add('laDragging');root.classList.add('laIsDragging');
+   }
+   if(drag.active){
+    const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('.laPublicPlace[data-place]');
+    root.querySelectorAll('.laPublicPlace').forEach(el=>el.classList.toggle('laDropTarget',el===target));
+   }
+  });
+  node.addEventListener('pointerup',e=>{
+   if(!drag||drag.pointer!==e.pointerId||drag.node!==node)return;
+   const wasDrag=drag.active,id=drag.id;
+   const target=wasDrag?document.elementFromPoint(e.clientX,e.clientY)?.closest('.laPublicPlace[data-place]'):null;
+   drag=null;node.classList.remove('laDragging');root.classList.remove('laIsDragging');
+   root.querySelectorAll('.laDropTarget').forEach(el=>el.classList.remove('laDropTarget'));
+   if(wasDrag){
+    node.dataset.dragHandled='yes';
+    if(target)laBoardMove(id,target.dataset.place);
+   }
+  });
+  node.addEventListener('pointercancel',()=>{drag=null;node.classList.remove('laDragging');root.classList.remove('laIsDragging');});
+ });
+}
+function laSelectBoardPupil(id,node){
+ if(node?.dataset.dragHandled==='yes'){delete node.dataset.dragHandled;return;}
+ laBoardSelectedId=id;render();
+}
 function laStudentPreview(){
  if(!Auth.canAccessGrade(6))return;
  const all=laPupils();
@@ -111,13 +158,13 @@ function laStudentPreview(){
  const info=Store.data.settings?.laBoardInfo?.[laSelectedRoom]||{};
  let html='<div class="laBoardTop"><div><div class="mini">KOMPASS · Jahrgang 6</div><h1>🏫 '+esc(laSelectedRoom)+'</h1><p>Unsere Lernatelier-Tafel · Wer ist wo?</p></div><button class="chip" onclick="laExitStudentPreview()">🔒 Lehrkraftmodus</button></div>';
  html+='<div class="laRoomSwitcher">'+LA_ROOMS.map(room=>'<button class="chip '+(room===laSelectedRoom?'dark':'')+'" onclick="laSelectedRoom=\''+room+'\';laBoardSelectedId=\'\';render()">'+room+' · '+all.filter(p=>laRoom(p)===room).length+'</button>').join('')+'</div>';
- html+='<div class="laBoardStatus"><div class="laStatusNoise"><span class="laStatusEmoji">'+noiseData[0]+'</span><div><span class="mini">Lärmampel</span><h2>'+noiseData[1]+'</h2></div></div><div><span class="mini">⭐ Teamstar</span><h2>'+esc(info.star||'Noch nicht eingetragen')+'</h2></div><div><span class="mini">🧹 Unsere Dienste</span><p class="laDutiesText">'+esc(info.duties||'Noch keine Dienste eingetragen')+'</p></div></div>';
+ html+='<div class="laBoardStatus"><div class="laStatusNoise"><span class="laStatusEmoji">'+noiseData[0]+'</span><div><span class="mini">Lärmampel</span><h2>'+noiseData[1]+'</h2></div></div><div><span class="mini">⭐ Fach-Teamstars</span><p>Die Sterne stehen direkt über den Namen.</p><div class="laStarLegend"><span class="laStarRed">★ Englisch</span><span class="laStarYellow">★ Deutsch</span><span class="laStarBlue">★ Mathe</span></div></div><div><span class="mini">🧹 Unsere Dienste</span><p class="laDutiesText">'+esc(info.duties||'Noch keine Dienste eingetragen')+'</p></div></div>';
  html+='<p class="laBoardInstructions">Tippe auf deinen Namen und wähle dann deinen Lernort. ✋ bedeutet: Ich brauche Hilfe.</p>';
  html+='<div class="laPublicBoard">';
  for(const place of LA_PLACES){
   const group=pupils.filter(p=>(p.learningPlace||'Lernatelier')===place);
-  html+='<section class="laPublicPlace"><h2>'+esc(place)+' <span>'+group.length+'</span></h2><div class="laPublicNames">';
-  html+=group.map(p=>'<button class="laPublicName '+(String(p.id)===String(laBoardSelectedId)?'laChosen':'')+'" onclick="laBoardSelectedId=\''+esc(p.id)+'\';render()"><span class="dot '+teamColor(p.team)+'"></span><span>'+esc(p.short||p.first+' '+p.last)+'</span>'+(p.laNeedsHelp?' <span title="Braucht Hilfe">✋</span>':'')+'</button>').join('')||'<p class="mini">Hier ist gerade niemand.</p>';
+  html+='<section class="laPublicPlace" data-place="'+esc(place)+'"><h2>'+esc(place)+' <span>'+group.length+'</span></h2><div class="laPublicNames">';
+  html+=group.map(p=>'<button type="button" data-pupil="'+esc(p.id)+'" class="laPublicName '+(String(p.id)===String(laBoardSelectedId)?'laChosen':'')+'" onclick="laSelectBoardPupil(\''+esc(p.id)+'\',this)"><span class="laPupilStars">'+LA_STAR_SUBJECTS.filter(x=>laStars(p).includes(x[0])).map(x=>'<span class="laStar laStar-'+x[2]+'" title="Teamstar '+x[1]+'">★</span>').join('')+'</span><span class="laNameLine"><span class="dot '+teamColor(p.team)+'"></span><span>'+esc(p.short||p.first+' '+p.last)+'</span>'+(p.laNeedsHelp?' <span title="Braucht Hilfe">✋</span>':'')+'</span></button>').join('')||'<p class="mini">Hier ist gerade niemand.</p>';
   html+='</div></section>';
  }
  html+='</div>';
@@ -130,6 +177,7 @@ function laStudentPreview(){
  }
  html+='<p class="mini laBoardFoot">Vorschau im angemeldeten Lehrkraftkonto. Die Standortwechsel sind hier direkt möglich; gesicherte Schülerzugänge und automatische Bewegungsrechte werden noch entwickelt.</p>';
  document.getElementById('app').innerHTML='<main class="laStudentFullscreen laKioskBoard">'+html+'</main>';
+ laInitDrag();
 }
 function learningAtelier(){
   if(!Auth.canAccessGrade(6)){shell(header('Lernatelier')+'<div class="card">Kein Zugriff auf Jahrgang 6.</div>');return;}
@@ -144,7 +192,7 @@ function learningAtelier(){
   if(unknown.length&&can)html+='<div class="card"><b>Sammelzuordnung</b><p class="mini">Noch nicht zugeordnet: '+unknown.length+' SuS aus Stufe 6. Bestehende Lernatelier-Zuordnungen bleiben unverändert.</p><button class="chip dark" onclick="laAssignUnassigned(\'LA 1\')">Alle noch nicht zugeordneten SuS → LA 1</button></div>';
   if(unknown.length)html+='<div class="card"><b>Hinweis: '+unknown.length+' SuS sind noch keinem Lernatelier zugeordnet.</b><p class="mini">Bitte unten im Bereich „Noch keinem Lernatelier zugeordnet“ die Zuordnung vornehmen. Die bisherige Auswahl wurde möglicherweise wegen eines Fehlers nicht gespeichert.</p></div>';
   const boardInfo=Store.data.settings?.laBoardInfo?.[laSelectedRoom]||{};
-  html+='<div class="card"><h2>⭐ Teamstar & 🧹 Lernatelier-Dienste</h2><p class="mini">Diese Informationen erscheinen oben auf der Schülertafel.</p><label>Teamstar</label><input id="laStarEdit" maxlength="150" value="'+esc(boardInfo.star||'')+'" placeholder="Name oder Team" '+(can?'':'disabled')+'><label>Dienste (z. B. Tafeldienst, Ordnungsdienst)</label><textarea id="laDutiesEdit" rows="3" '+(can?'':'disabled')+'>'+esc(boardInfo.duties||'')+'</textarea>'+(can?'<button class="chip dark" onclick="laSaveRoomInfo()">Dienste & Teamstar speichern</button>':'')+'</div>';
+  html+='<div class="card"><h2>🧹 Lernatelier-Dienste</h2><p class="mini">Teamstars vergibst du jetzt pro Kind und Fach in der Schülerverwaltung.</p><label>Dienste (z. B. Tafeldienst, Ordnungsdienst)</label><textarea id="laDutiesEdit" rows="3" '+(can?'':'disabled')+'>'+esc(boardInfo.duties||'')+'</textarea>'+(can?'<button class="chip dark" onclick="laSaveRoomInfo()">Dienste & Teamstar speichern</button>':'')+'</div>';
   html+=`<div class="card"><h2>Lärmampel · ${esc(laSelectedRoom)}</h2><div class="laLights">${[['green','🟢','Leise sprechen'],['yellow','🟡','Flüstern'],['red','🔴','Ruhe']].map(([v,i,l])=>`<button class="chip ${noise===v?'dark':''}" ${can?'':'disabled'} onclick="laNoise(laSelectedRoom,'${v}')">${i} ${l}</button>`).join('')}</div></div>`;
   const pending=current.filter(p=>p.laRequest?.status==='pending');
   const help=current.filter(p=>p.laNeedsHelp);
@@ -158,10 +206,10 @@ function learningAtelier(){
   for(const place of LA_PLACES){const ps=current.filter(p=>(p.learningPlace||'Lernatelier')===place);html+=`<div class="card"><h2>${esc(place)} <span class="mini">(${ps.length})</span></h2><div class="laNames">${ps.map(p=>`<span class="laName"><span class="dot ${teamColor(p.team)}"></span>${esc(p.short||p.first+' '+p.last)}</span>`).join('')||'<span class="mini">Niemand eingetragen</span>'}</div></div>`;}
   html+='</div><div class="section">Schülerverwaltung</div>';
   if(!can)html+='<div class="card">Die Zuordnungen und Graduierungen können nur durch die Stufenleitung geändert werden.</div>';
-  html+='<div class="card"><div class="laTableWrap"><table class="studentTable"><thead><tr><th>Name</th><th>Team</th><th>Graduierung</th><th>Standort</th><th>Stamm-LA</th><th>Aktionen</th></tr></thead><tbody>';
+  html+='<div class="card"><div class="laTableWrap"><table class="studentTable"><thead><tr><th>Name</th><th>Team</th><th>⭐ Fach-Teamstar</th><th>Graduierung</th><th>Standort</th><th>Stamm-LA</th><th>Aktionen</th></tr></thead><tbody>';
   for(const p of current){
     const id=laSafeId(p.id),sel=(key,values,currentValue)=>`<select aria-label="${esc(key)} für ${esc(p.short||p.first)}" ${can?'':'disabled'} onchange="laUpdate('${id}','${key}',this.value)">${values.map(v=>`<option value="${esc(v)}" ${currentValue===v?'selected':''}>${esc(v)}</option>`).join('')}</select>`;
-    html+=`<tr><td>${esc(p.short||p.first+' '+p.last)}</td><td>${esc(p.team||'')}</td><td>${sel('graduation',LA_LEVELS,p.graduation||'Hiker')}</td><td>${sel('learningPlace',LA_PLACES,p.learningPlace||'Lernatelier')}</td><td>${sel('learningAtelier',LA_ROOMS,laRoom(p))}</td><td><select aria-label="Lernort anfragen" onchange="if(this.value)laRequestPlace('${id}',this.value)"><option value="">Anfrage erstellen …</option>${LA_PLACES.filter(v=>v!=='Lernatelier').map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('')}</select><button class="chip" onclick="laSetHelp('${id}',${!p.laNeedsHelp})">${p.laNeedsHelp?'Hilfe erledigt':'✋ Hilfe'}</button></td></tr>`;
+    html+=`<tr><td>${esc(p.short||p.first+' '+p.last)}</td><td>${esc(p.team||'')}</td><td><div class="laStarControls">${LA_STAR_SUBJECTS.map(([subject,label,color])=>`<button type="button" class="laStarToggle laStar-${color} ${laStars(p).includes(subject)?'selected':''}" ${can?'':'disabled'} title="Teamstar ${label}" onclick="laToggleStar('${id}','${subject}')">★</button>`).join('')}</div></td><td>${sel('graduation',LA_LEVELS,p.graduation||'Hiker')}</td><td>${sel('learningPlace',LA_PLACES,p.learningPlace||'Lernatelier')}</td><td>${sel('learningAtelier',LA_ROOMS,laRoom(p))}</td><td><select aria-label="Lernort anfragen" onchange="if(this.value)laRequestPlace('${id}',this.value)"><option value="">Anfrage erstellen …</option>${LA_PLACES.filter(v=>v!=='Lernatelier').map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('')}</select><button class="chip" onclick="laSetHelp('${id}',${!p.laNeedsHelp})">${p.laNeedsHelp?'Hilfe erledigt':'✋ Hilfe'}</button></td></tr>`;
   }
   html+='</tbody></table></div></div>';
   if(unknown.length)html+=`<div class="section">Noch keinem Lernatelier zugeordnet · ${unknown.length}</div><div class="card"><p class="mini">Diese SuS sind bereits in Kompass vorhanden und müssen nur einem Lernatelier zugeordnet werden.</p><div class="laTableWrap"><table class="studentTable"><tbody>${unknown.map(p=>`<tr><td>${esc(p.short||p.first+' '+p.last)}</td><td>${esc(p.team||'')}</td><td><select ${can?'':'disabled'} onchange="laUpdate('${laSafeId(p.id)}','learningAtelier',this.value)"><option value="">Bitte wählen</option>${LA_ROOMS.map(r=>`<option value="${r}">${r}</option>`).join('')}</select></td></tr>`).join('')}</tbody></table></div></div>`;
