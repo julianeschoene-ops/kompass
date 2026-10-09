@@ -79,6 +79,15 @@ function laBoardMove(id,place){
  Store.save('Standorttafel: Lernort gewechselt',{pupilId:p.id,place});
  laBoardSelectedId='';render();
 }
+function laSaveRoomInfo(){
+ if(!Auth.canLead(6)&&!Auth.isAdmin())return;
+ const star=document.getElementById('laStarEdit')?.value||'';
+ const duties=document.getElementById('laDutiesEdit')?.value||'';
+ Store.data.settings=Store.data.settings||{};
+ Store.data.settings.laBoardInfo=Store.data.settings.laBoardInfo||{};
+ Store.data.settings.laBoardInfo[laSelectedRoom]={star:star.slice(0,150),duties:duties.slice(0,500)};
+ Store.save('Teamstar und Dienste gespeichert',{room:laSelectedRoom});render();
+}
 function laSetRoomInfo(kind,value){
  if(!Auth.canLead(6)&&!Auth.isAdmin())return;
  if(!LA_ROOMS.includes(laSelectedRoom)||!['duties','star'].includes(kind))return;
@@ -135,7 +144,7 @@ function learningAtelier(){
   if(unknown.length&&can)html+='<div class="card"><b>Sammelzuordnung</b><p class="mini">Noch nicht zugeordnet: '+unknown.length+' SuS aus Stufe 6. Bestehende Lernatelier-Zuordnungen bleiben unverändert.</p><button class="chip dark" onclick="laAssignUnassigned(\'LA 1\')">Alle noch nicht zugeordneten SuS → LA 1</button></div>';
   if(unknown.length)html+='<div class="card"><b>Hinweis: '+unknown.length+' SuS sind noch keinem Lernatelier zugeordnet.</b><p class="mini">Bitte unten im Bereich „Noch keinem Lernatelier zugeordnet“ die Zuordnung vornehmen. Die bisherige Auswahl wurde möglicherweise wegen eines Fehlers nicht gespeichert.</p></div>';
   const boardInfo=Store.data.settings?.laBoardInfo?.[laSelectedRoom]||{};
-  html+='<div class="card"><h2>⭐ Teamstar & 🧹 Lernatelier-Dienste</h2><p class="mini">Diese Informationen erscheinen oben auf der Schülertafel.</p><label>Teamstar</label><input id="laStarEdit" maxlength="150" value="'+esc(boardInfo.star||'')+'" placeholder="Name oder Team" '+(can?'':'disabled')+'><label>Dienste (z. B. Tafeldienst, Ordnungsdienst)</label><textarea id="laDutiesEdit" rows="3" '+(can?'':'disabled')+'>'+esc(boardInfo.duties||'')+'</textarea>'+(can?'<button class="chip dark" onclick="laSetRoomInfo(\'star\',document.getElementById(\'laStarEdit\').value);laSetRoomInfo(\'duties\',document.getElementById(\'laDutiesEdit\').value)">Dienste & Teamstar speichern</button>':'')+'</div>';
+  html+='<div class="card"><h2>⭐ Teamstar & 🧹 Lernatelier-Dienste</h2><p class="mini">Diese Informationen erscheinen oben auf der Schülertafel.</p><label>Teamstar</label><input id="laStarEdit" maxlength="150" value="'+esc(boardInfo.star||'')+'" placeholder="Name oder Team" '+(can?'':'disabled')+'><label>Dienste (z. B. Tafeldienst, Ordnungsdienst)</label><textarea id="laDutiesEdit" rows="3" '+(can?'':'disabled')+'>'+esc(boardInfo.duties||'')+'</textarea>'+(can?'<button class="chip dark" onclick="laSaveRoomInfo()">Dienste & Teamstar speichern</button>':'')+'</div>';
   html+=`<div class="card"><h2>Lärmampel · ${esc(laSelectedRoom)}</h2><div class="laLights">${[['green','🟢','Leise sprechen'],['yellow','🟡','Flüstern'],['red','🔴','Ruhe']].map(([v,i,l])=>`<button class="chip ${noise===v?'dark':''}" ${can?'':'disabled'} onclick="laNoise(laSelectedRoom,'${v}')">${i} ${l}</button>`).join('')}</div></div>`;
   const pending=current.filter(p=>p.laRequest?.status==='pending');
   const help=current.filter(p=>p.laNeedsHelp);
