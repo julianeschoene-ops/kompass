@@ -541,11 +541,14 @@ function laLimitedView(){
    const place=esc(p.learningPlace||'Lernatelier');
    const id=String(p.id).replace(/[^a-zA-Z0-9_-]/g,'');
    const actions='<button class="chip" onclick="laLimitedAction(\''+id+'\',\'help\',\''+(!p.laNeedsHelp)+'\')">'+(p.laNeedsHelp?'✓ Erledigt':'✋ Hilfe')+'</button>';
+   const pending=p.laRequest?.status==='pending'
+     ?'<div class="mini">Anfrage: '+esc(p.laRequest.place||'')+'</div>'+(laLimitedMode==='teacher'?'<button class="chip" onclick="laLimitedAction(\''+id+'\',\'approve\',null)">✓ Erlauben</button><button class="chip" onclick="laLimitedAction(\''+id+'\',\'deny\',null)">Ablehnen</button>':'')
+     :'';
    const places='<select onchange="laLimitedAction(\''+id+'\',\''+(laLimitedMode==='teacher'?'place':'request')+'\',this.value);this.selectedIndex=0"><option value="">Lernort wählen</option>'+LA_DEFAULT_PLACES.filter(v=>v!=='Lernatelier').map(v=>'<option value="'+esc(v)+'">'+esc(v)+'</option>').join('')+'</select>';
-   return '<div class="laQueue" data-la-name="'+esc([p.first,p.last,p.short,p.className].join(' ').toLocaleLowerCase('de'))+'"><div><b>'+name+'</b>'+(laLimitedMode==='teacher'?'<div class="mini">'+room+' · '+esc(p.className||'')+'</div>':'')+'</div><span class="statusPill">'+place+'</span>'+actions+places+'</div>';
+   return '<div class="laQueue" data-la-name="'+esc([p.first,p.last,p.short,p.className].join(' ').toLocaleLowerCase('de'))+'"><div><b>'+name+'</b>'+(laLimitedMode==='teacher'?'<div class="mini">'+room+' · '+esc(p.className||'')+'</div>':'')+'</div><span class="statusPill">'+place+'</span>'+pending+actions+places+'</div>';
  }).join('')||'<p class="mini">Keine passenden Schüler*innen.</p>';
  const controls=laLimitedMode==='teacher'
    ?'<div class="toolbar"><button class="chip" onclick="laLimitedRefresh()">↻ Aktualisieren</button><button class="chip dark" onclick="laLimitedStudent()">👩‍🎓 Schüleransicht</button></div><div class="card"><h2>🔎 Schüler finden · gesamte Stufe</h2><input type="search" placeholder="Name suchen …" value="'+esc(laLimitedQuery)+'" oninput="laLimitedSearch(this.value)"><p class="mini">Alle drei Lernateliers · schreibgeschützte Übersicht</p></div>'
    :'<div class="toolbar"><button class="chip" onclick="laLimitedTeacher()">🔒 Lehrkraftmodus</button></div><div class="toolbar">'+roomTabs+'</div>';
- root.innerHTML='<main class="main"><h1>Lernatelier · Stufe '+laGrade+'</h1><div class="toolbar">'+tabs+'</div>'+controls+'<div class="card"><h2>'+(laLimitedMode==='teacher'?'Alle Lernateliers':esc(laLimitedRoom))+'</h2>'+entries+'</div><p class="mini">Leseansicht · Standortwechsel und Hilfeanfragen sind noch nicht freigeschaltet.</p></main>';
+ root.innerHTML='<main class="main"><h1>Lernatelier · Stufe '+laGrade+'</h1><div class="toolbar">'+tabs+'</div>'+controls+'<div class="card"><h2>'+(laLimitedMode==='teacher'?'Alle Lernateliers':esc(laLimitedRoom))+'</h2>'+entries+'</div><p class="mini">Änderungen werden in der separaten Lernatelier-Tabelle gespeichert. Voraussetzung: SQL-Migration UPDATE_LERNATELIER_AKTIONEN.sql.</p></main>';
 }
