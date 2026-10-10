@@ -508,7 +508,7 @@ function laLimitedStartPoll(){
  if(laLimitedPollStarted)return;
  laLimitedPollStarted=true;
  setInterval(()=>{
-  if(!Auth.isLernatelier()||laLimitedBusy)return;
+  if(!Auth.isLernatelier()||laLimitedBusy||document.hidden)return;
   const grade=laGrade;
   Auth.cloudClient.from('kompass_lernatelier_state').select('payload').eq('grade',grade).maybeSingle().then(({data,error})=>{
    if(error||!Array.isArray(data?.payload?.pupils))return;
