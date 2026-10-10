@@ -205,6 +205,11 @@ const Sync={
   async saveCloudAccount({userId,name,role='teacher',active=false,gradeAccess={},coachTeams={},coachingGroups={}}){
     const data=await this.adminAccountAction({action:'saveAccount',userId,name,role,active,gradeAccess,coachTeams,coachingGroups});
     if(data?.verified!==true)throw new Error('Die Kontoänderungen wurden serverseitig nicht bestätigt.');
+    if(role==='lernatelier'){
+      const accounts=await this.cloudProfiles();
+      const saved=accounts.find(a=>a.id===userId);
+      if(!saved||saved.role!=='lernatelier')throw new Error('Die eingeschränkte Lernatelier-Rolle wurde nicht bestätigt. Konto bitte nicht auf Schüler-iPads verwenden.');
+    }
     Store.log('Cloud-Benutzer gespeichert',{target:userId,name,role,active,gradeAccess,coachTeams,coachingGroups});
     return data;
   },
