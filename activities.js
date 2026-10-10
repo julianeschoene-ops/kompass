@@ -68,9 +68,9 @@ function saveCreativeAssessment(activityId,pupilId,field,value){
 function creativeAssessmentControls(a,p,r){
  if(a.type!=='Kreativband')return '';
  const assessment=r.creativeAssessment||{};
- const level=assessment.level||'',color=assessment.color||'';
  const opts=(values,selected)=>values.map(([v,label])=>'<option value="'+v+'" '+(v===selected?'selected':'')+'>'+label+'</option>').join('');
- return '<div class="creativeInlineAssessment"><label class="mini">Niveau <select aria-label="Kreativband Niveau für '+esc(p.short||p.first)+'" onchange="saveCreativeAssessment(\\''+a.id+'\\',\\''+p.id+'\\',\\'level\\',this.value)">'+opts([['','–'],['G','G'],['M','M'],['E','E']],level)+'</select></label><label class="mini">Bewertung <select aria-label="Kreativband Bewertung für '+esc(p.short||p.first)+'" onchange="saveCreativeAssessment(\\''+a.id+'\\',\\''+p.id+'\\',\\'color\\',this.value)">'+opts([['','–'],['red','🔴 Rot'],['yellow','🟡 Gelb'],['green','🟢 Grün']],color)+'</select></label></div>';
+ const attrs=(field)=>'onchange="saveCreativeAssessment('+JSON.stringify(a.id)+','+JSON.stringify(p.id)+','+JSON.stringify(field)+',this.value)"';
+ return '<div class="creativeInlineAssessment"><label class="mini">Niveau <select aria-label="Niveau für '+esc(p.short||p.first)+'" '+attrs('level')+'>'+opts([['','–'],['G','G'],['M','M'],['E','E']],assessment.level||'')+'</select></label> <label class="mini">Bewertung <select aria-label="Bewertung für '+esc(p.short||p.first)+'" '+attrs('color')+'>'+opts([['','–'],['red','🔴 Rot'],['yellow','🟡 Gelb'],['green','🟢 Grün']],assessment.color||'')+'</select></label></div>';
 }
 function activityQuickRow(a,p){
   const r=activityRecord(a.id,p.id),att=isCountableActivity(a)?activityAttendance(a.id,p.id):null;
