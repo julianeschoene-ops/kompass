@@ -481,32 +481,60 @@ function learningAtelier(){
   shell(html);
 }
 
-let laLimitedRows={};
+
+/* Restricted account: isolated LA data only. Never load full grade records. */
+let laLimitedRows={},laLimitedMode='teacher',laLimitedRoom='LA 1',laLimitedQuery='',laLimitedBusy=false;
 async function laLoadLimited(grade){
- const result=await Auth.cloudClient.from('kompass_lernatelier_state').select('payload').eq('grade',grade).maybeSingle();
- if(result.error)throw result.error;
- if(!Array.isArray(result.data?.payload?.pupils))throw new Error('Lernatelier-Daten fehlen.');
- laLimitedRows[grade]=result.data.payload.pupils;
- laLimitedView();
+ if(laLimitedBusy)return;
+ laLimitedBusy=true;
+ try{
+   const {data,error}=await Auth.cloudClient.from('kompass_lernatelier_state')
+     .select('payload').eq('grade',Number(grade)).maybeSingle();
+   if(error)throw error;
+   if(!Array.isArray(data?.payload?.pupils))throw new Error('Für diese Stufe fehlen Lernatelier-Daten.');
+   laLimitedRows[grade]=data.payload.pupils;
+   if(Auth.isLernatelier())laLimitedView();
+ }catch(e){
+   const root=document.getElementById('app');
+   if(root)root.textContent='Lernatelier konnte nicht geladen werden: '+(e.message||String(e));
+ }finally{laLimitedBusy=false;}
+}
+function laLimitedRefresh(){delete laLimitedRows[laGrade];laLimitedView();}
+function laLimitedGrade(g){if(!Auth.canAccessGrade(g))return;laGrade=Number(g);laLimitedQuery='';laLimitedView();}
+function laLimitedSearch(v){laLimitedQuery=String(v||'');laLimitedView();}
+function laLimitedSetRoom(r){if(!LA_ROOMS.includes(r))return;laLimitedRoom=r;laLimitedView();}
+function laLimitedStudent(){laLimitedMode='student';laLimitedQuery='';laSetKioskLock(true);laLimitedView();}
+function laLimitedTeacher(){
+ if(!Auth.currentUser()||Auth.session?.mode!=='cloud')return;
+ const password=prompt('Passwort des Lernatelier-Accounts zum Entsperren eingeben:');
+ if(!password)return;
+ Auth.verifyCloudPassword(Auth.currentUser().username,password).then(ok=>{
+   if(!ok){alert('Passwort nicht korrekt.');return;}
+   laSetKioskLock(false);laLimitedMode='teacher';laLimitedView();
+ }).catch(()=>alert('Entsperren fehlgeschlagen.'));
 }
 function laLimitedView(){
  const grades=Auth.allowedGrades();
  if(!grades.includes(laGrade))laGrade=grades[0]||6;
  const root=document.getElementById('app');
- if(!grades.length){root.textContent='Keine Stufe freigegeben.';return;}
+ if(!root)return;
+ if(!grades.length){root.textContent='Für diesen Account sind noch keine Stufen freigegeben.';return;}
+ if(typeof laKioskLocked==='function'&&laKioskLocked())laLimitedMode='student';
  const pupils=laLimitedRows[laGrade];
- if(!pupils){
-   root.textContent='Lernatelier wird geladen …';
-   laLoadLimited(laGrade).catch(e=>{root.textContent='Laden fehlgeschlagen: '+e.message;});
-   return;
- }
- const tabs=grades.map(g=>'<button class="chip" onclick="laGrade='+g+';laLimitedView()">Stufe '+g+'</button>').join('');
- const rooms=['LA 1','LA 2','LA 3'];
- const cards=rooms.map(room=>{
-   const entries=pupils.filter(p=>p.learningAtelier===room).map(p=>
-     '<div class="laQueue"><b>'+esc(p.short||[p.first,p.last].filter(Boolean).join(' '))+'</b><span class="statusPill">'+esc(p.learningPlace||'Lernatelier')+'</span></div>'
-   ).join('');
-   return '<div class="card"><h2>'+room+'</h2>'+entries+'</div>';
- }).join('');
- root.innerHTML='<main class="main"><h1>Lernatelier · Stufe '+laGrade+'</h1><p>Geschützte Leseansicht</p><div class="toolbar">'+tabs+'</div>'+cards+'</main>';
+ if(!pupils){root.textContent='Lernatelier wird geladen …';laLoadLimited(laGrade);return;}
+ const tabs=grades.map(g=>'<button class="chip '+(g===laGrade?'dark':'')+'" onclick="laLimitedGrade('+g+')">Stufe '+g+'</button>').join('');
+ const roomTabs=LA_ROOMS.map(r=>'<button class="chip '+(r===laLimitedRoom?'dark':'')+'" onclick="laLimitedSetRoom(\''+r+'\')">'+r+'</button>').join('');
+ const visible=laLimitedMode==='student'?pupils.filter(p=>p.learningAtelier===laLimitedRoom):pupils;
+ const query=laLimitedMode==='teacher'?laLimitedQuery.toLocaleLowerCase('de').trim():'';
+ const filtered=visible.filter(p=>!p.archived&&(!query||[p.first,p.last,p.short,p.className].some(x=>String(x||'').toLocaleLowerCase('de').includes(query))));
+ const entries=filtered.map(p=>{
+   const name=esc(p.short||[p.first,p.last].filter(Boolean).join(' '));
+   const room=esc(p.learningAtelier||'Ohne LA');
+   const place=esc(p.learningPlace||'Lernatelier');
+   return '<div class="laQueue"><div><b>'+name+'</b>'+(laLimitedMode==='teacher'?'<div class="mini">'+room+' · '+esc(p.className||'')+'</div>':'')+'</div><span class="statusPill">'+place+'</span></div>';
+ }).join('')||'<p class="mini">Keine passenden Schüler*innen.</p>';
+ const controls=laLimitedMode==='teacher'
+   ?'<div class="toolbar"><button class="chip" onclick="laLimitedRefresh()">↻ Aktualisieren</button><button class="chip dark" onclick="laLimitedStudent()">👩‍🎓 Schüleransicht</button></div><div class="card"><h2>🔎 Schüler finden · gesamte Stufe</h2><input type="search" placeholder="Name suchen …" value="'+esc(laLimitedQuery)+'" oninput="laLimitedSearch(this.value)"><p class="mini">Alle drei Lernateliers · schreibgeschützte Übersicht</p></div>'
+   :'<div class="toolbar"><button class="chip" onclick="laLimitedTeacher()">🔒 Lehrkraftmodus</button></div><div class="toolbar">'+roomTabs+'</div>';
+ root.innerHTML='<main class="main"><h1>Lernatelier · Stufe '+laGrade+'</h1><div class="toolbar">'+tabs+'</div>'+controls+'<div class="card"><h2>'+(laLimitedMode==='teacher'?'Alle Lernateliers':esc(laLimitedRoom))+'</h2>'+entries+'</div><p class="mini">Leseansicht · Standortwechsel und Hilfeanfragen sind noch nicht freigeschaltet.</p></main>';
 }
