@@ -23,7 +23,7 @@ function laSavePlaces(){
  Store.data.settings=Store.data.settings||{};
  Store.data.settings[laSettingKey('laPlaces')]=Store.data.settings[laSettingKey('laPlaces')]||{};
  Store.data.settings[laSettingKey('laPlaces')][laSelectedRoom]=['Lernatelier',...names.filter(x=>x!=='Lernatelier')];
- Store.save('Lernorte aktualisiert',{room:laSelectedRoom});render();
+ Store.save('Lernorte aktualisiert',{room:laSelectedRoom});laPublishSharedSettings().catch(e=>alert('Lernatelier-Cloud nicht aktualisiert: '+e.message));render();
 }
 
 let laSelectedRoom='LA 1';
@@ -373,13 +373,30 @@ function laEditDailyBoard(){
  const d=laDayData(),entry=laGradeSettings('laDailyBoard')?.[d.date]||{};
  State.dialog={mode:'laDailyBoard',date:d.date};renderDialog();
 }
+async function laPublishSharedSettings(){
+ if(Auth.session?.mode!=='cloud'||!Auth.cloudClient)return;
+ const settings=Store.data.settings||{};
+ const grade=laGrade;
+ const suffix=grade===6?'':'Grade'+grade;
+ const dailyBoard=settings['laDailyBoard'+suffix]||{};
+ const places=settings['laPlaces'+suffix]||{};
+ const noise=settings['laNoise'+suffix]||{};
+ const calendar=(Store.calendarEvents||[]).filter(e=>
+  (!e.grade||e.grade==='all'||Number(e.grade)===grade)&&
+  (!e.visibility||e.visibility==='all'||e.visibility==='students')
+ ).map(e=>({date:e.date,endDate:e.endDate||e.date,title:e.title,time:e.time||'',location:e.location||''}));
+ const {error}=await Auth.cloudClient.rpc('kompass_la_publish',{
+  p_grade:grade,p_daily_board:dailyBoard,p_places:places,p_noise:noise,p_calendar:calendar
+ });
+ if(error)throw error;
+}
 function laSaveDailyBoard(){
  if(!Auth.isAdmin()&&!Auth.canLead(laGrade))return;
  const date=laDayData().date;if(!/^\d{4}-\d{2}-\d{2}$/.test(date||''))return;
  Store.data.settings=Store.data.settings||{};
  Store.data.settings[laSettingKey('laDailyBoard')]=Store.data.settings[laSettingKey('laDailyBoard')]||{};
  Store.data.settings[laSettingKey('laDailyBoard')][date]={notes:document.getElementById('laDailyNotes')?.value||'',news:document.getElementById('laDailyNews')?.value||'',motivation:document.getElementById('laDailyMotivation')?.value||'',published:!!document.getElementById('laDailyPublish')?.checked,updatedAt:new Date().toISOString()};
- Store.save('Tagesübersicht gespeichert',{date});State.dialog=null;render();
+ Store.save('Tagesübersicht gespeichert',{date});laPublishSharedSettings().catch(e=>alert('Lernatelier-Cloud nicht aktualisiert: '+e.message));State.dialog=null;render();
 }
 
 function laDailyEditor(){if(!Auth.isAdmin()&&!Auth.canLead(laGrade))return '';const d=laDayData(),x=laGradeSettings('laDailyBoard')?.[d.date]||{};return '<div class="card"><h2>☀️ Tagesübersicht vorbereiten</h2><label>Datum auswählen</label><input type="date" value="'+esc(d.date)+'" onchange="laBoardDate=this.value;render()"><p class="mini">Du kannst beliebige zukünftige Tage vorbereiten. Die Veröffentlichung gilt nur für das gewählte Datum.</p><label>Hinweise und Vertretungen (nur für Schüler freigegebene Inhalte)</label><textarea id="laDailyNotes" rows="5">'+esc(x.notes||'')+'</textarea><label>Geprüfte Weltnachricht (mit Quelle)</label><textarea id="laDailyNews" rows="4">'+esc(x.news||'')+'</textarea><label>Motivationsspruch des Tages (optional – sonst automatisch)</label><textarea id="laDailyMotivation" rows="2">'+esc(x.motivation||'')+'</textarea><label class="check"><input type="checkbox" id="laDailyPublish" '+(x.published?'checked':'')+'> Für alle Lernateliers veröffentlichen</label><button class="chip dark" onclick="laSaveDailyBoard()">Tagesübersicht speichern</button></div>';}
