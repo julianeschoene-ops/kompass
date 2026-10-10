@@ -571,7 +571,7 @@ function laLimitedGrade(g){if(!Auth.canAccessGrade(g))return;laGrade=Number(g);l
 function laLimitedSearch(v){laLimitedQuery=String(v||'');const q=laLimitedQuery.toLocaleLowerCase('de').trim();document.querySelectorAll('[data-la-name]').forEach(el=>{el.style.display=!q||el.getAttribute('data-la-name').includes(q)?'':'none';});}
 function laLimitedSetRoom(r){if(!LA_ROOMS.includes(r))return;laLimitedTab='room';laStudentTab='room';laLimitedRoom=r;laLimitedSelectedId='';laLimitedView();}
 function laLimitedSelect(id){laLimitedSelectedId=String(id);laBoardSelectedId=String(id);laLimitedView();}
-function laLimitedStudent(){laLimitedMode='student';laLimitedSelectedId='';laLimitedQuery='';laSetKioskLock(true);laLimitedView();}
+function laLimitedStudent(){laSelectedRoom=laLimitedRoom;laStudentTab='room';laBoardSelectedId='';laLimitedMode='student';laLimitedSelectedId='';laLimitedQuery='';laSetKioskLock(true);laLimitedView();}
 function laLimitedTeacher(){
  if(!Auth.currentUser()||Auth.session?.mode!=='cloud')return;
  const password=prompt('Passwort des Lernatelier-Accounts zum Entsperren eingeben:');
@@ -625,9 +625,9 @@ function laLimitedView(){
  const pupils=laLimitedRows[laGrade];
  if(!pupils){root.textContent='Lernatelier wird geladen …';laLoadLimited(laGrade);return;}
  if(laLimitedMode==='student'){
-  laSelectedRoom=laLimitedRoom;
-  laStudentTab=laLimitedTab==='news'?'news':'room';
-  laBoardSelectedId=laLimitedSelectedId;
+  laLimitedRoom=laSelectedRoom;
+  laLimitedTab=laStudentTab;
+  laLimitedSelectedId=laBoardSelectedId;
   laStudentPreview();return;
  }
  const tabs=laLimitedMode==='teacher'?grades.map(g=>'<button class="chip '+(g===laGrade?'dark':'')+'" onclick="laLimitedGrade('+g+')">Stufe '+g+'</button>').join(''):'';
