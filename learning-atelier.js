@@ -561,7 +561,7 @@ function laLimitedView(){
  if(typeof laKioskLocked==='function'&&laKioskLocked())laLimitedMode='student';
  const pupils=laLimitedRows[laGrade];
  if(!pupils){root.textContent='Lernatelier wird geladen …';laLoadLimited(laGrade);return;}
- const tabs=grades.map(g=>'<button class="chip '+(g===laGrade?'dark':'')+'" onclick="laLimitedGrade('+g+')">Stufe '+g+'</button>').join('');
+ const tabs=laLimitedMode==='teacher'?grades.map(g=>'<button class="chip '+(g===laGrade?'dark':'')+'" onclick="laLimitedGrade('+g+')">Stufe '+g+'</button>').join(''):'';
  const roomTabs=LA_ROOMS.map(r=>'<button class="chip '+(r===laLimitedRoom?'dark':'')+'" onclick="laLimitedSetRoom(\''+r+'\')">'+r+'</button>').join('');
  const visible=laLimitedMode==='student'?pupils.filter(p=>p.learningAtelier===laLimitedRoom):pupils;
  const query=laLimitedMode==='teacher'?laLimitedQuery.toLocaleLowerCase('de').trim():'';
