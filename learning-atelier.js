@@ -199,11 +199,11 @@ function laTodayBoard(){
  const notes=published?String(current.notes||'').trim():'';
  const news=published?String(current.news||'').trim():'';
  return '<section class="laTodayBoard"><div class="laTodayHeading"><h2>☀️ Heute bei uns</h2><span>'+esc(d.label)+'</span></div>'+
- '<div class="laTodayGrid"><div class="laTodaySection"><h3>📣 Infos & Vertretungen</h3><p>'+ (notes?esc(notes).replace(/\\n/g,'<br>'):'Heute sind noch keine Änderungen veröffentlicht.')+'</p></div>'+
+ '<div class="laTodayGrid"><div class="laTodaySection"><h3>📣 Infos & Vertretungen</h3><p>'+ (notes?esc(notes).replace(/\n/g,'<br>'):'Heute sind noch keine Änderungen veröffentlicht.')+'</p></div>'+
  '<div class="laTodaySection"><h3>🎨 Kreativband</h3>'+list(LA_DAY_OFFERS[d.day]||[])+'</div>'+
  '<div class="laTodaySection"><h3>📘 Flexstunden</h3>'+list(flex)+'</div>'+
  '<div class="laTodaySection"><h3>🏀 Weitere Sportangebote</h3>'+list(LA_SPORT_OFFERS[d.day]||[])+'</div>'+
- '<div class="laTodaySection"><h3>🌍 Neues aus der Welt</h3><p>'+(news?esc(news).replace(/\\n/g,'<br>'):'Noch keine geprüfte Nachricht veröffentlicht.')+'</p></div></div>'+
+ '<div class="laTodaySection"><h3>🌍 Neues aus der Welt</h3><p>'+(news?esc(news).replace(/\n/g,'<br>'):'Noch keine geprüfte Nachricht veröffentlicht.')+'</p></div></div>'+
  (published&&current.updatedAt?'<p class="mini">Zuletzt aktualisiert: '+esc(new Date(current.updatedAt).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}))+'</p>':'')+'</section>';
 }
 function laEditDailyBoard(){
@@ -213,13 +213,14 @@ function laEditDailyBoard(){
 }
 function laSaveDailyBoard(){
  if(!Auth.isAdmin()&&!Auth.canLead(6))return;
- const date=State.dialog?.date;if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(date||''))return;
+ const date=State.dialog?.date;if(!/^\d{4}-\d{2}-\d{2}$/.test(date||''))return;
  Store.data.settings=Store.data.settings||{};
  Store.data.settings.laDailyBoard=Store.data.settings.laDailyBoard||{};
  Store.data.settings.laDailyBoard[date]={notes:document.getElementById('laDailyNotes')?.value||'',news:document.getElementById('laDailyNews')?.value||'',published:!!document.getElementById('laDailyPublish')?.checked,updatedAt:new Date().toISOString()};
  Store.save('Tagesübersicht gespeichert',{date});State.dialog=null;render();
 }
 
+function laDailyEditor(){if(!Auth.isAdmin()&&!Auth.canLead(6))return '';const d=laDayData(),x=Store.data.settings?.laDailyBoard?.[d.date]||{};return '<div class="card"><h2>☀️ Tagesübersicht bearbeiten · '+esc(d.label)+'</h2><label>Hinweise und Vertretungen (nur für Schüler freigegebene Inhalte)</label><textarea id="laDailyNotes" rows="5">'+esc(x.notes||'')+'</textarea><label>Geprüfte Weltnachricht (mit Quelle)</label><textarea id="laDailyNews" rows="4">'+esc(x.news||'')+'</textarea><label class="check"><input type="checkbox" id="laDailyPublish" '+(x.published?'checked':'')+'> Für alle Lernateliers veröffentlichen</label><button class="chip dark" onclick="laSaveDailyBoard()">Tagesübersicht speichern</button></div>';}
 function laStudentPreview(){
  if(!Auth.canAccessGrade(6))return;
  const all=laPupils();
@@ -264,6 +265,7 @@ function learningAtelier(){
   const can=Auth.canLead(6)||Auth.isAdmin();
   let html=header('Lernatelier','Jahrgang 6 · alle Farbteams gemeinsam · Lehrkraftansicht');
   html+='<div class="toolbar"><button class="chip dark" onclick="laViewMode=\'student\';render()">👩‍🎓 Zur Schülersicht wechseln</button></div>';
+  html+=laDailyEditor();
   html+='<div class="toolbar"><div class="laTabs">'+LA_ROOMS.map(r=>`<button class="chip ${laSelectedRoom===r?'dark':''}" onclick="laSelectedRoom='${r}';laPreviewPupilId='';render()">${r} · ${all.filter(p=>laRoom(p)===r).length}</button>`).join('')+'</div><p class="mini">Die Zuordnung zum Lernatelier bleibt auch bei einem Standortwechsel bestehen.</p></div>';
   if(unknown.length&&can)html+='<div class="card"><b>Sammelzuordnung</b><p class="mini">Noch nicht zugeordnet: '+unknown.length+' SuS aus Stufe 6. Bestehende Lernatelier-Zuordnungen bleiben unverändert.</p><button class="chip dark" onclick="laAssignUnassigned(\'LA 1\')">Alle noch nicht zugeordneten SuS → LA 1</button></div>';
   if(unknown.length)html+='<div class="card"><b>Hinweis: '+unknown.length+' SuS sind noch keinem Lernatelier zugeordnet.</b><p class="mini">Bitte unten im Bereich „Noch keinem Lernatelier zugeordnet“ die Zuordnung vornehmen. Die bisherige Auswahl wurde möglicherweise wegen eines Fehlers nicht gespeichert.</p></div>';
