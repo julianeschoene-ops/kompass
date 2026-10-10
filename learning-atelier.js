@@ -388,10 +388,20 @@ function laStudentPreview(){
  document.getElementById('app').innerHTML='<main class="laStudentFullscreen laKioskBoard">'+html+'</main>';
  laInitDrag();
 }
+async function laRetryCloudPupils(){
+ if(!Sync.enabled()){alert('Keine aktive Cloud-Anmeldung. Bitte mit dem Lehrkraftkonto anmelden.');return;}
+ try{
+  await Sync.pull();
+  const count=laPupils().length;
+  if(!count)alert('Die Cloud-Synchronisierung ist abgeschlossen, aber für Jahrgang 6 wurden keine Schülerdaten geladen. Bitte die Cloud-Berechtigungen und den gespeicherten Jahrgangsbestand prüfen. Es wurden keine Schülerdaten verändert.');
+  render();
+ }catch(e){alert('Schülerdaten konnten nicht geladen werden: '+(e?.message||String(e))+'\n\nEs wurden keine Schülerdaten verändert.');}
+}
 function learningAtelier(){
   if(Auth.canAccessGrade(6))laEnsureWeeklyDuties();
   if(Auth.canAccessGrade(6))laResetLearningPlacesDaily();
   if(!Auth.canAccessGrade(6)){shell(header('Lernatelier')+'<div class="card">Kein Zugriff auf Jahrgang 6.</div>');return;}
+  if(!laPupils().length){shell(header('Lernatelier')+'<div class="card"><h2>Schülerdaten noch nicht geladen</h2><p>Die Oberfläche ist verfügbar, aber für Jahrgang 6 wurden keine Schülerdaten geladen. Bitte nicht neu anlegen oder zurücksetzen.</p><button class="chip dark" onclick="laRetryCloudPupils()">☁️ Schülerdaten erneut aus der Cloud laden</button><p class="mini">Diese Prüfung liest nur Daten. Ein fehlender Cloudbestand wird nicht überschrieben.</p></div>');return;}
   if(laViewMode==='student')return laStudentPreview();
   const all=laPupils(),current=all.filter(p=>laRoom(p)===laSelectedRoom);
   const unknown=all.filter(p=>!laRoom(p));
