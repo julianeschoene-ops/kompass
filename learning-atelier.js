@@ -190,16 +190,19 @@ const LA_FLEX_OFFERS=[
  ['2026-10-15','3.','Deutsch','QUOP / FLINK','Nicole Oursin'],
  ['2026-10-16','4.','Englisch','Sketches & Board Games','Dagmar Zwilling'],['2026-10-16','5.','Englisch','Story Time','Ribanna Tsehaye'],['2026-10-16','2.','Mathematik','Runden & Überschlagen','Marcel Moser'],['2026-10-16','3.','Mathematik','Schriftliche Division','Heike von Vietinghoff'],['2026-10-16','4.','Mathematik','Schriftliche Subtraktion','Marcel Moser']
 ];
-function laDayData(){const d=new Date(), day=d.getDay();return {day,date:[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-'),label:d.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'})};}
+let laBoardDate='';
+function laDayData(date=laBoardDate){const d=date?new Date(date+'T12:00:00'):new Date(), day=d.getDay();return {day,date:[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-'),label:d.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'})};}
+function laMoveBoardDay(n){const d=laDayData(),next=new Date(d.date+'T12:00:00');next.setDate(next.getDate()+n);laBoardDate=[next.getFullYear(),String(next.getMonth()+1).padStart(2,'0'),String(next.getDate()).padStart(2,'0')].join('-');render();}
 function laTodayBoard(){
  const d=laDayData();const config=Store.data.settings?.laDailyBoard||{};
  const current=config[d.date]||{};const published=current.published===true;
+ const events=(Store.calendarEvents||[]).filter(e=>e.date<=d.date&&d.date<=(e.endDate||e.date)&&(!e.grade||e.grade==='all'||Number(e.grade)===6)&&(!e.visibility||e.visibility==='all'||e.visibility==='students'));
  const list=(items)=>items.length?'<div class="laTodayItems">'+items.map(x=>'<div class="laTodayItem"><b>'+esc(x[0])+'. Std. · '+esc(x[1])+'</b><span>'+esc(x[2])+(x[3]?' · Treff: '+esc(x[3]):'')+'</span></div>').join('')+'</div>':'<p class="mini">Keine Angebote eingetragen.</p>';
  const flex=LA_FLEX_OFFERS.filter(x=>x[0]===d.date).map(x=>[x[1],x[2]+' · '+x[3],x[4],'']);
  const notes=published?String(current.notes||'').trim():'';
  const news=published?String(current.news||'').trim():'';
  return '<section class="laTodayBoard"><div class="laTodayHeading"><h2>☀️ Heute bei uns</h2><span>'+esc(d.label)+'</span></div>'+
- '<div class="laTodayGrid"><div class="laTodaySection"><h3>📣 Infos & Vertretungen</h3><p>'+ (notes?esc(notes).replace(/\n/g,'<br>'):'Heute sind noch keine Änderungen veröffentlicht.')+'</p></div>'+
+ '<div class="laTodayGrid"><div class="laTodaySection"><h3>📅 Aus dem Kalender</h3>'+(events.length?'<div class="laTodayItems">'+events.map(e=>'<div class="laTodayItem"><b>'+esc((e.time?e.time+' · ':'')+e.title)+'</b><span>'+esc(e.location||'')+'</span></div>').join('')+'</div>':'<p class="mini">Keine Kalendereinträge für diesen Tag.</p>')+'</div><div class="laTodaySection"><h3>📣 Infos & Vertretungen</h3><p>'+ (notes?esc(notes).replace(/\n/g,'<br>'):'Heute sind noch keine Änderungen veröffentlicht.')+'</p></div>'+
  '<div class="laTodaySection"><h3>🎨 Kreativband</h3>'+list(LA_DAY_OFFERS[d.day]||[])+'</div>'+
  '<div class="laTodaySection"><h3>📘 Flexstunden</h3>'+list(flex)+'</div>'+
  '<div class="laTodaySection"><h3>🏀 Weitere Sportangebote</h3>'+list(LA_SPORT_OFFERS[d.day]||[])+'</div>'+
@@ -213,14 +216,14 @@ function laEditDailyBoard(){
 }
 function laSaveDailyBoard(){
  if(!Auth.isAdmin()&&!Auth.canLead(6))return;
- const date=State.dialog?.date;if(!/^\d{4}-\d{2}-\d{2}$/.test(date||''))return;
+ const date=laDayData().date;if(!/^\d{4}-\d{2}-\d{2}$/.test(date||''))return;
  Store.data.settings=Store.data.settings||{};
  Store.data.settings.laDailyBoard=Store.data.settings.laDailyBoard||{};
  Store.data.settings.laDailyBoard[date]={notes:document.getElementById('laDailyNotes')?.value||'',news:document.getElementById('laDailyNews')?.value||'',published:!!document.getElementById('laDailyPublish')?.checked,updatedAt:new Date().toISOString()};
  Store.save('Tagesübersicht gespeichert',{date});State.dialog=null;render();
 }
 
-function laDailyEditor(){if(!Auth.isAdmin()&&!Auth.canLead(6))return '';const d=laDayData(),x=Store.data.settings?.laDailyBoard?.[d.date]||{};return '<div class="card"><h2>☀️ Tagesübersicht bearbeiten · '+esc(d.label)+'</h2><label>Hinweise und Vertretungen (nur für Schüler freigegebene Inhalte)</label><textarea id="laDailyNotes" rows="5">'+esc(x.notes||'')+'</textarea><label>Geprüfte Weltnachricht (mit Quelle)</label><textarea id="laDailyNews" rows="4">'+esc(x.news||'')+'</textarea><label class="check"><input type="checkbox" id="laDailyPublish" '+(x.published?'checked':'')+'> Für alle Lernateliers veröffentlichen</label><button class="chip dark" onclick="laSaveDailyBoard()">Tagesübersicht speichern</button></div>';}
+function laDailyEditor(){if(!Auth.isAdmin()&&!Auth.canLead(6))return '';const d=laDayData(),x=Store.data.settings?.laDailyBoard?.[d.date]||{};return '<div class="card"><h2>☀️ Tagesübersicht vorbereiten</h2><label>Datum auswählen</label><input type="date" value="'+esc(d.date)+'" onchange="laBoardDate=this.value;render()"><p class="mini">Du kannst beliebige zukünftige Tage vorbereiten. Die Veröffentlichung gilt nur für das gewählte Datum.</p><label>Hinweise und Vertretungen (nur für Schüler freigegebene Inhalte)</label><textarea id="laDailyNotes" rows="5">'+esc(x.notes||'')+'</textarea><label>Geprüfte Weltnachricht (mit Quelle)</label><textarea id="laDailyNews" rows="4">'+esc(x.news||'')+'</textarea><label class="check"><input type="checkbox" id="laDailyPublish" '+(x.published?'checked':'')+'> Für alle Lernateliers veröffentlichen</label><button class="chip dark" onclick="laSaveDailyBoard()">Tagesübersicht speichern</button></div>';}
 function laStudentPreview(){
  if(!Auth.canAccessGrade(6))return;
  const all=laPupils();
@@ -235,7 +238,7 @@ function laStudentPreview(){
  let html='<div class="laBoardTop"><div><div class="mini">KOMPASS · Jahrgang 6</div><h1>🏫 '+esc(laSelectedRoom)+'</h1></div><div class="laTopActions"><div class="laCompactNoise">'+noiseData[0]+' '+noiseData[1]+'</div><button class="chip" onclick="laExitStudentPreview()">🔒 Lehrkraftmodus</button></div></div>';
  html+='<div class="laRoomSwitcher">'+LA_ROOMS.map(room=>'<button class="chip '+(room===laSelectedRoom?'dark':'')+'" onclick="laSelectedRoom=\''+room+'\';laBoardSelectedId=\'\';render()">'+room+' · '+all.filter(p=>laRoom(p)===room).length+'</button>').join('')+'</div>';
  
- html+=laTodayBoard();
+ html+='<div class="laTodayDateNav"><button class="chip" onclick="laMoveBoardDay(-1)">‹ Vortag</button><button class="chip" onclick="laBoardDate=\'\';render()">Heute</button><button class="chip" onclick="laMoveBoardDay(1)">Nächster Tag ›</button></div>';html+=laTodayBoard();
  html+='<p class="laBoardInstructions">Namen antippen oder mit dem Finger in einen anderen Bereich ziehen.</p>';
  html+='<div class="laPublicBoard laCompactBoard">';
  for(const place of laPlaces()){
