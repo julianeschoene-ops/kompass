@@ -360,3 +360,8 @@
 .laStudentFullscreen .laBoardTopClean .laNoiseLevel{width:54px}
 @media(max-width:1050px){.laStudentFullscreen .laBoardTopClean>.laBoardMeta{display:none}.laStudentFullscreen .laBoardTopClean>.laTopActions{flex:1}}
 @media(max-width:650px){.laStudentFullscreen .laBoardTopClean{align-items:flex-start}.laStudentFullscreen .laBoardTopClean>.laTopActions{justify-content:flex-start;flex-basis:100%}}
+
+.laNoiseChallenge{display:flex;align-items:center;gap:8px;padding:5px 9px;border:1px solid #dbe4f0;border-radius:12px;background:#f8fafc;font-size:12px}
+.laNoiseChallenge strong{white-space:nowrap;color:#334155}.laNoiseChallenge #laNoiseTimer{font-variant-numeric:tabular-nums;font-weight:800;color:#475569}
+.laNoiseProgress{width:50px;height:7px;border-radius:9px;background:#dbe4f0;overflow:hidden}.laNoiseProgress span{display:block;width:0;height:100%;background:#22c55e}
+.laNoiseMinutes{white-space:nowrap}.laNoiseMinutes select{font-size:12px;padding:3px;border:1px solid #cbd5e1;border-radius:6px}
