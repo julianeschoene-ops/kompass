@@ -488,7 +488,7 @@ function laNoiseSetMinutes(value){
 }
 function laNoiseChallengeUI(){
  const minutes=laNoiseMinutes();
- return '<div class="laNoiseChallenge"><strong>🏆 <span id="laNoisePoints">'+laNoiseLocalPoints()+'</span> Punkte</strong><span id="laNoiseTimer">'+minutes+':00</span><div class="laNoiseProgress"><span id="laNoiseProgressFill"></span></div>'+
+ return '<div class="laNoiseChallenge"><strong>🏆 <span id="laNoisePoints">'+laNoiseLocalPoints()+'</span> Punkte</strong><span class="laNoiseRewards">🎁 <span id="laNoiseRewards">'+Math.floor(laNoiseLocalPoints()/5)+'</span> Belohnungen erspielt</span><span id="laNoiseTimer">'+minutes+':00</span><div class="laNoiseProgress"><span id="laNoiseProgressFill"></span></div>'+
  (!laKioskLocked()&&!Auth.isLernatelier()?'<label class="laNoiseMinutes">Punkt nach <select onchange="laNoiseSetMinutes(this.value)">'+[3,5,7,10].map(n=>'<option value="'+n+'" '+(minutes===n?'selected':'')+'>'+n+' Min.</option>').join('')+'</select></label>':'')+
  '</div>';
 }
@@ -505,7 +505,9 @@ function laNoiseChallengeTick(){
  if(elapsed>=duration){
   c.greenSince=Date.now();
   try{localStorage.setItem(laNoiseScoreKey(),String(laNoiseLocalPoints()+1));}catch(e){}
-  const score=document.getElementById('laNoisePoints');if(score)score.textContent=laNoiseLocalPoints();
+  const points=laNoiseLocalPoints();
+  const score=document.getElementById('laNoisePoints');if(score)score.textContent=points;
+  const rewards=document.getElementById('laNoiseRewards');if(rewards)rewards.textContent=Math.floor(points/5);
  }
  const remaining=Math.max(0,duration-Math.min(elapsed,duration));
  const timer=document.getElementById('laNoiseTimer');
