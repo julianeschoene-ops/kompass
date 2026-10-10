@@ -556,6 +556,12 @@ async function laLimitedAction(id,action,value){
   laLimitedView();
  }catch(e){alert('Nicht gespeichert: '+e.message);}
 }
+function laLimitedSignOut(){
+ laLimitedRows={};
+ laLimitedMode='teacher';
+ laLimitedQuery='';
+ Auth.logout();
+}
 function laLimitedView(){
  laLimitedStartPoll();
  const grades=Auth.allowedGrades();
@@ -584,7 +590,7 @@ function laLimitedView(){
    return '<div class="laQueue" data-la-name="'+esc([p.first,p.last,p.short,p.className].join(' ').toLocaleLowerCase('de'))+'"><div><b>'+name+'</b>'+(laLimitedMode==='teacher'?'<div class="mini">'+room+' · '+esc(p.className||'')+'</div>':'')+'</div><span class="statusPill">'+place+'</span>'+pending+actions+places+'</div>';
  }).join('')||'<p class="mini">Keine passenden Schüler*innen.</p>';
  const controls=laLimitedMode==='teacher'
-   ?'<div class="toolbar"><button class="chip" onclick="laLimitedRefresh()">↻ Aktualisieren</button><button class="chip dark" onclick="laLimitedStudent()">👩‍🎓 Schüleransicht</button></div><div class="card"><h2>🔎 Schüler finden · gesamte Stufe</h2><input type="search" placeholder="Name suchen …" value="'+esc(laLimitedQuery)+'" oninput="laLimitedSearch(this.value)"><p class="mini">Alle drei Lernateliers · schreibgeschützte Übersicht</p></div>'
+   ?'<div class="toolbar"><button class="chip" onclick="laLimitedRefresh()">↻ Aktualisieren</button><button class="chip" onclick="laLimitedSignOut()">Abmelden</button><button class="chip dark" onclick="laLimitedStudent()">👩‍🎓 Schüleransicht</button></div><div class="card"><h2>🔎 Schüler finden · gesamte Stufe</h2><input type="search" placeholder="Name suchen …" value="'+esc(laLimitedQuery)+'" oninput="laLimitedSearch(this.value)"><p class="mini">Alle drei Lernateliers · schreibgeschützte Übersicht</p></div>'
    :'<div class="toolbar"><button class="chip" onclick="laLimitedTeacher()">🔒 Lehrkraftmodus</button></div><div class="toolbar">'+roomTabs+'</div>';
  root.innerHTML='<main class="main"><h1>Lernatelier · Stufe '+laGrade+'</h1><div class="toolbar">'+tabs+'</div>'+controls+'<div class="card"><h2>'+(laLimitedMode==='teacher'?'Alle Lernateliers':esc(laLimitedRoom))+'</h2>'+entries+'</div><p class="mini">Änderungen werden in der separaten Lernatelier-Tabelle gespeichert. Voraussetzung: SQL-Migration UPDATE_LERNATELIER_AKTIONEN.sql.</p></main>';
 }
