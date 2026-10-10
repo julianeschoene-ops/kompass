@@ -14,7 +14,7 @@ begin
  select payload into v_payload from public.kompass_lernatelier_state where grade=p_grade for update;
  if v_payload is null then raise exception 'Lernatelier nicht gefunden'; end if;
  v_history:=coalesce(v_payload->'dutyHistory','{}'::jsonb);
- if v_history ? p_week then return v_history->p_week; end if;
+ if v_history ? p_week and (select count(*) from jsonb_each(v_history->p_week->'assignments'))>=36 then return v_history->p_week; end if;
  v_people:=coalesce(v_payload->'pupils','[]'::jsonb);
  foreach v_room in array array['LA 1','LA 2','LA 3'] loop
   foreach v_duty in array array['broom','book','hall','trash'] loop
