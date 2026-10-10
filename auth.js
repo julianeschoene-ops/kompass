@@ -16,13 +16,13 @@ const Auth={
   ensureLocalBootstrap(){let db;try{db=JSON.parse(localStorage.getItem(AUTH_KEY)||'null')}catch(e){db=null}if(!db||!Array.isArray(db.users)){db={users:[],createdAt:new Date().toISOString()};localStorage.setItem(AUTH_KEY,JSON.stringify(db));}},
   localDb(){try{return JSON.parse(localStorage.getItem(AUTH_KEY)||'{"users":[]}')}catch(e){return {users:[]}}},
   saveLocalDb(db){localStorage.setItem(AUTH_KEY,JSON.stringify(db))},
-  currentUser(){return this.session?.user||null},isLoggedIn(){return !!this.currentUser()},isAdmin(){return this.currentUser()?.role==='admin'},
+  currentUser(){return this.session?.user||null},isLoggedIn(){return !!this.currentUser()},isAdmin(){return this.currentUser()?.role==='admin'},isLernatelier(){return this.currentUser()?.role==='lernatelier'},
   // Passwortwechsel bleiben freiwillig. Ein Konto darf niemals allein wegen
   // eines fehlenden Metadaten-Merkers gesperrt werden.
   needsPasswordChange(){return false},
   allowedGrades(){if(this.isAdmin())return [5,6,7];if(this.session?.mode==='cloud')return Object.keys(this.currentUser()?.gradeAccess||{}).map(Number).filter(x=>[5,6,7].includes(x)).sort();return [5,6,7]},
   canAccessGrade(grade){return this.isAdmin()||this.session?.mode!=='cloud'||!!this.currentUser()?.gradeAccess?.[grade]},
-  canLead(grade=State?.year){if(this.isAdmin())return true;if(this.session?.mode==='cloud')return this.currentUser()?.gradeAccess?.[grade]==='leitung';return this.currentUser()?.role==='leitung'},
+  canLead(grade=State?.year){if(this.isLernatelier())return false;if(this.isAdmin())return true;if(this.session?.mode==='cloud')return this.currentUser()?.gradeAccess?.[grade]==='leitung';return this.currentUser()?.role==='leitung'},
   async hash(v){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(String(v)));return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('')},
   async createFirstAdmin(name,username,password){const db=this.localDb();if(db.users.length)throw new Error('Es existiert bereits ein Konto.');const u={id:uid('user'),name:name.trim(),username:username.trim().toLowerCase(),passwordHash:await this.hash(password),role:'admin',active:true,createdAt:new Date().toISOString()};db.users.push(u);this.saveLocalDb(db);await this.localLogin(username,password);return u;},
   async createLocalUser({name,username,password,role}){const db=this.localDb();username=username.trim().toLowerCase();if(db.users.some(u=>u.username===username))throw new Error('Benutzername existiert bereits.');const u={id:uid('user'),name:name.trim(),username,passwordHash:await this.hash(password),role:role||'teacher',active:true,createdAt:new Date().toISOString()};db.users.push(u);this.saveLocalDb(db);Store.log('Benutzerkonto angelegt',{target:u.name,role:u.role});return u;},
