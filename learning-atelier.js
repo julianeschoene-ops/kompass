@@ -470,6 +470,62 @@ async function laResetRoomOccupancy(){
   }
  }catch(e){alert('Zuruecksetzen fehlgeschlagen: '+e.message);}
 }
+// Lokale Mikrofon-Lärmampel: Audiodaten verlassen das Gerät nicht.
+const laNoiseMeter={stream:null,context:null,analyser:null,buffer:null,frame:0,active:false,level:0,peak:0,threshold:35,room:'',grade:0,lastPaint:0};
+function laNoiseMeterKey(){return 'kompass_noise_threshold_v1';}
+function laNoiseMeterThreshold(){try{return Math.max(10,Math.min(90,Number(localStorage.getItem(laNoiseMeterKey()))||35));}catch(e){return 35;}}
+function laNoiseMeterUI(){
+ const m=laNoiseMeter;
+ return '<div class="laNoiseMeter" aria-label="Automatische Lärmampel"><div class="laNoiseLamp '+(m.active?(m.level>=m.threshold?'laNoiseRed':m.level>=m.threshold*.75?'laNoiseYellow':'laNoiseGreen'):'laNoiseOff')+'" id="laNoiseLamp"><span id="laNoiseFace">'+(m.active?(m.level>=m.threshold?'🔴':m.level>=m.threshold*.75?'🟡':'🟢'):'🎙️')+'</span><span id="laNoiseText">'+(m.active?(m.level>=m.threshold?'Zu laut!':m.level>=m.threshold*.75?'Etwas leiser':'Gut so!'):'Lärmampel starten')+'</span></div><button type="button" class="chip" onclick="laNoiseToggle()">'+(m.active?'⏹ Messung stoppen':'🎙️ Messung starten')+'</button><label class="laNoiseSensitivity">Grenzwert <input type="range" min="10" max="90" step="5" value="'+m.threshold+'" oninput="laNoiseThreshold(this.value)"><span id="laNoiseThresholdValue">'+m.threshold+'</span></label><div class="laNoiseLevel"><span id="laNoiseBar" style="width:'+m.level+'%"></span></div><span class="mini">Mikrofon nur auf diesem iPad · keine Aufnahme</span></div>';
+}
+function laNoiseThreshold(v){
+ laNoiseMeter.threshold=Math.max(10,Math.min(90,Number(v)||35));
+ try{localStorage.setItem(laNoiseMeterKey(),String(laNoiseMeter.threshold));}catch(e){}
+ const el=document.getElementById('laNoiseThresholdValue');if(el)el.textContent=laNoiseMeter.threshold;
+}
+async function laNoiseToggle(){
+ if(laNoiseMeter.active){laNoiseStop();return;}
+ if(!navigator.mediaDevices?.getUserMedia){alert('Das Mikrofon ist hier nicht verfügbar. Bitte KOMPASS über HTTPS in Safari öffnen.');return;}
+ try{
+  const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false},video:false});
+  const ctx=new (window.AudioContext||window.webkitAudioContext)();
+  const source=ctx.createMediaStreamSource(stream),analyser=ctx.createAnalyser();
+  analyser.fftSize=2048;analyser.smoothingTimeConstant=.65;source.connect(analyser);
+  await ctx.resume();
+  Object.assign(laNoiseMeter,{stream,context:ctx,analyser,buffer:new Float32Array(analyser.fftSize),active:true,threshold:laNoiseMeterThreshold(),level:0,peak:0});
+  laNoiseTick();laNoiseRefreshButton();
+ }catch(e){alert('Mikrofon konnte nicht gestartet werden. Bitte Mikrofonzugriff für KOMPASS erlauben. ('+e.message+')');}
+}
+function laNoiseStop(){
+ const m=laNoiseMeter;m.active=false;
+ if(m.frame)cancelAnimationFrame(m.frame);m.frame=0;
+ if(m.stream)m.stream.getTracks().forEach(t=>t.stop());
+ if(m.context)m.context.close().catch(()=>{});
+ m.stream=null;m.context=null;m.analyser=null;m.level=0;
+ laNoiseRefreshButton();laNoisePaint();
+}
+function laNoiseRefreshButton(){
+ const el=document.querySelector('.laNoiseMeter button');if(el)el.textContent=laNoiseMeter.active?'⏹ Messung stoppen':'🎙️ Messung starten';
+}
+function laNoiseTick(time=0){
+ const m=laNoiseMeter;if(!m.active||!m.analyser)return;
+ m.analyser.getFloatTimeDomainData(m.buffer);
+ let sum=0;for(let i=0;i<m.buffer.length;i++)sum+=m.buffer[i]*m.buffer[i];
+ const rms=Math.sqrt(sum/m.buffer.length);
+ // Relative Geräuschstärke (kein geeichter Dezibelmesser).
+ const raw=Math.max(0,Math.min(100,(20*Math.log10(Math.max(rms,.00001))+70)*2));
+ m.level=m.level*.76+raw*.24;
+ if(time-m.lastPaint>90){laNoisePaint();m.lastPaint=time;}
+ m.frame=requestAnimationFrame(laNoiseTick);
+}
+function laNoisePaint(){
+ const m=laNoiseMeter,red=m.active&&m.level>=m.threshold,yellow=m.active&&!red&&m.level>=m.threshold*.75;
+ const lamp=document.getElementById('laNoiseLamp');if(lamp)lamp.className='laNoiseLamp '+(!m.active?'laNoiseOff':red?'laNoiseRed':yellow?'laNoiseYellow':'laNoiseGreen');
+ const face=document.getElementById('laNoiseFace');if(face)face.textContent=!m.active?'🎙️':red?'🔴':yellow?'🟡':'🟢';
+ const label=document.getElementById('laNoiseText');if(label)label.textContent=!m.active?'Lärmampel starten':red?'Zu laut!':yellow?'Etwas leiser':'Gut so!';
+ const bar=document.getElementById('laNoiseBar');if(bar)bar.style.width=m.level+'%';
+}
+laNoiseMeter.threshold=laNoiseMeterThreshold();
 function laStudentPreview(){
  if(!Auth.canAccessGrade(laGrade))return;
  if(!Auth.isLernatelier())laResetLearningPlacesDaily();
@@ -482,7 +538,7 @@ function laStudentPreview(){
  const noise=laGradeSettings('laNoise')?.[laSelectedRoom]||'green';
  const noiseData={green:['🟢','Leise sprechen'],yellow:['🟡','Flüstern'],red:['🔴','Ruhe']}[noise];
  const info=laGradeSettings('laBoardInfo')?.[laSelectedRoom]||{};
- let html=laGradeTabs()+'<div class="laBoardTop"><div><div class="mini">KOMPASS · Jahrgang '+laGrade+'</div><h1>'+ (laStudentTab==='news'?'📰 News':'🏫 '+esc(laSelectedRoom))+'</h1></div><div class="laTopActions">'+(laStudentTab==='news'?'':'<div class="laCompactNoise">'+noiseData[0]+' '+noiseData[1]+'</div>')+(laStudentTab==='room'&&!Auth.isLernatelier()&&!laKioskLocked()?'<button class="chip" onclick="laResetRoomOccupancy()">↺ Besetzung zurücksetzen</button>':'')+'<button class="chip" onclick="laExitStudentPreview()">🔒 Lehrkraftmodus</button></div></div>';
+ let html=laGradeTabs()+'<div class="laBoardTop"><div><div class="mini">KOMPASS · Jahrgang '+laGrade+'</div><h1>'+ (laStudentTab==='news'?'📰 News':'🏫 '+esc(laSelectedRoom))+'</h1></div><div class="laTopActions">'+(laStudentTab==='news'?'':laNoiseMeterUI())+(laStudentTab==='room'&&!Auth.isLernatelier()&&!laKioskLocked()?'<button class="chip" onclick="laResetRoomOccupancy()">↺ Besetzung zurücksetzen</button>':'')+'<button class="chip" onclick="laExitStudentPreview()">🔒 Lehrkraftmodus</button></div></div>';
  html+='<div class="laRoomSwitcher laMainTabs"><button class="chip '+(laStudentTab==='news'?'dark':'')+'" onclick="laStudentTab=\'news\';laBoardSelectedId=\'\';render()">📰 News</button>'+LA_ROOMS.map(room=>'<button class="chip '+(laStudentTab==='room'&&room===laSelectedRoom?'dark':'')+'" onclick="laStudentTab=\'room\';laSelectedRoom=\''+room+'\';laBoardSelectedId=\'\';render()">'+room+'</button>').join('')+'</div>';
  if(laStudentTab==='news'){
   const dateNav='<div class="laTodayDateNav"><button class="chip" onclick="laMoveBoardDay(-1)">‹ Vortag</button><button class="chip" onclick="laBoardDate=\'\';render()">Heute</button><button class="chip" onclick="laMoveBoardDay(1)">Nächster Tag ›</button></div>';
