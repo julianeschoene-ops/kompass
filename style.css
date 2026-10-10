@@ -250,3 +250,35 @@
 .loginCard{box-sizing:border-box}.loginCard input:not([type="checkbox"]),.loginCard textarea{box-sizing:border-box;max-width:100%}.loginCard .loginPasswordCheck{display:flex;align-items:center;justify-content:flex-start;gap:10px;width:max-content;max-width:100%;margin:0 0 16px;font-size:14px;font-weight:600;cursor:pointer}.loginCard .loginPasswordCheck input[type="checkbox"]{width:18px;height:18px;flex:0 0 18px;margin:0;accent-color:#233451}.loginCard .loginPasswordCheck span{white-space:nowrap}
 
 .laExitOverlay{position:fixed;inset:0;z-index:99999;background:rgba(17,24,39,.52);display:grid;place-items:center;padding:18px}.laExitCard{width:min(440px,100%);box-sizing:border-box;background:#fff;border-radius:24px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:10px}.laExitCard h2{margin:0}.laExitCard p{margin:4px 0}.laExitCard>input{box-sizing:border-box;width:100%;min-height:42px}.laExitShow{display:flex;align-items:center;gap:10px;cursor:pointer;margin:6px 0}.laExitShow input{width:18px;height:18px;margin:0;flex:0 0 18px}.laExitActions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+
+/* Lernatelier News: einheitliches iPad-Layout, keine abgeschnittenen Angebote */
+.laStudentFullscreen .laTodayGrid.laTodayMasonry{
+ grid-template-columns:minmax(0,.9fr) minmax(0,.9fr) minmax(0,1.35fr) minmax(0,1.35fr)!important;
+ align-items:start!important;
+}
+.laStudentFullscreen .laTodayMasonry .laTodayColumn,
+.laStudentFullscreen .laTodayMasonry .laTodaySection{
+ min-height:0!important;
+ max-height:none!important;
+ overflow:visible!important;
+}
+.laStudentFullscreen .laTodayMasonry .laTodayItems{
+ max-height:none!important;
+ overflow:visible!important;
+}
+.laStudentFullscreen .laTodayMasonry .laTodayItem{
+ break-inside:avoid;
+}
+.laStudentFullscreen .laTodayBoard{
+ overflow:visible!important;
+}
+@media(max-width:900px){
+ .laStudentFullscreen .laTodayGrid.laTodayMasonry{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ }
+}
+@media(max-width:540px){
+ .laStudentFullscreen .laTodayGrid.laTodayMasonry{
+  grid-template-columns:minmax(0,1fr)!important;
+ }
+}
