@@ -56,6 +56,7 @@ const Sync={
   },
   schedule(delay=0){if(!this.enabled())return;this.dirty=true;clearTimeout(this.timer);this.timer=setTimeout(()=>this.push(),delay)},
   async overlayLernatelier(years,merged){
+    if(!years.length)return;
     const {data,error}=await Auth.cloudClient.from('kompass_lernatelier_state')
       .select('grade,payload').in('grade',years);
     if(error)throw error;
