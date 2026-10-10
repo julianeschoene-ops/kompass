@@ -93,6 +93,8 @@ function laBoardMove(id,place){
  if(!p||laRoom(p)!==laSelectedRoom)return;
  // This remains a teacher-authenticated kiosk preview, not a public student login.
  p.learningPlace=place;
+ Store.data.settings=Store.data.settings||{};
+ Store.data.settings.laLastPlaceReset=laDayData('').date;
  p.laRequest=null;
  Store.save('Standorttafel: Lernort gewechselt',{pupilId:p.id,place});
  laBoardSelectedId='';render();
@@ -224,8 +226,24 @@ function laSaveDailyBoard(){
 }
 
 function laDailyEditor(){if(!Auth.isAdmin()&&!Auth.canLead(6))return '';const d=laDayData(),x=Store.data.settings?.laDailyBoard?.[d.date]||{};return '<div class="card"><h2>☀️ Tagesübersicht vorbereiten</h2><label>Datum auswählen</label><input type="date" value="'+esc(d.date)+'" onchange="laBoardDate=this.value;render()"><p class="mini">Du kannst beliebige zukünftige Tage vorbereiten. Die Veröffentlichung gilt nur für das gewählte Datum.</p><label>Hinweise und Vertretungen (nur für Schüler freigegebene Inhalte)</label><textarea id="laDailyNotes" rows="5">'+esc(x.notes||'')+'</textarea><label>Geprüfte Weltnachricht (mit Quelle)</label><textarea id="laDailyNews" rows="4">'+esc(x.news||'')+'</textarea><label class="check"><input type="checkbox" id="laDailyPublish" '+(x.published?'checked':'')+'> Für alle Lernateliers veröffentlichen</label><button class="chip dark" onclick="laSaveDailyBoard()">Tagesübersicht speichern</button></div>';}
+function laResetLearningPlacesDaily(){
+ const today=laDayData('').date;
+ const settings=Store.data.settings||(Store.data.settings={});
+ // Nur die Stufenleitung führt den täglichen Cloud-Reset durch.
+ // Die Schülertafel zeigt veraltete Lernorte unabhängig davon nicht an.
+ if(settings.laLastPlaceReset===today)return;
+ if(!Auth.isAdmin()&&!Auth.canLead(6))return;
+ for(const p of laPupils()){p.learningPlace='Lernatelier';p.laRequest=null;}
+ settings.laLastPlaceReset=today;
+ Store.save('Täglicher Neustart der Lernorte',{date:today});
+}
+function laCurrentPlace(p){
+ const today=laDayData('').date;
+ return Store.data.settings?.laLastPlaceReset===today?(p.learningPlace||'Lernatelier'):'Lernatelier';
+}
 function laStudentPreview(){
  if(!Auth.canAccessGrade(6))return;
+ laResetLearningPlacesDaily();
  const all=laPupils();
  if(!all.some(p=>laRoom(p)===laSelectedRoom)){
   const first=LA_ROOMS.find(room=>all.some(p=>laRoom(p)===room));if(first)laSelectedRoom=first;
@@ -242,14 +260,14 @@ function laStudentPreview(){
  html+='<p class="laBoardInstructions">Namen antippen oder mit dem Finger in einen anderen Bereich ziehen.</p>';
  html+='<div class="laPublicBoard laCompactBoard">';
  for(const place of laPlaces()){
-  const group=pupils.filter(p=>(p.learningPlace||'Lernatelier')===place);
+  const group=pupils.filter(p=>laCurrentPlace(p)===place);
   html+='<section class="laPublicPlace '+(place==='Lernatelier'?'laHomePlace':'')+' '+(group.length?'laOccupied':'laEmpty')+'" data-place="'+esc(place)+'"><h2>'+esc(place)+' <span>'+group.length+'</span></h2><div class="laPublicNames">';
   html+=group.map(p=>'<button type="button" data-pupil="'+esc(p.id)+'" class="laPublicName '+(String(p.id)===String(laBoardSelectedId)?'laChosen':'')+'" onclick="laSelectBoardPupil(\''+esc(p.id)+'\',this)"><span class="laPupilStars">'+LA_STAR_SUBJECTS.filter(x=>laStars(p).includes(x[0])).map(x=>'<span class="laStar laStar-'+x[2]+'" title="Teamstar '+x[1]+'">★</span>').join('')+'</span><span class="laNameLine"><span class="dot '+teamColor(p.team)+'"></span><span>'+esc(p.short||p.first+' '+p.last)+'</span>'+(p.laNeedsHelp?' <span title="Braucht Hilfe">✋</span>':'')+LA_DUTIES.filter(x=>laDuties(p).includes(x[0])).map(x=>'<span title="'+x[2]+'">'+x[1]+'</span>').join('')+'</span></button>').join('')||'<p class="mini">Hier ist gerade niemand.</p>';
   html+='</div></section>';
  }
  html+='</div>';
  if(selected){
-  const here=selected.learningPlace||'Lernatelier';
+  const here=laCurrentPlace(selected);
   html+='<div class="laActionPanel" role="dialog" aria-label="Lernort auswählen"><div class="laActionHead"><div><span class="mini">Ausgewählt</span><h2>'+esc(selected.short||selected.first+' '+selected.last)+'</h2><span class="mini">Aktuell: '+esc(here)+'</span></div><button class="chip" onclick="laBoardSelectedId=\'\';render()">✕ Schließen</button></div>';
   html+='<div class="laActionPlaces">'+laPlaces().map(place=>'<button class="laPlaceButton" '+(place===here?'disabled':'')+' onclick="laBoardMove(\''+esc(selected.id)+'\',\''+esc(place)+'\')"><strong>'+esc(place)+'</strong></button>').join('')+'</div>';
   html+='<button class="chip dark laHelpButton" onclick="laSetHelp(\''+esc(selected.id)+'\','+(!selected.laNeedsHelp)+')">'+(selected.laNeedsHelp?'✓ Hilfehand zurücknehmen':'✋ Ich brauche Hilfe')+'</button>';
@@ -260,6 +278,7 @@ function laStudentPreview(){
  laInitDrag();
 }
 function learningAtelier(){
+  if(Auth.canAccessGrade(6))laResetLearningPlacesDaily();
   if(!Auth.canAccessGrade(6)){shell(header('Lernatelier')+'<div class="card">Kein Zugriff auf Jahrgang 6.</div>');return;}
   if(laViewMode==='student')return laStudentPreview();
   const all=laPupils(),current=all.filter(p=>laRoom(p)===laSelectedRoom);
