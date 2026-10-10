@@ -194,6 +194,11 @@ const Sync={
   async createCloudUser({name,email,password,role='teacher',gradeAccess={},coachTeams={},coachingGroups={}}){
     const data=await this.adminAccountAction({action:'create',name,email,password,role,gradeAccess,coachTeams,coachingGroups});
     if(!data?.user?.id||data?.verified!==true)throw new Error('Das Konto wurde serverseitig nicht vollständig bestätigt.');
+    if(role==='lernatelier'){
+      const accounts=await this.cloudProfiles();
+      const created=accounts.find(a=>a.id===data.user.id);
+      if(!created||created.role!=='lernatelier')throw new Error('Das Konto wurde angelegt, aber die eingeschränkte Lernatelier-Rolle wurde nicht bestätigt. Bitte nicht für Schüler-iPads verwenden.');
+    }
     Store.log(data.repairedExisting?'Cloud-Benutzer repariert':'Cloud-Benutzer angelegt',{target:name,email,role,gradeAccess,coachTeams,coachingGroups});
     return data;
   },
