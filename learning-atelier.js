@@ -510,6 +510,8 @@ let laLimitedRows={},laLimitedMode='teacher',laLimitedRoom='LA 1',laLimitedQuery
 let laLimitedPollStarted=false;
 let laLimitedPollInFlight=false;
 let laLimitedSelectedId='';
+let laLimitedTab='room';
+let laLimitedPayloads={};
 function laLimitedStartPoll(){
  if(laLimitedPollStarted)return;
  laLimitedPollStarted=true;
@@ -519,8 +521,9 @@ function laLimitedStartPoll(){
   const grade=laGrade;
   Auth.cloudClient.from('kompass_lernatelier_state').select('payload').eq('grade',grade).maybeSingle().then(({data,error})=>{
    if(error||!Array.isArray(data?.payload?.pupils))return;
-   if(JSON.stringify(laLimitedRows[grade])!==JSON.stringify(data.payload.pupils)){
+   if(JSON.stringify(laLimitedPayloads[grade])!==JSON.stringify(data.payload)){
     laLimitedRows[grade]=data.payload.pupils;
+    laLimitedPayloads[grade]=data.payload;
     if(Auth.isLernatelier()&&grade===laGrade)laLimitedView();
    }
   }).catch(()=>{}).finally(()=>{laLimitedPollInFlight=false;});
@@ -535,6 +538,7 @@ async function laLoadLimited(grade){
    if(error)throw error;
    if(!Array.isArray(data?.payload?.pupils))throw new Error('Für diese Stufe fehlen Lernatelier-Daten.');
    laLimitedRows[grade]=data.payload.pupils;
+   laLimitedPayloads[grade]=data.payload;
    if(Auth.isLernatelier())laLimitedView();
  }catch(e){
    const root=document.getElementById('app');
@@ -568,6 +572,7 @@ async function laLimitedAction(id,action,value){
 function laLimitedSignOut(){
  laSetKioskLock(false);
  laLimitedRows={};
+ laLimitedPayloads={};
  laLimitedMode='teacher';
  laLimitedQuery='';
  Auth.logout();
