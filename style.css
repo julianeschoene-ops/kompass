@@ -367,3 +367,13 @@
 .laNoiseMinutes{white-space:nowrap}.laNoiseMinutes select{font-size:12px;padding:3px;border:1px solid #cbd5e1;border-radius:6px}
 
 .laNoiseRewards{white-space:nowrap;font-size:12px;font-weight:700;color:#0f766e;padding:4px 7px;background:#ecfdf5;border-radius:8px}
+
+/* iPad: Lernatelier occupies the full left side; other locations flow on the right */
+@media(min-width:900px){
+.laStudentFullscreen .laCompactBoard{display:grid!important;grid-template-columns:minmax(420px,1.65fr) repeat(2,minmax(0,1fr))!important;grid-auto-flow:row!important;align-items:stretch!important;gap:8px!important}
+.laStudentFullscreen .laCompactBoard>.laHomePlace{grid-column:1!important;grid-row:span 10!important;min-height:calc(100vh - 365px)!important}
+.laStudentFullscreen .laCompactBoard>.laPublicPlace:not(.laHomePlace){grid-column:auto!important;grid-row:auto!important}
+}
+.laStudentFullscreen .laNoiseSensitivity input[type=number]{width:45px;padding:4px 3px;border:1px solid #cbd5e1;border-radius:7px;text-align:center;font-size:13px;font-weight:700}
+.laStudentFullscreen .laNoiseSensitivity .laNoiseAdjust{border:1px solid #cbd5e1;background:#fff;border-radius:7px;min-width:26px;min-height:28px;font-size:17px;cursor:pointer}
+.laStudentFullscreen .laNoiseSensitivity #laNoiseThresholdValue{display:none}
