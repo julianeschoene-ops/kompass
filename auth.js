@@ -60,6 +60,11 @@ const Auth={
     sessionStorage.setItem(SESSION_KEY,JSON.stringify(this.session));State.teacher=this.session.user.name;State.role=this.session.user.role;
     const years=this.allowedGrades();if(years.length&&!years.includes(State.year))State.year=years[0];
     State.cloudLoadError=null;
+    // Restricted accounts must never retain a previous teacher's full roster in memory.
+    if(this.isLernatelier()){
+      Store.data={pupils:[],settings:{},auditLog:[]};
+      Store._lastSnapshot=JSON.stringify(Store.data);
+    }
     if(window.Sync){try{await Sync.pull()}catch(e){State.cloudLoadError=e?.message||String(e);render();return;}}render();
   },
   async cloudLogin(email,password){const {data,error}=await this.cloudClient.auth.signInWithPassword({email:String(email||'').trim().toLowerCase(),password});if(error){if(String(error.message||'').toLowerCase().includes('invalid login credentials'))throw new Error('E-Mail oder Passwort ist nicht korrekt.');throw error;}await this.applyCloudSession(data.session)},
