@@ -83,6 +83,7 @@ function laSetHelp(id,enabled){
 }
 
 function laEnterStudentKiosk(){try{laSetKioskLock(true);laViewMode='student';State.view='learningAtelier';render();}catch(e){alert('Schülermodus konnte nicht gesichert werden.');}}
+function laToggleExitPassword(visible){const input=document.getElementById('laExitPassword');if(input)input.type=visible?'text':'password';}
 function laCloseExitDialog(){
  const dialog=document.getElementById('laExitDialog');
  if(dialog)dialog.remove();
@@ -95,7 +96,7 @@ function laExitStudentPreview(){
  const overlay=document.createElement('div');
  overlay.id='laExitDialog';
  overlay.className='laExitOverlay';
- overlay.innerHTML='<form class="laExitCard" onsubmit="laConfirmExitStudentPreview(event)"><h2>🔒 Lehrkraftmodus</h2><p>Bitte bestätige dein KOMPASS-Passwort.</p><label for="laExitUsername">Schul-E-Mail</label><input id="laExitUsername" type="email" autocomplete="username" readonly value="'+esc(user.username||'')+'"><label for="laExitPassword">Passwort</label><input id="laExitPassword" type="password" autocomplete="current-password" required><label class="laExitShow"><input id="laExitShowPassword" type="checkbox" onchange="document.getElementById(\\'laExitPassword\\').type=this.checked?\\'text\\':\\'password\\'"><span>Passwort anzeigen</span></label><p id="laExitError" class="loginError" role="alert"></p><div class="laExitActions"><button class="chip" type="button" onclick="laCloseExitDialog()">Abbrechen</button><button class="chip dark" type="submit">Lehrkraftmodus öffnen</button></div></form>';
+ overlay.innerHTML='<form class="laExitCard" onsubmit="laConfirmExitStudentPreview(event)"><h2>🔒 Lehrkraftmodus</h2><p>Bitte bestätige dein KOMPASS-Passwort.</p><label for="laExitUsername">Schul-E-Mail</label><input id="laExitUsername" type="email" autocomplete="username" readonly value="'+esc(user.username||'')+'"><label for="laExitPassword">Passwort</label><input id="laExitPassword" type="password" autocomplete="current-password" required><label class="laExitShow"><input id="laExitShowPassword" type="checkbox" onchange="laToggleExitPassword(this.checked)"><span>Passwort anzeigen</span></label><p id="laExitError" class="loginError" role="alert"></p><div class="laExitActions"><button class="chip" type="button" onclick="laCloseExitDialog()">Abbrechen</button><button class="chip dark" type="submit">Lehrkraftmodus öffnen</button></div></form>';
  document.body.appendChild(overlay);
  document.getElementById('laExitPassword')?.focus();
 }
