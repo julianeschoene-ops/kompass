@@ -282,6 +282,19 @@ function laTeacherShort(name){
  if(parts.length<2)return name;
  return parts[0].charAt(0)+'. '+parts.slice(1).join(' ');
 }
+function laMergeConsecutiveOffers(items){
+ const groups=new Map();
+ for(const item of items){
+  const hour=String(item[0]||'').replace(/\.$/,'');
+  const key=JSON.stringify(item.slice(1));
+  if(!groups.has(key))groups.set(key,{item:[...item],hours:new Set()});
+  groups.get(key).hours.add(hour);
+ }
+ return [...groups.values()].map(({item,hours})=>{
+  if(hours.has('5')&&hours.has('6'))item[0]='5. & 6.';
+  return item;
+ }).sort((a,b)=>parseInt(a[0])-parseInt(b[0])||String(a[1]).localeCompare(String(b[1]),'de'));
+}
 function laTodayBoard(){
  const d=laDayData();const config=Store.data.settings?.laDailyBoard||{};
  const current=config[d.date]||{};const published=current.published===true;
@@ -293,9 +306,9 @@ function laTodayBoard(){
  const motivation=published&&String(current.motivation||'').trim()?String(current.motivation).trim():laMotivationForDate(d.date);
  return '<section class="laTodayBoard"><div class="laTodayHeading"><h2>☀️ Heute bei uns</h2><span>'+esc(d.label)+'</span></div>'+
  '<div class="laMotivation"><div class="laMotivationEyebrow">✨ Dein Gedanke für heute</div><div class="laMotivationQuote">'+esc(motivation)+'</div></div><div class="laTodayGrid"><div class="laTodaySection"><h3>📅 Aus dem Kalender</h3>'+(events.length?'<div class="laTodayItems">'+events.map(e=>'<div class="laTodayItem"><b>'+esc((e.time?e.time+' · ':'')+e.title)+'</b><span>'+esc(e.location||'')+'</span></div>').join('')+'</div>':'<p class="mini">Keine Kalendereinträge für diesen Tag.</p>')+'</div><div class="laTodaySection"><h3>📣 Infos & Vertretungen</h3><p>'+ (notes?esc(notes).replace(/\n/g,'<br>'):'Heute sind noch keine Änderungen veröffentlicht.')+'</p></div>'+
- '<div class="laTodaySection"><h3>🎨 Kreativband</h3>'+list(LA_DAY_OFFERS[d.day]||[])+'</div>'+
+ '<div class="laTodaySection"><h3>🎨 Kreativband</h3>'+list(laMergeConsecutiveOffers(LA_DAY_OFFERS[d.day]||[]))+'</div>'+
  '<div class="laTodaySection"><h3>📘 Flexstunden</h3>'+list(flex,true)+'</div>'+
- '<div class="laTodaySection"><h3>🏀 Weitere Sportangebote</h3>'+list(LA_SPORT_OFFERS[d.day]||[])+'</div>'+
+ '<div class="laTodaySection"><h3>🏀 Weitere Sportangebote</h3>'+list(laMergeConsecutiveOffers(LA_SPORT_OFFERS[d.day]||[]))+'</div>'+
  '<div class="laTodaySection"><h3>🌍 Neues aus der Welt</h3><p>'+(news?esc(news).replace(/\n/g,'<br>'):'Noch keine geprüfte Nachricht veröffentlicht.')+'</p></div></div>'+
  (published&&current.updatedAt?'<p class="mini">Zuletzt aktualisiert: '+esc(new Date(current.updatedAt).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}))+'</p>':'')+'</section>';
 }
