@@ -4,7 +4,7 @@ let laGrade=(()=>{try{const g=Number(localStorage.getItem('kompass_la_grade_v1')
 function laSetGrade(g){g=Number(g);if(![5,6,7].includes(g)||!Auth.canAccessGrade(g))return;laGrade=g;try{localStorage.setItem('kompass_la_grade_v1',String(g));}catch(_){}laSelectedRoom='LA 1';laBoardSelectedId='';laPreviewPupilId='';render();}
 function laGradeTabs(){return '<div class="laRoomSwitcher">'+[5,6,7].filter(g=>Auth.canAccessGrade(g)).map(g=>'<button class="chip '+(laGrade===g?'dark':'')+'" onclick="laSetGrade('+g+')">Stufe '+g+'</button>').join('')+'</div>';}
 function laSettingKey(k){return laGrade===6?k:k+'Grade'+laGrade;}
-function laGradeSettings(k){return Store.data.settings?.[laSettingKey(k)];}
+function laGradeSettings(k){if(Auth.isLernatelier()){const p=laLimitedPayloads[laGrade]||{};return ({laDailyBoard:p.dailyBoard,laPlaces:p.places,laNoise:p.noise,laBoardInfo:p.boardInfo,laLastPlaceReset:laDayData('').date})[k];}return Store.data.settings?.[laSettingKey(k)];}
 
 const LA_PLACES=['Lernatelier','Stichgang','Marktplatz','Bibliothek','Input','Coaching'];
 const LA_LEVELS=['Hiker','Climber','Free-Climber'];
@@ -32,7 +32,7 @@ function laKioskLocked(){try{return localStorage.getItem(LA_KIOSK_LOCK_KEY)==='1
 function laSetKioskLock(locked){if(locked)localStorage.setItem(LA_KIOSK_LOCK_KEY,'1');else localStorage.removeItem(LA_KIOSK_LOCK_KEY);}
 let laViewMode=laKioskLocked()?'student':'teacher';
 let laPreviewPupilId='';
-function laPupils(){return (Store.pupils||[]).filter(p=>!p.archived&&Number(p.year||String(p.className||'').charAt(0))===laGrade);}
+function laPupils(){if(Auth.isLernatelier())return (laLimitedRows[laGrade]||[]).filter(p=>!p.archived);return (Store.pupils||[]).filter(p=>!p.archived&&Number(p.year||String(p.className||'').charAt(0))===laGrade);}
 function laRoom(p){return LA_ROOMS.includes(p.learningAtelier)?p.learningAtelier:'';}
 function laSafeId(id){return esc(String(id));}
 async function laUpdate(id,key,value){
@@ -95,6 +95,7 @@ async function laAnswerRequest(id,yes){
  Store.save('Lernort-Anfrage entschieden',{pupilId:p.id,approved:yes});render();
 }
 async function laSetHelp(id,enabled){
+ if(Auth.isLernatelier()){laLimitedAction(id,'help',String(!!enabled));return;}
  if(!Auth.canAccessGrade(laGrade))return;
  const p=laPupils().find(x=>String(x.id)===String(id));if(!p)return;
  try{await laTeacherCloudChange(id,'help',String(!!enabled));}catch(e){alert('Hilfehand nicht gespeichert: '+e.message);return;}
@@ -108,6 +109,7 @@ function laCloseExitDialog(){
  if(dialog)dialog.remove();
 }
 function laExitStudentPreview(){
+ if(Auth.isLernatelier()){laLimitedTeacher();return;}
  const user=Auth.currentUser();
  if(!user)return;
  if(Auth.session?.mode!=='cloud'){alert('Die geschützte Rückkehr benötigt ein Cloud-Lehrkraftkonto.');return;}
@@ -143,6 +145,7 @@ async function laConfirmExitStudentPreview(event){
 let laBoardSelectedId='';
 let laStudentTab='news';
 async function laBoardMove(id,place){
+ if(Auth.isLernatelier()){await laLimitedAction(id,'request',place);laBoardSelectedId='';return;}
  if(!Auth.canAccessGrade(laGrade)||!laPlaces(laSelectedRoom).includes(place))return;
  const p=laPupils().find(x=>String(x.id)===String(id));
  if(!p||laRoom(p)!==laSelectedRoom)return;
@@ -422,7 +425,7 @@ function laStudentPupilCard(p,selectedId,onSelect){
 }
 function laStudentPreview(){
  if(!Auth.canAccessGrade(laGrade))return;
- laResetLearningPlacesDaily();
+ if(!Auth.isLernatelier())laResetLearningPlacesDaily();
  const all=laPupils();
  if(!all.some(p=>laRoom(p)===laSelectedRoom)){
   const first=LA_ROOMS.find(room=>all.some(p=>laRoom(p)===room));if(first)laSelectedRoom=first;
@@ -436,7 +439,7 @@ function laStudentPreview(){
  html+='<div class="laRoomSwitcher laMainTabs"><button class="chip '+(laStudentTab==='news'?'dark':'')+'" onclick="laStudentTab=\'news\';laBoardSelectedId=\'\';render()">📰 News</button>'+LA_ROOMS.map(room=>'<button class="chip '+(laStudentTab==='room'&&room===laSelectedRoom?'dark':'')+'" onclick="laStudentTab=\'room\';laSelectedRoom=\''+room+'\';laBoardSelectedId=\'\';render()">'+room+'</button>').join('')+'</div>';
  if(laStudentTab==='news'){
   html+='<div class="laTodayDateNav"><button class="chip" onclick="laMoveBoardDay(-1)">‹ Vortag</button><button class="chip" onclick="laBoardDate=\'\';render()">Heute</button><button class="chip" onclick="laMoveBoardDay(1)">Nächster Tag ›</button></div>';
-  html+=laTodayBoard();
+  html+=Auth.isLernatelier()?laLimitedNews():laTodayBoard();
   document.getElementById('app').innerHTML='<main class="laStudentFullscreen">'+html+'</main>';
   return;
  }
@@ -566,8 +569,8 @@ async function laLoadLimited(grade){
 function laLimitedRefresh(){delete laLimitedRows[laGrade];laLimitedView();}
 function laLimitedGrade(g){if(!Auth.canAccessGrade(g))return;laGrade=Number(g);laLimitedQuery='';laLimitedView();}
 function laLimitedSearch(v){laLimitedQuery=String(v||'');const q=laLimitedQuery.toLocaleLowerCase('de').trim();document.querySelectorAll('[data-la-name]').forEach(el=>{el.style.display=!q||el.getAttribute('data-la-name').includes(q)?'':'none';});}
-function laLimitedSetRoom(r){if(!LA_ROOMS.includes(r))return;laLimitedTab='room';laLimitedRoom=r;laLimitedSelectedId='';laLimitedView();}
-function laLimitedSelect(id){laLimitedSelectedId=String(id);laLimitedView();}
+function laLimitedSetRoom(r){if(!LA_ROOMS.includes(r))return;laLimitedTab='room';laStudentTab='room';laLimitedRoom=r;laLimitedSelectedId='';laLimitedView();}
+function laLimitedSelect(id){laLimitedSelectedId=String(id);laBoardSelectedId=String(id);laLimitedView();}
 function laLimitedStudent(){laLimitedMode='student';laLimitedSelectedId='';laLimitedQuery='';laSetKioskLock(true);laLimitedView();}
 function laLimitedTeacher(){
  if(!Auth.currentUser()||Auth.session?.mode!=='cloud')return;
@@ -610,7 +613,7 @@ function laLimitedNews(){
  '<div class="laTodayColumn"><div class="laTodaySection"><h3>🎨 Kreativband</h3><p class="mini">Veröffentlichte Angebote erscheinen nach der Datensynchronisierung.</p></div></div>'+
  '<div class="laTodayColumn"><div class="laTodaySection"><h3>📘 Flexstunden</h3><p class="mini">Veröffentlichte Flexstunden erscheinen nach der Datensynchronisierung.</p></div></div></div></section>';
 }
-function laLimitedSetTab(tab){if(tab!=='room'&&tab!=='news')return;laLimitedTab=tab;laLimitedSelectedId='';laLimitedView();}
+function laLimitedSetTab(tab){if(tab!=='room'&&tab!=='news')return;laStudentTab=tab;laLimitedTab=tab;laLimitedSelectedId='';laLimitedView();}
 function laLimitedView(){
  laLimitedStartPoll();
  const grades=Auth.allowedGrades();
@@ -621,6 +624,12 @@ function laLimitedView(){
  if(typeof laKioskLocked==='function'&&laKioskLocked())laLimitedMode='student';
  const pupils=laLimitedRows[laGrade];
  if(!pupils){root.textContent='Lernatelier wird geladen …';laLoadLimited(laGrade);return;}
+ if(laLimitedMode==='student'){
+  laSelectedRoom=laLimitedRoom;
+  laStudentTab=laLimitedTab==='news'?'news':'room';
+  laBoardSelectedId=laLimitedSelectedId;
+  laStudentPreview();return;
+ }
  const tabs=laLimitedMode==='teacher'?grades.map(g=>'<button class="chip '+(g===laGrade?'dark':'')+'" onclick="laLimitedGrade('+g+')">Stufe '+g+'</button>').join(''):'';
  const roomTabs=LA_ROOMS.map(r=>'<button class="chip '+(r===laLimitedRoom?'dark':'')+'" onclick="laLimitedSetRoom(\''+r+'\')">'+r+'</button>').join('');
  const visible=laLimitedMode==='student'?pupils.filter(p=>p.learningAtelier===laLimitedRoom):pupils;
