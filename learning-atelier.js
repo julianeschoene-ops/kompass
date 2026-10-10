@@ -539,12 +539,12 @@ function laLimitedView(){
    const name=esc(p.short||[p.first,p.last].filter(Boolean).join(' '));
    const room=esc(p.learningAtelier||'Ohne LA');
    const place=esc(p.learningPlace||'Lernatelier');
-   const id=String(p.id).replace(/[^a-zA-Z0-9_-]/g,'');
-   const actions='<button class="chip" onclick="laLimitedAction(\''+id+'\',\'help\',\''+(!p.laNeedsHelp)+'\')">'+(p.laNeedsHelp?'✓ Erledigt':'✋ Hilfe')+'</button>';
+   const id=encodeURIComponent(String(p.id)).replace(/'/g,'%27');
+   const actions='<button class="chip" onclick="laLimitedAction(decodeURIComponent(\''+id+'\'),\'help\',\''+(!p.laNeedsHelp)+'\')">'+(p.laNeedsHelp?'✓ Erledigt':'✋ Hilfe')+'</button>';
    const pending=p.laRequest?.status==='pending'
-     ?'<div class="mini">Anfrage: '+esc(p.laRequest.place||'')+'</div>'+(laLimitedMode==='teacher'?'<button class="chip" onclick="laLimitedAction(\''+id+'\',\'approve\',null)">✓ Erlauben</button><button class="chip" onclick="laLimitedAction(\''+id+'\',\'deny\',null)">Ablehnen</button>':'')
+     ?'<div class="mini">Anfrage: '+esc(p.laRequest.place||'')+'</div>'+(laLimitedMode==='teacher'?'<button class="chip" onclick="laLimitedAction(decodeURIComponent(\''+id+'\'),\'approve\',null)">✓ Erlauben</button><button class="chip" onclick="laLimitedAction(decodeURIComponent(\''+id+'\'),\'deny\',null)">Ablehnen</button>':'')
      :'';
-   const places='<select onchange="laLimitedAction(\''+id+'\',\''+(laLimitedMode==='teacher'?'place':'request')+'\',this.value);this.selectedIndex=0"><option value="">Lernort wählen</option>'+LA_DEFAULT_PLACES.filter(v=>v!=='Lernatelier').map(v=>'<option value="'+esc(v)+'">'+esc(v)+'</option>').join('')+'</select>';
+   const places='<select onchange="laLimitedAction(decodeURIComponent(\''+id+'\'),\''+(laLimitedMode==='teacher'?'place':'request')+'\',this.value);this.selectedIndex=0"><option value="">Lernort wählen</option>'+LA_DEFAULT_PLACES.filter(v=>v!=='Lernatelier').map(v=>'<option value="'+esc(v)+'">'+esc(v)+'</option>').join('')+'</select>';
    return '<div class="laQueue" data-la-name="'+esc([p.first,p.last,p.short,p.className].join(' ').toLocaleLowerCase('de'))+'"><div><b>'+name+'</b>'+(laLimitedMode==='teacher'?'<div class="mini">'+room+' · '+esc(p.className||'')+'</div>':'')+'</div><span class="statusPill">'+place+'</span>'+pending+actions+places+'</div>';
  }).join('')||'<p class="mini">Keine passenden Schüler*innen.</p>';
  const controls=laLimitedMode==='teacher'
