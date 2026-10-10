@@ -145,7 +145,7 @@ async function laConfirmExitStudentPreview(event){
 let laBoardSelectedId='';
 let laStudentTab='news';
 async function laBoardMove(id,place){
- if(Auth.isLernatelier()){await laLimitedAction(id,'request',place);laBoardSelectedId='';return;}
+ if(Auth.isLernatelier()){laBoardSelectedId='';await laLimitedAction(id,'place',place);return;}
  if(!Auth.canAccessGrade(laGrade)||!laPlaces(laSelectedRoom).includes(place))return;
  const p=laPupils().find(x=>String(x.id)===String(id));
  if(!p||laRoom(p)!==laSelectedRoom)return;
@@ -460,7 +460,7 @@ function laStudentPreview(){
   html+='<button class="chip dark laHelpButton" onclick="laSetHelp(\''+esc(selected.id)+'\','+(!selected.laNeedsHelp)+')">'+(selected.laNeedsHelp?'✓ Hilfehand zurücknehmen':'✋ Ich brauche Hilfe')+'</button>';
   html+='</div>';
  }
- html+='<p class="mini laBoardFoot">Vorschau im angemeldeten Lehrkraftkonto. Die Standortwechsel sind hier direkt möglich; gesicherte Schülerzugänge und automatische Bewegungsrechte werden noch entwickelt.</p>';
+
  document.getElementById('app').innerHTML='<main class="laStudentFullscreen laKioskBoard">'+html+'</main>';
  laInitDrag();
 }
