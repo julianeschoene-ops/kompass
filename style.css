@@ -206,3 +206,23 @@
 @media(min-width:901px) and (max-width:1100px){
  .laStudentFullscreen .laTodayGrid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
 }
+
+/* Freundliche News-Startseite mit hervorgehobenem Tagesgedanken */
+.laStudentFullscreen:not(.laKioskBoard) .laTodayBoard{background:#f8f9fe;border-color:#dce3f0;border-radius:22px;box-shadow:0 4px 18px rgba(48,61,96,.045)}
+.laStudentFullscreen:not(.laKioskBoard) .laTodayHeading h2{font-size:1.5rem!important}
+.laStudentFullscreen:not(.laKioskBoard) .laMotivation{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:linear-gradient(110deg,#fff0c8 0%,#fff5de 45%,#f2eaff 100%);border:1px solid #eddcbb;border-radius:18px;padding:18px 22px!important;margin:14px 0!important;min-height:110px;box-shadow:0 3px 10px rgba(105,81,57,.045)}
+.laStudentFullscreen:not(.laKioskBoard) .laMotivationEyebrow{font-size:.95rem;font-weight:750;color:#7e5b88;margin-bottom:7px!important}
+.laStudentFullscreen:not(.laKioskBoard) .laMotivationQuote{font-size:clamp(1.35rem,2.25vw,1.9rem)!important;line-height:1.3;font-weight:800;color:#39405d}
+.laStudentFullscreen:not(.laKioskBoard) .laTodayGrid{gap:11px!important;margin-top:12px!important}
+.laStudentFullscreen:not(.laKioskBoard) .laTodaySection{padding:14px!important;border-radius:16px;box-shadow:0 2px 7px rgba(49,64,93,.035)}
+.laStudentFullscreen:not(.laKioskBoard) .laTodaySection:nth-child(6n+1){background:#eef6ff;border-color:#d8e7fa}
+.laStudentFullscreen:not(.laKioskBoard) .laTodaySection:nth-child(6n+2){background:#fff5e8;border-color:#f1e3cd}
+.laStudentFullscreen:not(.laKioskBoard) .laTodaySection:nth-child(6n+3){background:#f0f8ed;border-color:#dcebd7}
+.laStudentFullscreen:not(.laKioskBoard) .laTodaySection:nth-child(6n+4){background:#f3f0ff;border-color:#e4ddfa}
+.laStudentFullscreen:not(.laKioskBoard) .laTodaySection:nth-child(6n+5){background:#fff0f1;border-color:#f1dfe3}
+.laStudentFullscreen:not(.laKioskBoard) .laTodaySection:nth-child(6n+6){background:#ebf8f6;border-color:#d7ebe8}
+.laStudentFullscreen:not(.laKioskBoard) .laTodaySection h3{font-size:1.03rem!important;margin-bottom:9px!important;color:#293b56}
+.laStudentFullscreen:not(.laKioskBoard) .laTodayItem{font-size:.91rem!important;padding:7px 0!important;line-height:1.35}
+.laStudentFullscreen:not(.laKioskBoard) .laTodayItem span{font-size:.82rem!important}
+.laStudentFullscreen:not(.laKioskBoard) .laTodayItems{max-height:225px!important}
+@media(min-width:901px){.laStudentFullscreen:not(.laKioskBoard) .laTodayBoard{padding:17px!important}}
