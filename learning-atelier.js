@@ -480,3 +480,33 @@ function learningAtelier(){
   html+='<p class="mini">Erste Ausbaustufe: Die Standortänderung erfolgt durch berechtigte Lehrkräfte. Schüler-Selbstbuchung und digitale Genehmigungen werden erst nach Einrichtung gesicherter Schülerzugänge freigeschaltet.</p>';
   shell(html);
 }
+
+let laLimitedRows={};
+async function laLoadLimited(grade){
+ const result=await Auth.cloudClient.from('kompass_lernatelier_state').select('payload').eq('grade',grade).maybeSingle();
+ if(result.error)throw result.error;
+ if(!Array.isArray(result.data?.payload?.pupils))throw new Error('Lernatelier-Daten fehlen.');
+ laLimitedRows[grade]=result.data.payload.pupils;
+ laLimitedView();
+}
+function laLimitedView(){
+ const grades=Auth.allowedGrades();
+ if(!grades.includes(laGrade))laGrade=grades[0]||6;
+ const root=document.getElementById('app');
+ if(!grades.length){root.textContent='Keine Stufe freigegeben.';return;}
+ const pupils=laLimitedRows[laGrade];
+ if(!pupils){
+   root.textContent='Lernatelier wird geladen …';
+   laLoadLimited(laGrade).catch(e=>{root.textContent='Laden fehlgeschlagen: '+e.message;});
+   return;
+ }
+ const tabs=grades.map(g=>'<button class="chip" onclick="laGrade='+g+';laLimitedView()">Stufe '+g+'</button>').join('');
+ const rooms=['LA 1','LA 2','LA 3'];
+ const cards=rooms.map(room=>{
+   const entries=pupils.filter(p=>p.learningAtelier===room).map(p=>
+     '<div class="laQueue"><b>'+esc(p.short||[p.first,p.last].filter(Boolean).join(' '))+'</b><span class="statusPill">'+esc(p.learningPlace||'Lernatelier')+'</span></div>'
+   ).join('');
+   return '<div class="card"><h2>'+room+'</h2>'+entries+'</div>';
+ }).join('');
+ root.innerHTML='<main class="main"><h1>Lernatelier · Stufe '+laGrade+'</h1><p>Geschützte Leseansicht</p><div class="toolbar">'+tabs+'</div>'+cards+'</main>';
+}
