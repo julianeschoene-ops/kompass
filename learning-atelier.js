@@ -65,6 +65,11 @@ function laNoise(room,value){
   Store.save();render();
 }
 
+async function laTeacherRefresh(){
+ if(!Sync.enabled())return;
+ try{await Sync.pull();render();toast('Lernatelier aktualisiert');}
+ catch(e){alert('Aktualisierung fehlgeschlagen: '+(e.message||String(e)));}
+}
 async function laTeacherCloudChange(id,action,value){
  if(Auth.session?.mode!=='cloud'||!Auth.cloudClient)return;
  const {error}=await Auth.cloudClient.rpc('kompass_la_change',{
