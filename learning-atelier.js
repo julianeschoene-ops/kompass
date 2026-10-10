@@ -1,22 +1,28 @@
 /* KOMPASS Lernatelier – erste Lehrkraft-Version. Schüler-Selbstbuchung folgt nach Rollenprüfung. */
 const LA_ROOMS=['LA 1','LA 2','LA 3'];
+let laGrade=6;
+function laSetGrade(g){g=Number(g);if(![5,6,7].includes(g)||!Auth.canAccessGrade(g))return;laGrade=g;laSelectedRoom='LA 1';laBoardSelectedId='';laPreviewPupilId='';render();}
+function laGradeTabs(){return '<div class="laRoomSwitcher">'+[5,6,7].filter(g=>Auth.canAccessGrade(g)).map(g=>'<button class="chip '+(laGrade===g?'dark':'')+'" onclick="laSetGrade('+g+')">Stufe '+g+'</button>').join('')+'</div>';}
+function laSettingKey(k){return laGrade===6?k:k+'Grade'+laGrade;}
+function laGradeSettings(k){return Store.data.settings?.[laSettingKey(k)];}
+
 const LA_PLACES=['Lernatelier','Stichgang','Marktplatz','Bibliothek','Input','Coaching'];
 const LA_LEVELS=['Hiker','Climber','Free-Climber'];
 const LA_DEFAULT_PLACES=['Lernatelier','Input Deutsch','Input Mathematik','Input Englisch','Stichgang','Bibliothek','Marktplatz','WC','Zu Hause','VKL','Chor / Bläserklasse','Sport','Club','SMV','Bäcker','Teamstunde','Coaching','Schülersozialarbeit','LA 3 / Extraraum'];
 function laPlaces(room=laSelectedRoom){
- const configured=Store.data.settings?.laPlaces?.[room];
+ const configured=laGradeSettings('laPlaces')?.[room];
  const names=Array.isArray(configured)&&configured.length?configured:LA_DEFAULT_PLACES;
  const used=laPupils().filter(p=>laRoom(p)===room).map(p=>p.learningPlace).filter(Boolean);
  return [...new Set(['Lernatelier',...names,...used])];
 }
 function laSavePlaces(){
- if(!Auth.canLead(6)&&!Auth.isAdmin())return;
+ if(!Auth.canLead(laGrade)&&!Auth.isAdmin())return;
  const input=document.getElementById('laPlaceEditor');if(!input)return;
  const names=[...new Set(input.value.split(/\n/).map(x=>x.trim()).filter(Boolean))].slice(0,40);
  if(!names.length){alert('Bitte mindestens einen Lernort eingeben.');return;}
  Store.data.settings=Store.data.settings||{};
- Store.data.settings.laPlaces=Store.data.settings.laPlaces||{};
- Store.data.settings.laPlaces[laSelectedRoom]=['Lernatelier',...names.filter(x=>x!=='Lernatelier')];
+ Store.data.settings[laSettingKey('laPlaces')]=Store.data.settings[laSettingKey('laPlaces')]||{};
+ Store.data.settings[laSettingKey('laPlaces')][laSelectedRoom]=['Lernatelier',...names.filter(x=>x!=='Lernatelier')];
  Store.save('Lernorte aktualisiert',{room:laSelectedRoom});render();
 }
 
@@ -26,11 +32,11 @@ function laKioskLocked(){try{return localStorage.getItem(LA_KIOSK_LOCK_KEY)==='1
 function laSetKioskLock(locked){if(locked)localStorage.setItem(LA_KIOSK_LOCK_KEY,'1');else localStorage.removeItem(LA_KIOSK_LOCK_KEY);}
 let laViewMode=laKioskLocked()?'student':'teacher';
 let laPreviewPupilId='';
-function laPupils(){return (Store.pupils||[]).filter(p=>!p.archived&&Number(p.year||String(p.className||'').charAt(0))===6);}
+function laPupils(){return (Store.pupils||[]).filter(p=>!p.archived&&Number(p.year||String(p.className||'').charAt(0))===laGrade);}
 function laRoom(p){return LA_ROOMS.includes(p.learningAtelier)?p.learningAtelier:'';}
 function laSafeId(id){return esc(String(id));}
 function laUpdate(id,key,value){
-  if(!Auth.canLead(6)&&!Auth.isAdmin()){toast('Nur Stufenleitung darf diese Zuordnung ändern.');return;}
+  if(!Auth.canLead(laGrade)&&!Auth.isAdmin()){toast('Nur Stufenleitung darf diese Zuordnung ändern.');return;}
   const p=laPupils().find(x=>String(x.id)===String(id));if(!p)return;
   if(key==='learningAtelier'&&!LA_ROOMS.includes(value))return;
   if(key==='graduation'&&!LA_LEVELS.includes(value))return;
@@ -38,7 +44,7 @@ function laUpdate(id,key,value){
   p[key]=value;Store.save();render();
 }
 function laAssignUnassigned(room){
- if(!Auth.canLead(6)&&!Auth.isAdmin())return;
+ if(!Auth.canLead(laGrade)&&!Auth.isAdmin())return;
  if(!LA_ROOMS.includes(room))return;
  const pupils=laPupils().filter(p=>!laRoom(p));
  if(!pupils.length){toast('Alle SuS sind bereits zugeordnet.');return;}
@@ -48,22 +54,22 @@ function laAssignUnassigned(room){
  laSelectedRoom=room;render();
 }
 function laNoise(room,value){
-  if(!Auth.canLead(6)&&!Auth.isAdmin())return;
+  if(!Auth.canLead(laGrade)&&!Auth.isAdmin())return;
   if(!LA_ROOMS.includes(room)||!['green','yellow','red'].includes(value))return;
   Store.data.settings=Store.data.settings||{};
-  Store.data.settings.laNoise=Store.data.settings.laNoise||{};
-  Store.data.settings.laNoise[room]=value;
+  Store.data.settings[laSettingKey('laNoise')]=Store.data.settings[laSettingKey('laNoise')]||{};
+  Store.data.settings[laSettingKey('laNoise')][room]=value;
   Store.save();render();
 }
 
 function laRequestPlace(id,place){
- if(!Auth.canAccessGrade(6)||!laPlaces(laSelectedRoom).includes(place)||place==='Lernatelier')return;
+ if(!Auth.canAccessGrade(laGrade)||!laPlaces(laSelectedRoom).includes(place)||place==='Lernatelier')return;
  const p=laPupils().find(x=>String(x.id)===String(id));if(!p||!laRoom(p))return;
  p.laRequest={place,status:'pending',at:new Date().toISOString()};
  Store.save('Lernort-Anfrage erstellt',{pupilId:p.id,place});render();
 }
 function laAnswerRequest(id,yes){
- if(!Auth.canAccessGrade(6))return;
+ if(!Auth.canAccessGrade(laGrade))return;
  const p=laPupils().find(x=>String(x.id)===String(id));if(!p||p.laRequest?.status!=='pending')return;
  const place=p.laRequest.place;
  p.laRequest={...p.laRequest,status:yes?'approved':'denied',decidedAt:new Date().toISOString()};
@@ -71,7 +77,7 @@ function laAnswerRequest(id,yes){
  Store.save('Lernort-Anfrage entschieden',{pupilId:p.id,approved:yes});render();
 }
 function laSetHelp(id,enabled){
- if(!Auth.canAccessGrade(6))return;
+ if(!Auth.canAccessGrade(laGrade))return;
  const p=laPupils().find(x=>String(x.id)===String(id));if(!p)return;
  p.laNeedsHelp=!!enabled;Store.save('Hilfehand geändert',{pupilId:p.id});render();
 }
@@ -93,40 +99,40 @@ async function laExitStudentPreview(){
 let laBoardSelectedId='';
 let laStudentTab='news';
 function laBoardMove(id,place){
- if(!Auth.canAccessGrade(6)||!laPlaces(laSelectedRoom).includes(place))return;
+ if(!Auth.canAccessGrade(laGrade)||!laPlaces(laSelectedRoom).includes(place))return;
  const p=laPupils().find(x=>String(x.id)===String(id));
  if(!p||laRoom(p)!==laSelectedRoom)return;
  // This remains a teacher-authenticated kiosk preview, not a public student login.
  p.learningPlace=place;
  Store.data.settings=Store.data.settings||{};
- Store.data.settings.laLastPlaceReset=laDayData('').date;
+ Store.data.settings[laSettingKey('laLastPlaceReset')]=laDayData('').date;
  p.laRequest=null;
  Store.save('Standorttafel: Lernort gewechselt',{pupilId:p.id,place});
  laBoardSelectedId='';render();
 }
 function laSaveRoomInfo(){
- if(!Auth.canLead(6)&&!Auth.isAdmin())return;
- const star=Store.data.settings?.laBoardInfo?.[laSelectedRoom]?.star||'';
+ if(!Auth.canLead(laGrade)&&!Auth.isAdmin())return;
+ const star=laGradeSettings('laBoardInfo')?.[laSelectedRoom]?.star||'';
  const duties=document.getElementById('laDutiesEdit')?.value||'';
  Store.data.settings=Store.data.settings||{};
- Store.data.settings.laBoardInfo=Store.data.settings.laBoardInfo||{};
- Store.data.settings.laBoardInfo[laSelectedRoom]={star:star.slice(0,150),duties:duties.slice(0,500)};
+ Store.data.settings[laSettingKey('laBoardInfo')]=Store.data.settings[laSettingKey('laBoardInfo')]||{};
+ Store.data.settings[laSettingKey('laBoardInfo')][laSelectedRoom]={star:star.slice(0,150),duties:duties.slice(0,500)};
  Store.save('Teamstar und Dienste gespeichert',{room:laSelectedRoom});render();
 }
 function laSetRoomInfo(kind,value){
- if(!Auth.canLead(6)&&!Auth.isAdmin())return;
+ if(!Auth.canLead(laGrade)&&!Auth.isAdmin())return;
  if(!LA_ROOMS.includes(laSelectedRoom)||!['duties','star'].includes(kind))return;
  Store.data.settings=Store.data.settings||{};
- Store.data.settings.laBoardInfo=Store.data.settings.laBoardInfo||{};
- const info=Store.data.settings.laBoardInfo[laSelectedRoom]||{duties:'',star:''};
+ Store.data.settings[laSettingKey('laBoardInfo')]=Store.data.settings[laSettingKey('laBoardInfo')]||{};
+ const info=Store.data.settings[laSettingKey('laBoardInfo')][laSelectedRoom]||{duties:'',star:''};
  info[kind]=String(value||'').slice(0,500);
- Store.data.settings.laBoardInfo[laSelectedRoom]=info;
+ Store.data.settings[laSettingKey('laBoardInfo')][laSelectedRoom]=info;
  Store.save('Lernatelier-Tafel aktualisiert',{room:laSelectedRoom,kind});render();
 }
 const LA_STAR_SUBJECTS=[['en','Englisch','red'],['de','Deutsch','yellow'],['ma','Mathematik','blue']];
 function laStars(p){return Array.isArray(p.laStars)?p.laStars:[];}
 function laToggleStar(id,subject){
- if(!Auth.canLead(6)&&!Auth.isAdmin())return;
+ if(!Auth.canLead(laGrade)&&!Auth.isAdmin())return;
  if(!LA_STAR_SUBJECTS.some(x=>x[0]===subject))return;
  const p=laPupils().find(x=>String(x.id)===String(id));if(!p)return;
  const old=laStars(p);
@@ -135,14 +141,14 @@ function laToggleStar(id,subject){
 }
 const LA_DUTIES=[['broom','🧹','Besen'],['book','📖','Buch'],['hall','🚪','Flur'],['trash','🗑️','Mülleimer']];
 function laWeekKey(date=new Date()){const d=new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate()));d.setUTCDate(d.getUTCDate()+4-(d.getUTCDay()||7));const year=d.getUTCFullYear();const jan=new Date(Date.UTC(year,0,1));return year+'-W'+String(Math.ceil((((d-jan)/86400000)+1)/7)).padStart(2,'0');}
-function laDutyHistory(){return Store.data.settings?.laDutyHistory||{};}
+function laDutyHistory(){return laGradeSettings('laDutyHistory')||{};}
 function laDutyCount(id,duty){return Object.values(laDutyHistory()).filter(w=>w&&w.assignments&&w.assignments[String(id)]?.includes(duty)).length;}
 function laDuties(p){return Array.isArray(p.laDuties)?p.laDuties:[];}
 function laEnsureWeeklyDuties(){
  const week=laWeekKey(),settings=Store.data.settings||(Store.data.settings={});
- settings.laDutyHistory=settings.laDutyHistory||{};
- if(settings.laDutyHistory[week])return;
- if(!Auth.isAdmin()&&!Auth.canLead(6))return;
+ settings[laSettingKey('laDutyHistory')]=settings[laSettingKey('laDutyHistory')]||{};
+ if(settings[laSettingKey('laDutyHistory')][week])return;
+ if(!Auth.isAdmin()&&!Auth.canLead(laGrade))return;
  const assignments={};
  for(const room of LA_ROOMS){
   const pupils=laPupils().filter(p=>laRoom(p)===room);
@@ -156,16 +162,16 @@ function laEnsureWeeklyDuties(){
    }
   }
  }
- settings.laDutyHistory[week]={createdAt:new Date().toISOString(),assignments};
+ settings[laSettingKey('laDutyHistory')][week]={createdAt:new Date().toISOString(),assignments};
  for(const p of laPupils())p.laDuties=assignments[String(p.id)]||[];
  Store.save('Wöchentliche Dienste automatisch eingeteilt',{week});
 }
 function laToggleDuty(id,duty){
- if(!Auth.canLead(6)&&!Auth.isAdmin())return;
+ if(!Auth.canLead(laGrade)&&!Auth.isAdmin())return;
  if(!LA_DUTIES.some(x=>x[0]===duty))return;
  laEnsureWeeklyDuties();
  const p=laPupils().find(x=>String(x.id)===String(id));if(!p)return;
- const week=laWeekKey(),history=Store.data.settings.laDutyHistory;
+ const week=laWeekKey(),history=Store.data.settings[laSettingKey('laDutyHistory')];
  const old=laDuties(p),adding=!old.includes(duty);
  if(adding){const others=laPupils().filter(x=>laRoom(x)===laRoom(p)&&String(x.id)!==String(id)&&laDuties(x).includes(duty));if(others.length>=3&&!confirm('Für diesen Dienst sind bereits drei Kinder eingeteilt. Trotzdem hinzufügen?'))return;if(others.some(x=>String(x.team||'')===String(p.team||''))&&!confirm('Ein Kind aus demselben Farbteam ist bereits eingeteilt. Trotzdem hinzufügen?'))return;}
  if(adding&&laDutyCount(id,duty)>=2&&!confirm((p.short||p.first)+' hatte diesen Dienst bereits '+laDutyCount(id,duty)+'-mal. Trotzdem einteilen?'))return;
@@ -175,7 +181,7 @@ function laToggleDuty(id,duty){
  Store.save('Lernatelier-Dienst geändert',{pupilId:p.id,duty,week});render();
 }
 function laDutyOverview(){
- if(!Auth.isAdmin()&&!Auth.canLead(6))return '';
+ if(!Auth.isAdmin()&&!Auth.canLead(laGrade))return '';
  const room=laSelectedRoom,people=laPupils().filter(p=>laRoom(p)===room);
  return '<div class="card"><h2>🧹 Wochendienste · '+esc(room)+' · '+esc(laWeekKey())+'</h2><p class="mini">Wird beim ersten Aufruf in einer neuen Kalenderwoche automatisch eingeteilt. Pro Dienst werden drei Kinder aus unterschiedlichen Farbteams vorgeschlagen. Falls nicht genügend Kinder verfügbar sind, bleiben Plätze offen. Manuelle Änderungen sind in der Tabelle möglich.</p><div class="laTodayItems">'+LA_DUTIES.map(([id,icon,label])=>{const assigned=people.filter(p=>laDuties(p).includes(id));return '<div class="laTodayItem"><b>'+icon+' '+esc(label)+'</b><span>'+(assigned.length?assigned.map(p=>esc(p.short||p.first)+' (bisher '+laDutyCount(p.id,id)+'×)').join(', '):'Noch niemand eingeteilt')+'</span></div>';}).join('')+'</div></div>';
 }
@@ -300,56 +306,56 @@ function laMergeConsecutiveOffers(items){
  }).sort((a,b)=>parseInt(a[0])-parseInt(b[0])||String(a[1]).localeCompare(String(b[1]),'de'));
 }
 function laTodayBoard(){
- const d=laDayData();const config=Store.data.settings?.laDailyBoard||{};
+ const d=laDayData();const config=laGradeSettings('laDailyBoard')||{};
  const current=config[d.date]||{};const published=current.published===true;
- const events=(Store.calendarEvents||[]).filter(e=>e.date<=d.date&&d.date<=(e.endDate||e.date)&&(!e.grade||e.grade==='all'||Number(e.grade)===6)&&(!e.visibility||e.visibility==='all'||e.visibility==='students'));
+ const events=(Store.calendarEvents||[]).filter(e=>e.date<=d.date&&d.date<=(e.endDate||e.date)&&(!e.grade||e.grade==='all'||Number(e.grade)===laGrade)&&(!e.visibility||e.visibility==='all'||e.visibility==='students'));
  const list=(items,isFlex=false)=>items.length?'<div class="laTodayItems">'+items.map(x=>'<div class="laTodayItem"><b>'+esc(x[0])+' Std. · '+esc(x[1])+'</b><span>'+esc(laTeacherShort(x[2]))+(x[3]?(isFlex?' · Raum: ':' · Treff: ')+esc(x[3]):'')+(isFlex&&x[4]?'<br>Teams: '+esc(x[4]):'')+'</span></div>').join('')+'</div>':'<p class="mini">Keine Angebote eingetragen.</p>';
- const flex=laFlexForDate(d);
+ const flex=laGrade===6?laFlexForDate(d):[];
  const notes=published?String(current.notes||'').trim():'';
  const news=published?String(current.news||'').trim():'';
  const motivation=published&&String(current.motivation||'').trim()?String(current.motivation).trim():laMotivationForDate(d.date);
  return '<section class="laTodayBoard"><div class="laTodayHeading"><h2>☀️ Heute bei uns</h2><span>'+esc(d.label)+'</span></div>'+
  '<div class="laMotivation"><div class="laMotivationEyebrow">✨ Dein Gedanke für heute</div><div class="laMotivationQuote">'+esc(motivation)+'</div></div><div class="laTodayGrid laTodayMasonry">'+
  '<div class="laTodayColumn"><div class="laTodaySection"><h3>📅 Aus dem Kalender</h3>'+(events.length?'<div class="laTodayItems">'+events.map(e=>'<div class="laTodayItem"><b>'+esc((e.time?e.time+' · ':'')+e.title)+'</b><span>'+esc(e.location||'')+'</span></div>').join('')+'</div>':'<p class="mini">Keine Kalendereinträge für diesen Tag.</p>')+'</div>'+
- '<div class="laTodaySection"><h3>🏀 Weitere Sportangebote</h3>'+list(laMergeConsecutiveOffers(LA_SPORT_OFFERS[d.day]||[]))+'</div></div>'+
+ '<div class="laTodaySection"><h3>🏀 Weitere Sportangebote</h3>'+list(laMergeConsecutiveOffers(laGrade===6?(LA_SPORT_OFFERS[d.day]||[]):[]))+'</div></div>'+
  '<div class="laTodayColumn"><div class="laTodaySection"><h3>📣 Infos & Vertretungen</h3><p>'+(notes?esc(notes).replace(/\n/g,'<br>'):'Heute sind noch keine Änderungen veröffentlicht.')+'</p></div>'+
  '<div class="laTodaySection"><h3>🌍 Neues aus der Welt</h3><p>'+(news?esc(news).replace(/\n/g,'<br>'):'Noch keine geprüfte Nachricht veröffentlicht.')+'</p></div></div>'+
- '<div class="laTodayColumn"><div class="laTodaySection"><h3>🎨 Kreativband</h3>'+list(laMergeConsecutiveOffers(LA_DAY_OFFERS[d.day]||[]))+'</div></div>'+
+ '<div class="laTodayColumn"><div class="laTodaySection"><h3>🎨 Kreativband</h3>'+list(laMergeConsecutiveOffers(laGrade===6?(LA_DAY_OFFERS[d.day]||[]):[]))+'</div></div>'+
  '<div class="laTodayColumn"><div class="laTodaySection"><h3>📘 Flexstunden</h3>'+list(flex,true)+'</div></div></div>'+
  (published&&current.updatedAt?'<p class="mini">Zuletzt aktualisiert: '+esc(new Date(current.updatedAt).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}))+'</p>':'')+'</section>';
 }
 function laEditDailyBoard(){
- if(!Auth.isAdmin()&&!Auth.canLead(6))return;
- const d=laDayData(),entry=Store.data.settings?.laDailyBoard?.[d.date]||{};
+ if(!Auth.isAdmin()&&!Auth.canLead(laGrade))return;
+ const d=laDayData(),entry=laGradeSettings('laDailyBoard')?.[d.date]||{};
  State.dialog={mode:'laDailyBoard',date:d.date};renderDialog();
 }
 function laSaveDailyBoard(){
- if(!Auth.isAdmin()&&!Auth.canLead(6))return;
+ if(!Auth.isAdmin()&&!Auth.canLead(laGrade))return;
  const date=laDayData().date;if(!/^\d{4}-\d{2}-\d{2}$/.test(date||''))return;
  Store.data.settings=Store.data.settings||{};
- Store.data.settings.laDailyBoard=Store.data.settings.laDailyBoard||{};
- Store.data.settings.laDailyBoard[date]={notes:document.getElementById('laDailyNotes')?.value||'',news:document.getElementById('laDailyNews')?.value||'',motivation:document.getElementById('laDailyMotivation')?.value||'',published:!!document.getElementById('laDailyPublish')?.checked,updatedAt:new Date().toISOString()};
+ Store.data.settings[laSettingKey('laDailyBoard')]=Store.data.settings[laSettingKey('laDailyBoard')]||{};
+ Store.data.settings[laSettingKey('laDailyBoard')][date]={notes:document.getElementById('laDailyNotes')?.value||'',news:document.getElementById('laDailyNews')?.value||'',motivation:document.getElementById('laDailyMotivation')?.value||'',published:!!document.getElementById('laDailyPublish')?.checked,updatedAt:new Date().toISOString()};
  Store.save('Tagesübersicht gespeichert',{date});State.dialog=null;render();
 }
 
-function laDailyEditor(){if(!Auth.isAdmin()&&!Auth.canLead(6))return '';const d=laDayData(),x=Store.data.settings?.laDailyBoard?.[d.date]||{};return '<div class="card"><h2>☀️ Tagesübersicht vorbereiten</h2><label>Datum auswählen</label><input type="date" value="'+esc(d.date)+'" onchange="laBoardDate=this.value;render()"><p class="mini">Du kannst beliebige zukünftige Tage vorbereiten. Die Veröffentlichung gilt nur für das gewählte Datum.</p><label>Hinweise und Vertretungen (nur für Schüler freigegebene Inhalte)</label><textarea id="laDailyNotes" rows="5">'+esc(x.notes||'')+'</textarea><label>Geprüfte Weltnachricht (mit Quelle)</label><textarea id="laDailyNews" rows="4">'+esc(x.news||'')+'</textarea><label>Motivationsspruch des Tages (optional – sonst automatisch)</label><textarea id="laDailyMotivation" rows="2">'+esc(x.motivation||'')+'</textarea><label class="check"><input type="checkbox" id="laDailyPublish" '+(x.published?'checked':'')+'> Für alle Lernateliers veröffentlichen</label><button class="chip dark" onclick="laSaveDailyBoard()">Tagesübersicht speichern</button></div>';}
+function laDailyEditor(){if(!Auth.isAdmin()&&!Auth.canLead(laGrade))return '';const d=laDayData(),x=laGradeSettings('laDailyBoard')?.[d.date]||{};return '<div class="card"><h2>☀️ Tagesübersicht vorbereiten</h2><label>Datum auswählen</label><input type="date" value="'+esc(d.date)+'" onchange="laBoardDate=this.value;render()"><p class="mini">Du kannst beliebige zukünftige Tage vorbereiten. Die Veröffentlichung gilt nur für das gewählte Datum.</p><label>Hinweise und Vertretungen (nur für Schüler freigegebene Inhalte)</label><textarea id="laDailyNotes" rows="5">'+esc(x.notes||'')+'</textarea><label>Geprüfte Weltnachricht (mit Quelle)</label><textarea id="laDailyNews" rows="4">'+esc(x.news||'')+'</textarea><label>Motivationsspruch des Tages (optional – sonst automatisch)</label><textarea id="laDailyMotivation" rows="2">'+esc(x.motivation||'')+'</textarea><label class="check"><input type="checkbox" id="laDailyPublish" '+(x.published?'checked':'')+'> Für alle Lernateliers veröffentlichen</label><button class="chip dark" onclick="laSaveDailyBoard()">Tagesübersicht speichern</button></div>';}
 function laResetLearningPlacesDaily(){
  const today=laDayData('').date;
  const settings=Store.data.settings||(Store.data.settings={});
  // Nur die Stufenleitung führt den täglichen Cloud-Reset durch.
  // Die Schülertafel zeigt veraltete Lernorte unabhängig davon nicht an.
- if(settings.laLastPlaceReset===today)return;
- if(!Auth.isAdmin()&&!Auth.canLead(6))return;
+ if(settings[laSettingKey('laLastPlaceReset')]===today)return;
+ if(!Auth.isAdmin()&&!Auth.canLead(laGrade))return;
  for(const p of laPupils()){p.learningPlace='Lernatelier';p.laRequest=null;}
- settings.laLastPlaceReset=today;
+ settings[laSettingKey('laLastPlaceReset')]=today;
  Store.save('Täglicher Neustart der Lernorte',{date:today});
 }
 function laCurrentPlace(p){
  const today=laDayData('').date;
- return Store.data.settings?.laLastPlaceReset===today?(p.learningPlace||'Lernatelier'):'Lernatelier';
+ return laGradeSettings('laLastPlaceReset')===today?(p.learningPlace||'Lernatelier'):'Lernatelier';
 }
 function laStudentPreview(){
- if(!Auth.canAccessGrade(6))return;
+ if(!Auth.canAccessGrade(laGrade))return;
  laResetLearningPlacesDaily();
  const all=laPupils();
  if(!all.some(p=>laRoom(p)===laSelectedRoom)){
@@ -357,10 +363,10 @@ function laStudentPreview(){
  }
  const pupils=all.filter(p=>laRoom(p)===laSelectedRoom).sort((a,b)=>String(a.first||a.short||'').localeCompare(String(b.first||b.short||''),'de'));
  const selected=pupils.find(p=>String(p.id)===String(laBoardSelectedId));
- const noise=Store.data.settings?.laNoise?.[laSelectedRoom]||'green';
+ const noise=laGradeSettings('laNoise')?.[laSelectedRoom]||'green';
  const noiseData={green:['🟢','Leise sprechen'],yellow:['🟡','Flüstern'],red:['🔴','Ruhe']}[noise];
- const info=Store.data.settings?.laBoardInfo?.[laSelectedRoom]||{};
- let html='<div class="laBoardTop"><div><div class="mini">KOMPASS · Jahrgang 6</div><h1>'+ (laStudentTab==='news'?'📰 News':'🏫 '+esc(laSelectedRoom))+'</h1></div><div class="laTopActions">'+(laStudentTab==='news'?'':'<div class="laCompactNoise">'+noiseData[0]+' '+noiseData[1]+'</div>')+'<button class="chip" onclick="laExitStudentPreview()">🔒 Lehrkraftmodus</button></div></div>';
+ const info=laGradeSettings('laBoardInfo')?.[laSelectedRoom]||{};
+ let html=laGradeTabs()+'<div class="laBoardTop"><div><div class="mini">KOMPASS · Jahrgang '+laGrade+'</div><h1>'+ (laStudentTab==='news'?'📰 News':'🏫 '+esc(laSelectedRoom))+'</h1></div><div class="laTopActions">'+(laStudentTab==='news'?'':'<div class="laCompactNoise">'+noiseData[0]+' '+noiseData[1]+'</div>')+'<button class="chip" onclick="laExitStudentPreview()">🔒 Lehrkraftmodus</button></div></div>';
  html+='<div class="laRoomSwitcher laMainTabs"><button class="chip '+(laStudentTab==='news'?'dark':'')+'" onclick="laStudentTab=\'news\';laBoardSelectedId=\'\';render()">📰 News</button>'+LA_ROOMS.map(room=>'<button class="chip '+(laStudentTab==='room'&&room===laSelectedRoom?'dark':'')+'" onclick="laStudentTab=\'room\';laSelectedRoom=\''+room+'\';laBoardSelectedId=\'\';render()">'+room+'</button>').join('')+'</div>';
  if(laStudentTab==='news'){
   html+='<div class="laTodayDateNav"><button class="chip" onclick="laMoveBoardDay(-1)">‹ Vortag</button><button class="chip" onclick="laBoardDate=\'\';render()">Heute</button><button class="chip" onclick="laMoveBoardDay(1)">Nächster Tag ›</button></div>';
@@ -393,28 +399,28 @@ async function laRetryCloudPupils(){
  try{
   await Sync.pull();
   const count=laPupils().length;
-  if(!count)alert('Die Cloud-Synchronisierung ist abgeschlossen, aber für Jahrgang 6 wurden keine Schülerdaten geladen. Bitte die Cloud-Berechtigungen und den gespeicherten Jahrgangsbestand prüfen. Es wurden keine Schülerdaten verändert.');
+  if(!count)alert('Die Cloud-Synchronisierung ist abgeschlossen, aber für Jahrgang '+laGrade+' wurden keine Schülerdaten geladen. Bitte die Cloud-Berechtigungen und den gespeicherten Jahrgangsbestand prüfen. Es wurden keine Schülerdaten verändert.');
   render();
  }catch(e){alert('Schülerdaten konnten nicht geladen werden: '+(e?.message||String(e))+'\n\nEs wurden keine Schülerdaten verändert.');}
 }
 function learningAtelier(){
-  if(Auth.canAccessGrade(6))laEnsureWeeklyDuties();
-  if(Auth.canAccessGrade(6))laResetLearningPlacesDaily();
-  if(!Auth.canAccessGrade(6)){shell(header('Lernatelier')+'<div class="card">Kein Zugriff auf Jahrgang 6.</div>');return;}
-  if(!laPupils().length){shell(header('Lernatelier')+'<div class="card"><h2>Schülerdaten noch nicht geladen</h2><p>Die Oberfläche ist verfügbar, aber für Jahrgang 6 wurden keine Schülerdaten geladen. Bitte nicht neu anlegen oder zurücksetzen.</p><button class="chip dark" onclick="laRetryCloudPupils()">☁️ Schülerdaten erneut aus der Cloud laden</button><p class="mini">Diese Prüfung liest nur Daten. Ein fehlender Cloudbestand wird nicht überschrieben.</p></div>');return;}
+  if(Auth.canAccessGrade(laGrade))laEnsureWeeklyDuties();
+  if(Auth.canAccessGrade(laGrade))laResetLearningPlacesDaily();
+  if(!Auth.canAccessGrade(laGrade)){shell(header('Lernatelier')+laGradeTabs()+'<div class="card">Kein Zugriff auf Jahrgang '+laGrade+'.</div>');return;}
+  if(!laPupils().length){shell(header('Lernatelier')+laGradeTabs()+'<div class="card"><h2>Schülerdaten noch nicht geladen</h2><p>Die Oberfläche ist verfügbar, aber für Jahrgang '+laGrade+' wurden keine Schülerdaten geladen. Bitte nicht neu anlegen oder zurücksetzen.</p><button class="chip dark" onclick="laRetryCloudPupils()">☁️ Schülerdaten erneut aus der Cloud laden</button><p class="mini">Diese Prüfung liest nur Daten. Ein fehlender Cloudbestand wird nicht überschrieben.</p></div>');return;}
   if(laViewMode==='student')return laStudentPreview();
   const all=laPupils(),current=all.filter(p=>laRoom(p)===laSelectedRoom);
   const unknown=all.filter(p=>!laRoom(p));
-  const noise=Store.data.settings?.laNoise?.[laSelectedRoom]||'green';
-  const can=Auth.canLead(6)||Auth.isAdmin();
-  let html=header('Lernatelier','Jahrgang 6 · alle Farbteams gemeinsam · Lehrkraftansicht');
+  const noise=laGradeSettings('laNoise')?.[laSelectedRoom]||'green';
+  const can=Auth.canLead(laGrade)||Auth.isAdmin();
+  let html=header('Lernatelier','Jahrgang '+laGrade+' · alle Farbteams gemeinsam · Lehrkraftansicht');html+=laGradeTabs();
   html+='<div class="toolbar"><button class="chip dark" onclick="laEnterStudentKiosk()">👩‍🎓 Zur Schülersicht wechseln</button></div>';
   html+=laDailyEditor();html+=laDutyOverview();
   html+='<div class="toolbar"><div class="laTabs">'+LA_ROOMS.map(r=>`<button class="chip ${laSelectedRoom===r?'dark':''}" onclick="laSelectedRoom='${r}';laPreviewPupilId='';render()">${r} · ${all.filter(p=>laRoom(p)===r).length}</button>`).join('')+'</div><p class="mini">Die Zuordnung zum Lernatelier bleibt auch bei einem Standortwechsel bestehen.</p></div>';
-  if(unknown.length&&can)html+='<div class="card"><b>Sammelzuordnung</b><p class="mini">Noch nicht zugeordnet: '+unknown.length+' SuS aus Stufe 6. Bestehende Lernatelier-Zuordnungen bleiben unverändert.</p><button class="chip dark" onclick="laAssignUnassigned(\'LA 1\')">Alle noch nicht zugeordneten SuS → LA 1</button></div>';
+  if(unknown.length&&can)html+='<div class="card"><b>Sammelzuordnung</b><p class="mini">Noch nicht zugeordnet: '+unknown.length+' SuS aus Stufe '+laGrade+'. Bestehende Lernatelier-Zuordnungen bleiben unverändert.</p><button class="chip dark" onclick="laAssignUnassigned(\'LA 1\')">Alle noch nicht zugeordneten SuS → LA 1</button></div>';
   if(unknown.length)html+='<div class="card"><b>Hinweis: '+unknown.length+' SuS sind noch keinem Lernatelier zugeordnet.</b><p class="mini">Bitte unten im Bereich „Noch keinem Lernatelier zugeordnet“ die Zuordnung vornehmen. Die bisherige Auswahl wurde möglicherweise wegen eines Fehlers nicht gespeichert.</p></div>';
-  html+='<div class="card"><h2>📍 Lernorte der Tafel</h2><p class="mini">Ein Standort pro Zeile. Du kannst Lernorte hinzufügen, umbenennen oder aus der Liste entfernen. Bereits belegte Standorte bleiben sichtbar, bis die Kinder umgezogen sind.</p><textarea id="laPlaceEditor" rows="8" '+(can?'':'disabled')+'>'+esc((Store.data.settings?.laPlaces?.[laSelectedRoom]||LA_DEFAULT_PLACES).join('\n'))+'</textarea>'+(can?'<button class="chip dark" onclick="laSavePlaces()">Lernorte speichern</button>':'')+'</div>';
-  const boardInfo=Store.data.settings?.laBoardInfo?.[laSelectedRoom]||{};
+  html+='<div class="card"><h2>📍 Lernorte der Tafel</h2><p class="mini">Ein Standort pro Zeile. Du kannst Lernorte hinzufügen, umbenennen oder aus der Liste entfernen. Bereits belegte Standorte bleiben sichtbar, bis die Kinder umgezogen sind.</p><textarea id="laPlaceEditor" rows="8" '+(can?'':'disabled')+'>'+esc((laGradeSettings('laPlaces')?.[laSelectedRoom]||LA_DEFAULT_PLACES).join('\n'))+'</textarea>'+(can?'<button class="chip dark" onclick="laSavePlaces()">Lernorte speichern</button>':'')+'</div>';
+  const boardInfo=laGradeSettings('laBoardInfo')?.[laSelectedRoom]||{};
 
   html+=`<div class="card"><h2>Lärmampel · ${esc(laSelectedRoom)}</h2><div class="laLights">${[['green','🟢','Leise sprechen'],['yellow','🟡','Flüstern'],['red','🔴','Ruhe']].map(([v,i,l])=>`<button class="chip ${noise===v?'dark':''}" ${can?'':'disabled'} onclick="laNoise(laSelectedRoom,'${v}')">${i} ${l}</button>`).join('')}</div></div>`;
   const pending=current.filter(p=>p.laRequest?.status==='pending');
