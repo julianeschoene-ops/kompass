@@ -129,13 +129,46 @@ function laToggleStar(id,subject){
  Store.save('Fach-Teamstar geändert',{pupilId:p.id,subject});render();
 }
 const LA_DUTIES=[['broom','🧹','Besen'],['book','📖','Buch'],['hall','🚪','Flur'],['trash','🗑️','Mülleimer']];
+function laWeekKey(date=new Date()){const d=new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate()));d.setUTCDate(d.getUTCDate()+4-(d.getUTCDay()||7));const year=d.getUTCFullYear();const jan=new Date(Date.UTC(year,0,1));return year+'-W'+String(Math.ceil((((d-jan)/86400000)+1)/7)).padStart(2,'0');}
+function laDutyHistory(){return Store.data.settings?.laDutyHistory||{};}
+function laDutyCount(id,duty){return Object.values(laDutyHistory()).filter(w=>w&&w.assignments&&w.assignments[String(id)]?.includes(duty)).length;}
 function laDuties(p){return Array.isArray(p.laDuties)?p.laDuties:[];}
+function laEnsureWeeklyDuties(){
+ const week=laWeekKey(),settings=Store.data.settings||(Store.data.settings={});
+ settings.laDutyHistory=settings.laDutyHistory||{};
+ if(settings.laDutyHistory[week])return;
+ if(!Auth.isAdmin()&&!Auth.canLead(6))return;
+ const assignments={};
+ for(const room of LA_ROOMS){
+  const pupils=laPupils().filter(p=>laRoom(p)===room).sort((a,b)=>String(a.id).localeCompare(String(b.id)));
+  const used=new Set();
+  for(const [duty] of LA_DUTIES){
+   const candidates=pupils.filter(p=>!used.has(String(p.id))).sort((a,b)=>laDutyCount(a.id,duty)-laDutyCount(b.id,duty)||Object.values(laDutyHistory()).filter(w=>w.assignments?.[String(a.id)]?.length).length-Object.values(laDutyHistory()).filter(w=>w.assignments?.[String(b.id)]?.length).length||String(a.id).localeCompare(String(b.id)));
+   const chosen=candidates[0];if(!chosen)continue;
+   used.add(String(chosen.id));assignments[String(chosen.id)]=[duty];
+  }
+ }
+ settings.laDutyHistory[week]={createdAt:new Date().toISOString(),assignments};
+ for(const p of laPupils())p.laDuties=assignments[String(p.id)]||[];
+ Store.save('Wöchentliche Dienste automatisch eingeteilt',{week});
+}
 function laToggleDuty(id,duty){
  if(!Auth.canLead(6)&&!Auth.isAdmin())return;
  if(!LA_DUTIES.some(x=>x[0]===duty))return;
+ laEnsureWeeklyDuties();
  const p=laPupils().find(x=>String(x.id)===String(id));if(!p)return;
- p.laDuties=laDuties(p).includes(duty)?laDuties(p).filter(x=>x!==duty):[...laDuties(p),duty];
- Store.save('Lernatelier-Dienst geändert',{pupilId:p.id,duty});render();
+ const week=laWeekKey(),history=Store.data.settings.laDutyHistory;
+ const old=laDuties(p),adding=!old.includes(duty);
+ if(adding&&laDutyCount(id,duty)>=2&&!confirm((p.short||p.first)+' hatte diesen Dienst bereits '+laDutyCount(id,duty)+'-mal. Trotzdem einteilen?'))return;
+ p.laDuties=adding?[...old,duty]:old.filter(x=>x!==duty);
+ history[week]=history[week]||{createdAt:new Date().toISOString(),assignments:{}};
+ history[week].assignments[String(id)]=p.laDuties.slice();
+ Store.save('Lernatelier-Dienst geändert',{pupilId:p.id,duty,week});render();
+}
+function laDutyOverview(){
+ if(!Auth.isAdmin()&&!Auth.canLead(6))return '';
+ const room=laSelectedRoom,people=laPupils().filter(p=>laRoom(p)===room);
+ return '<div class="card"><h2>🧹 Wochendienste · '+esc(room)+' · '+esc(laWeekKey())+'</h2><p class="mini">Wird beim ersten Aufruf in einer neuen Kalenderwoche automatisch eingeteilt. Manuelle Änderungen sind in der Tabelle möglich.</p><div class="laTodayItems">'+LA_DUTIES.map(([id,icon,label])=>{const assigned=people.filter(p=>laDuties(p).includes(id));return '<div class="laTodayItem"><b>'+icon+' '+esc(label)+'</b><span>'+(assigned.length?assigned.map(p=>esc(p.short||p.first)+' (bisher '+laDutyCount(p.id,id)+'×)').join(', '):'Noch niemand eingeteilt')+'</span></div>';}).join('')+'</div></div>';
 }
 function laInitDrag(){
  const root=document.querySelector('.laKioskBoard');if(!root)return;
@@ -278,6 +311,7 @@ function laStudentPreview(){
  laInitDrag();
 }
 function learningAtelier(){
+  if(Auth.canAccessGrade(6))laEnsureWeeklyDuties();
   if(Auth.canAccessGrade(6))laResetLearningPlacesDaily();
   if(!Auth.canAccessGrade(6)){shell(header('Lernatelier')+'<div class="card">Kein Zugriff auf Jahrgang 6.</div>');return;}
   if(laViewMode==='student')return laStudentPreview();
@@ -287,7 +321,7 @@ function learningAtelier(){
   const can=Auth.canLead(6)||Auth.isAdmin();
   let html=header('Lernatelier','Jahrgang 6 · alle Farbteams gemeinsam · Lehrkraftansicht');
   html+='<div class="toolbar"><button class="chip dark" onclick="laViewMode=\'student\';render()">👩‍🎓 Zur Schülersicht wechseln</button></div>';
-  html+=laDailyEditor();
+  html+=laDailyEditor();html+=laDutyOverview();
   html+='<div class="toolbar"><div class="laTabs">'+LA_ROOMS.map(r=>`<button class="chip ${laSelectedRoom===r?'dark':''}" onclick="laSelectedRoom='${r}';laPreviewPupilId='';render()">${r} · ${all.filter(p=>laRoom(p)===r).length}</button>`).join('')+'</div><p class="mini">Die Zuordnung zum Lernatelier bleibt auch bei einem Standortwechsel bestehen.</p></div>';
   if(unknown.length&&can)html+='<div class="card"><b>Sammelzuordnung</b><p class="mini">Noch nicht zugeordnet: '+unknown.length+' SuS aus Stufe 6. Bestehende Lernatelier-Zuordnungen bleiben unverändert.</p><button class="chip dark" onclick="laAssignUnassigned(\'LA 1\')">Alle noch nicht zugeordneten SuS → LA 1</button></div>';
   if(unknown.length)html+='<div class="card"><b>Hinweis: '+unknown.length+' SuS sind noch keinem Lernatelier zugeordnet.</b><p class="mini">Bitte unten im Bereich „Noch keinem Lernatelier zugeordnet“ die Zuordnung vornehmen. Die bisherige Auswahl wurde möglicherweise wegen eines Fehlers nicht gespeichert.</p></div>';
