@@ -192,6 +192,30 @@ function laWeekKey(date=new Date()){const d=new Date(Date.UTC(date.getFullYear()
 function laDutyHistory(){return laGradeSettings('laDutyHistory')||{};}
 function laDutyCount(id,duty){return Object.values(laDutyHistory()).filter(w=>w&&w.assignments&&w.assignments[String(id)]?.includes(duty)).length;}
 function laDuties(p){return Array.isArray(p.laDuties)?p.laDuties:[];}
+let laWeekAssignPending={};
+async function laEnsureCloudWeeklyDuties(){
+ if(Auth.isLernatelier()||Auth.session?.mode!=='cloud'||!Auth.cloudClient||!Auth.canAccessGrade(laGrade))return;
+ const grade=laGrade,week=laWeekKey(),key=grade+':'+week;
+ if(laWeekAssignPending[key])return;
+ laWeekAssignPending[key]=true;
+ try{
+  const {data,error}=await Auth.cloudClient.rpc('kompass_la_assign_week',{p_grade:grade,p_week:week});
+  if(error)throw error;
+  if(!data)return;
+  const assignments=data.assignments||{};
+  const history=Store.data.settings||(Store.data.settings={});
+  history[laSettingKey('laDutyHistory')]=history[laSettingKey('laDutyHistory')]||{};
+  history[laSettingKey('laDutyHistory')][week]=data;
+  for(const p of laPupils())p.laDuties=assignments[String(p.id)]||[];
+  Store.save('Wochendienste aus Lernatelier-Cloud synchronisiert',{week});
+  render();
+ }catch(e){console.warn('Wochendienste konnten nicht geladen werden:',e.message);}
+ finally{delete laWeekAssignPending[key];}
+}
+async function laAssignDutiesNow(){
+ if(Auth.isLernatelier()){alert('Die Wochendienste werden im Lehrkraftkonto eingeteilt.');return;}
+ await laEnsureCloudWeeklyDuties();
+}
 function laEnsureWeeklyDuties(){
  const week=laWeekKey(),settings=Store.data.settings||(Store.data.settings={});
  settings[laSettingKey('laDutyHistory')]=settings[laSettingKey('laDutyHistory')]||{};
@@ -231,7 +255,7 @@ function laToggleDuty(id,duty){
 function laDutyOverview(){
  if(!Auth.isAdmin()&&!Auth.canLead(laGrade))return '';
  const room=laSelectedRoom,people=laPupils().filter(p=>laRoom(p)===room);
- return '<div class="card"><h2>🧹 Wochendienste · '+esc(room)+' · '+esc(laWeekKey())+'</h2><p class="mini">Wird beim ersten Aufruf in einer neuen Kalenderwoche automatisch eingeteilt. Pro Dienst werden drei Kinder aus unterschiedlichen Farbteams vorgeschlagen. Falls nicht genügend Kinder verfügbar sind, bleiben Plätze offen. Manuelle Änderungen sind in der Tabelle möglich.</p><div class="laTodayItems">'+LA_DUTIES.map(([id,icon,label])=>{const assigned=people.filter(p=>laDuties(p).includes(id));return '<div class="laTodayItem"><b>'+icon+' '+esc(label)+'</b><span>'+(assigned.length?assigned.map(p=>esc(p.short||p.first)+' (bisher '+laDutyCount(p.id,id)+'×)').join(', '):'Noch niemand eingeteilt')+'</span></div>';}).join('')+'</div></div>';
+ return '<div class="card"><h2>🧹 Wochendienste · '+esc(room)+' · '+esc(laWeekKey())+'</h2><button class="chip" onclick="laAssignDutiesNow()">↻ Wochendienste synchronisieren</button><p class="mini">Wird beim ersten Aufruf in einer neuen Kalenderwoche automatisch eingeteilt. Pro Dienst werden drei Kinder aus unterschiedlichen Farbteams vorgeschlagen. Falls nicht genügend Kinder verfügbar sind, bleiben Plätze offen. Manuelle Änderungen sind in der Tabelle möglich.</p><div class="laTodayItems">'+LA_DUTIES.map(([id,icon,label])=>{const assigned=people.filter(p=>laDuties(p).includes(id));return '<div class="laTodayItem"><b>'+icon+' '+esc(label)+'</b><span>'+(assigned.length?assigned.map(p=>esc(p.short||p.first)+' (bisher '+laDutyCount(p.id,id)+'×)').join(', '):'Noch niemand eingeteilt')+'</span></div>';}).join('')+'</div></div>';
 }
 function laInitDrag(){
  const root=document.querySelector('.laKioskBoard');if(!root)return;
@@ -504,7 +528,7 @@ function laFindResults(){
 function laFindPanel(){return '<div class="card"><h2>🔎 Schüler finden · gesamte Stufe '+laGrade+'</h2><label for="laFindInput">Name suchen – LA 1, LA 2 und LA 3</label><input id="laFindInput" type="search" autocomplete="off" placeholder="Schülername eingeben …" value="'+esc(laFindQuery)+'" oninput="laFindPupil(this.value)"><div id="laFindResults">'+laFindResults()+'</div></div>';}
 function learningAtelier(){
   if(!Auth.canAccessGrade(laGrade)&&Auth.allowedGrades().length)laGrade=Auth.allowedGrades()[0];
-  if(Auth.canAccessGrade(laGrade)&&laPupils().some(p=>laRoom(p)))laEnsureWeeklyDuties();
+  if(Auth.canAccessGrade(laGrade)&&laPupils().some(p=>laRoom(p)))laEnsureCloudWeeklyDuties();
   if(Auth.canAccessGrade(laGrade))laResetLearningPlacesDaily();
   if(!Auth.canAccessGrade(laGrade)){shell(header('Lernatelier')+laGradeTabs()+'<div class="card">Kein Zugriff auf Jahrgang '+laGrade+'.</div>');return;}
   if(!laPupils().length){shell(header('Lernatelier')+laGradeTabs()+'<div class="card"><h2>Schülerdaten noch nicht geladen</h2><p>Die Oberfläche ist verfügbar, aber für Jahrgang '+laGrade+' wurden keine Schülerdaten geladen. Bitte nicht neu anlegen oder zurücksetzen.</p><button class="chip dark" onclick="laRetryCloudPupils()">☁️ Schülerdaten erneut aus der Cloud laden</button><p class="mini">Diese Prüfung liest nur Daten. Ein fehlender Cloudbestand wird nicht überschrieben.</p></div>');return;}
