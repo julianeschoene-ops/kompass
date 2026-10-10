@@ -504,11 +504,13 @@ function learningAtelier(){
 /* Restricted account: isolated LA data only. Never load full grade records. */
 let laLimitedRows={},laLimitedMode='teacher',laLimitedRoom='LA 1',laLimitedQuery='',laLimitedBusy=false;
 let laLimitedPollStarted=false;
+let laLimitedPollInFlight=false;
 function laLimitedStartPoll(){
  if(laLimitedPollStarted)return;
  laLimitedPollStarted=true;
  setInterval(()=>{
-  if(!Auth.isLernatelier()||laLimitedBusy||document.hidden||!Auth.cloudClient)return;
+  if(!Auth.isLernatelier()||laLimitedBusy||laLimitedPollInFlight||document.hidden||!Auth.cloudClient)return;
+  laLimitedPollInFlight=true;
   const grade=laGrade;
   Auth.cloudClient.from('kompass_lernatelier_state').select('payload').eq('grade',grade).maybeSingle().then(({data,error})=>{
    if(error||!Array.isArray(data?.payload?.pupils))return;
@@ -516,7 +518,7 @@ function laLimitedStartPoll(){
     laLimitedRows[grade]=data.payload.pupils;
     if(Auth.isLernatelier()&&grade===laGrade)laLimitedView();
    }
-  }).catch(()=>{});
+  }).catch(()=>{}).finally(()=>{laLimitedPollInFlight=false;});
  },20000);
 }
 async function laLoadLimited(grade){
