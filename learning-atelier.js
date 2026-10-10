@@ -605,7 +605,7 @@ function laLimitedView(){
      board+='<section class="laPublicPlace '+(place==='Lernatelier'?'laHomePlace':'')+' '+(group.length?'laOccupied':'laEmpty')+'"><h2>'+esc(place)+' <span>'+group.length+'</span></h2><div class="laPublicNames">';
      board+=group.map(p=>{
        const id=encodeURIComponent(String(p.id)).replace(/'/g,'%27');
-       return '<button type="button" class="laPublicName '+(String(p.id)===laLimitedSelectedId?'laChosen':'')+'" onclick="laLimitedSelect(decodeURIComponent(\''+id+'\'))"><span class="laNameLine">'+esc(p.short||[p.first,p.last].filter(Boolean).join(' '))+(p.laNeedsHelp?' ✋':'')+'</span></button>';
+       return '<button type="button" class="laPublicName '+(String(p.id)===laLimitedSelectedId?'laChosen':'')+'" onclick="laLimitedSelect(decodeURIComponent(\''+id+'\'))"><span class="laPupilStars">'+LA_STAR_SUBJECTS.filter(x=>Array.isArray(p.laStars)&&p.laStars.includes(x[0])).map(x=>'<span class="laStar laStar-'+x[2]+'" title="Teamstar '+esc(x[1])+'">★</span>').join('')+'</span><span class="laNameLine"><span class="dot '+teamColor(p.team)+'"></span>'+esc(p.short||[p.first,p.last].filter(Boolean).join(' '))+(p.laNeedsHelp?' ✋':'')+LA_DUTIES.filter(x=>Array.isArray(p.laDuties)&&p.laDuties.includes(x[0])).map(x=>' <span title="'+esc(x[2])+'">'+x[1]+'</span>').join('')+'</span></button>';
      }).join('')||'<p class="mini">Hier ist gerade niemand.</p>';
      board+='</div></section>';
    }
