@@ -11,7 +11,7 @@ with source as (
   from public.kompass_lernatelier_state l
   cross join lateral jsonb_array_elements(l.payload->'pupils') with ordinality as lp(pupil,ordinality)
   join public.kompass_grade_state g on g.grade=l.grade
-  join lateral jsonb_array_elements(g.payload->'pupils') gp(pupil)
+  left join lateral jsonb_array_elements(g.payload->'pupils') gp(pupil)
     on gp.pupil->>'id'=lp.pupil->>'id'
   group by l.grade
 )
