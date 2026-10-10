@@ -541,7 +541,8 @@ function laLimitedView(){
    const place=esc(p.learningPlace||'Lernatelier');
    const id=String(p.id).replace(/[^a-zA-Z0-9_-]/g,'');
    const actions='<button class="chip" onclick="laLimitedAction(\''+id+'\',\'help\',\''+(!p.laNeedsHelp)+'\')">'+(p.laNeedsHelp?'✓ Erledigt':'✋ Hilfe')+'</button>';
-   return '<div class="laQueue" data-la-name="'+esc([p.first,p.last,p.short,p.className].join(' ').toLocaleLowerCase('de'))+'"><div><b>'+name+'</b>'+(laLimitedMode==='teacher'?'<div class="mini">'+room+' · '+esc(p.className||'')+'</div>':'')+'</div><span class="statusPill">'+place+'</span>'+actions+'</div>';
+   const places='<select onchange="laLimitedAction(\''+id+'\',\''+(laLimitedMode==='teacher'?'place':'request')+'\',this.value);this.selectedIndex=0"><option value="">Lernort wählen</option>'+LA_DEFAULT_PLACES.filter(v=>v!=='Lernatelier').map(v=>'<option value="'+esc(v)+'">'+esc(v)+'</option>').join('')+'</select>';
+   return '<div class="laQueue" data-la-name="'+esc([p.first,p.last,p.short,p.className].join(' ').toLocaleLowerCase('de'))+'"><div><b>'+name+'</b>'+(laLimitedMode==='teacher'?'<div class="mini">'+room+' · '+esc(p.className||'')+'</div>':'')+'</div><span class="statusPill">'+place+'</span>'+actions+places+'</div>';
  }).join('')||'<p class="mini">Keine passenden Schüler*innen.</p>';
  const controls=laLimitedMode==='teacher'
    ?'<div class="toolbar"><button class="chip" onclick="laLimitedRefresh()">↻ Aktualisieren</button><button class="chip dark" onclick="laLimitedStudent()">👩‍🎓 Schüleransicht</button></div><div class="card"><h2>🔎 Schüler finden · gesamte Stufe</h2><input type="search" placeholder="Name suchen …" value="'+esc(laLimitedQuery)+'" oninput="laLimitedSearch(this.value)"><p class="mini">Alle drei Lernateliers · schreibgeschützte Übersicht</p></div>'
