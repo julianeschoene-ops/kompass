@@ -229,6 +229,29 @@ const LA_FLEX_OFFERS=[
 let laBoardDate='';
 function laDayData(date=laBoardDate){const d=date?new Date(date+'T12:00:00'):new Date(), day=d.getDay();return {day,date:[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-'),label:d.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'})};}
 function laMoveBoardDay(n){const d=laDayData(),next=new Date(d.date+'T12:00:00');next.setDate(next.getDate()+n);laBoardDate=[next.getFullYear(),String(next.getMonth()+1).padStart(2,'0'),String(next.getDate()).padStart(2,'0')].join('-');render();}
+const LA_MOTIVATION_QUOTES=[
+'Jeder kleine Schritt bringt dich weiter.',
+'Du musst nicht alles können. Du darfst alles lernen.',
+'Fehler zeigen, dass du etwas ausprobierst.',
+'Heute ist eine neue Chance, etwas zu entdecken.',
+'Deine Ideen sind wichtig.',
+'Mut bedeutet, es trotzdem zu versuchen.',
+'Gemeinsam schaffen wir mehr.',
+'Frag nach, wenn du etwas nicht verstehst.',
+'Übung macht dich jeden Tag ein Stück sicherer.',
+'Du kannst stolz auf deinen Fortschritt sein.',
+'Neugier ist der Anfang von etwas Großem.',
+'Ein guter Anfang muss nicht perfekt sein.',
+'Gib dir Zeit. Lernen braucht Geduld.',
+'Ein freundliches Wort kann viel verändern.',
+'Heute zählt, was du ausprobierst.',
+'Dein Tempo ist in Ordnung.',
+'Es lohnt sich, dranzubleiben.',
+'Du darfst um Hilfe bitten.',
+'Manchmal ist ein neuer Versuch der beste Weg.',
+'Sei mutig und stell deine Fragen.'
+];
+function laMotivationForDate(date){let hash=0;for(const c of date)hash=(hash*31+c.charCodeAt(0))>>>0;return LA_MOTIVATION_QUOTES[hash%LA_MOTIVATION_QUOTES.length];}
 function laTodayBoard(){
  const d=laDayData();const config=Store.data.settings?.laDailyBoard||{};
  const current=config[d.date]||{};const published=current.published===true;
@@ -237,8 +260,9 @@ function laTodayBoard(){
  const flex=LA_FLEX_OFFERS.filter(x=>x[0]===d.date).map(x=>[x[1],x[2]+' · '+x[3],x[4],'']);
  const notes=published?String(current.notes||'').trim():'';
  const news=published?String(current.news||'').trim():'';
+ const motivation=published&&String(current.motivation||'').trim()?String(current.motivation).trim():laMotivationForDate(d.date);
  return '<section class="laTodayBoard"><div class="laTodayHeading"><h2>☀️ Heute bei uns</h2><span>'+esc(d.label)+'</span></div>'+
- '<div class="laTodayGrid"><div class="laTodaySection"><h3>📅 Aus dem Kalender</h3>'+(events.length?'<div class="laTodayItems">'+events.map(e=>'<div class="laTodayItem"><b>'+esc((e.time?e.time+' · ':'')+e.title)+'</b><span>'+esc(e.location||'')+'</span></div>').join('')+'</div>':'<p class="mini">Keine Kalendereinträge für diesen Tag.</p>')+'</div><div class="laTodaySection"><h3>📣 Infos & Vertretungen</h3><p>'+ (notes?esc(notes).replace(/\n/g,'<br>'):'Heute sind noch keine Änderungen veröffentlicht.')+'</p></div>'+
+ '<div class="laMotivation"><div class="laMotivationEyebrow">✨ Dein Gedanke für heute</div><div class="laMotivationQuote">'+esc(motivation)+'</div></div><div class="laTodayGrid"><div class="laTodaySection"><h3>📅 Aus dem Kalender</h3>'+(events.length?'<div class="laTodayItems">'+events.map(e=>'<div class="laTodayItem"><b>'+esc((e.time?e.time+' · ':'')+e.title)+'</b><span>'+esc(e.location||'')+'</span></div>').join('')+'</div>':'<p class="mini">Keine Kalendereinträge für diesen Tag.</p>')+'</div><div class="laTodaySection"><h3>📣 Infos & Vertretungen</h3><p>'+ (notes?esc(notes).replace(/\n/g,'<br>'):'Heute sind noch keine Änderungen veröffentlicht.')+'</p></div>'+
  '<div class="laTodaySection"><h3>🎨 Kreativband</h3>'+list(LA_DAY_OFFERS[d.day]||[])+'</div>'+
  '<div class="laTodaySection"><h3>📘 Flexstunden</h3>'+list(flex)+'</div>'+
  '<div class="laTodaySection"><h3>🏀 Weitere Sportangebote</h3>'+list(LA_SPORT_OFFERS[d.day]||[])+'</div>'+
@@ -255,11 +279,11 @@ function laSaveDailyBoard(){
  const date=laDayData().date;if(!/^\d{4}-\d{2}-\d{2}$/.test(date||''))return;
  Store.data.settings=Store.data.settings||{};
  Store.data.settings.laDailyBoard=Store.data.settings.laDailyBoard||{};
- Store.data.settings.laDailyBoard[date]={notes:document.getElementById('laDailyNotes')?.value||'',news:document.getElementById('laDailyNews')?.value||'',published:!!document.getElementById('laDailyPublish')?.checked,updatedAt:new Date().toISOString()};
+ Store.data.settings.laDailyBoard[date]={notes:document.getElementById('laDailyNotes')?.value||'',news:document.getElementById('laDailyNews')?.value||'',motivation:document.getElementById('laDailyMotivation')?.value||'',published:!!document.getElementById('laDailyPublish')?.checked,updatedAt:new Date().toISOString()};
  Store.save('Tagesübersicht gespeichert',{date});State.dialog=null;render();
 }
 
-function laDailyEditor(){if(!Auth.isAdmin()&&!Auth.canLead(6))return '';const d=laDayData(),x=Store.data.settings?.laDailyBoard?.[d.date]||{};return '<div class="card"><h2>☀️ Tagesübersicht vorbereiten</h2><label>Datum auswählen</label><input type="date" value="'+esc(d.date)+'" onchange="laBoardDate=this.value;render()"><p class="mini">Du kannst beliebige zukünftige Tage vorbereiten. Die Veröffentlichung gilt nur für das gewählte Datum.</p><label>Hinweise und Vertretungen (nur für Schüler freigegebene Inhalte)</label><textarea id="laDailyNotes" rows="5">'+esc(x.notes||'')+'</textarea><label>Geprüfte Weltnachricht (mit Quelle)</label><textarea id="laDailyNews" rows="4">'+esc(x.news||'')+'</textarea><label class="check"><input type="checkbox" id="laDailyPublish" '+(x.published?'checked':'')+'> Für alle Lernateliers veröffentlichen</label><button class="chip dark" onclick="laSaveDailyBoard()">Tagesübersicht speichern</button></div>';}
+function laDailyEditor(){if(!Auth.isAdmin()&&!Auth.canLead(6))return '';const d=laDayData(),x=Store.data.settings?.laDailyBoard?.[d.date]||{};return '<div class="card"><h2>☀️ Tagesübersicht vorbereiten</h2><label>Datum auswählen</label><input type="date" value="'+esc(d.date)+'" onchange="laBoardDate=this.value;render()"><p class="mini">Du kannst beliebige zukünftige Tage vorbereiten. Die Veröffentlichung gilt nur für das gewählte Datum.</p><label>Hinweise und Vertretungen (nur für Schüler freigegebene Inhalte)</label><textarea id="laDailyNotes" rows="5">'+esc(x.notes||'')+'</textarea><label>Geprüfte Weltnachricht (mit Quelle)</label><textarea id="laDailyNews" rows="4">'+esc(x.news||'')+'</textarea><label>Motivationsspruch des Tages (optional – sonst automatisch)</label><textarea id="laDailyMotivation" rows="2">'+esc(x.motivation||'')+'</textarea><label class="check"><input type="checkbox" id="laDailyPublish" '+(x.published?'checked':'')+'> Für alle Lernateliers veröffentlichen</label><button class="chip dark" onclick="laSaveDailyBoard()">Tagesübersicht speichern</button></div>';}
 function laResetLearningPlacesDaily(){
  const today=laDayData('').date;
  const settings=Store.data.settings||(Store.data.settings={});
