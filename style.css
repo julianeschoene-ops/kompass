@@ -282,3 +282,60 @@
   grid-template-columns:minmax(0,1fr)!important;
  }
 }
+
+/* News: kompakte Informationszeile, darunter zwei breite Angebotsbereiche.
+   Gilt fuer die gemeinsame Schueleransicht auf allen Accounts. */
+.laStudentFullscreen .laTodayGrid.laTodayMasonry{
+ display:grid!important;
+ grid-template-columns:repeat(4,minmax(0,1fr))!important;
+ grid-template-areas:"calendar info info info" "creative creative flex flex"!important;
+ gap:12px!important;
+ align-items:start!important;
+}
+.laStudentFullscreen .laTodayMasonry>.laTodayColumn{
+ display:contents!important;
+}
+.laStudentFullscreen .laTodayMasonry>.laTodayColumn:nth-child(1)>.laTodaySection:nth-child(1){grid-area:calendar!important}
+.laStudentFullscreen .laTodayMasonry>.laTodayColumn:nth-child(1)>.laTodaySection:nth-child(2){grid-area:sport!important}
+.laStudentFullscreen .laTodayMasonry>.laTodayColumn:nth-child(2)>.laTodaySection:nth-child(1){grid-area:info!important}
+.laStudentFullscreen .laTodayMasonry>.laTodayColumn:nth-child(2)>.laTodaySection:nth-child(2){grid-area:world!important}
+.laStudentFullscreen .laTodayMasonry>.laTodayColumn:nth-child(3)>.laTodaySection{grid-area:creative!important}
+.laStudentFullscreen .laTodayMasonry>.laTodayColumn:nth-child(4)>.laTodaySection{grid-area:flex!important}
+.laStudentFullscreen .laTodayGrid.laTodayMasonry{
+ grid-template-areas:"calendar info sport world" "creative creative flex flex"!important;
+}
+.laStudentFullscreen .laTodayMasonry .laTodaySection{
+ min-width:0!important;
+ height:auto!important;
+ max-height:none!important;
+ overflow:visible!important;
+}
+.laStudentFullscreen .laTodayMasonry .laTodayItems{
+ max-height:none!important;
+ overflow:visible!important;
+}
+.laStudentFullscreen .laMotivation{
+ padding:9px 15px!important;
+ margin:7px 0 11px!important;
+ min-height:0!important;
+}
+.laStudentFullscreen .laMotivationQuote{
+ font-size:clamp(1.1rem,2.1vw,1.65rem)!important;
+ line-height:1.22!important;
+}
+.laStudentFullscreen .laMotivationEyebrow{
+ font-size:.8rem!important;
+ margin-bottom:3px!important;
+}
+@media(max-width:900px){
+ .laStudentFullscreen .laTodayGrid.laTodayMasonry{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  grid-template-areas:"calendar info" "sport world" "creative flex"!important;
+ }
+}
+@media(max-width:540px){
+ .laStudentFullscreen .laTodayGrid.laTodayMasonry{
+  grid-template-columns:minmax(0,1fr)!important;
+  grid-template-areas:"calendar" "info" "sport" "world" "creative" "flex"!important;
+ }
+}
