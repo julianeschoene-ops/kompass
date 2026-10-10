@@ -173,6 +173,53 @@ function laSelectBoardPupil(id,node){
  if(node?.dataset.dragHandled==='yes'){delete node.dataset.dragHandled;return;}
  laBoardSelectedId=id;render();
 }
+
+// Schulweite Tagesübersicht (zunächst ohne unbestätigte Echtzeitdaten).
+const LA_DAY_OFFERS={
+  1:[['5.','IT-Studio','Juliane Schöne','vor den Computerräumen'],['5.','Koch- und Nähstudio','Nina Kreuzberger','neben Aquarium links'],['5.','Kunstatelier','Anja Peschel','Fundbüro'],['5.','Naturwissenschaftliches Labor','Dagmar Zwilling','neben Aquarium rechts'],['5.','Schulgarten','Antonios Anastasatos','Treppe zur großen Schulstraße'],['5.','Sportangebot Heimbacher Hof','Anja Hoffmann','Glastür Stichgang Stufe 6/7'],['5.','Technikwerkstatt','Jan-Lukas Richter','Treppe zum 5er-Nest'],['5.','Musik – eigenständiges Üben','Friedrich Mück',''],['6.','Koch- und Nähstudio','Nina Kreuzberger','neben Aquarium links'],['6.','Kunstatelier','Anja Peschel','Fundbüro'],['6.','Musikatelier','Miriam Bay','Busausgang / Elterntaxi'],['6.','Naturwissenschaftliches Labor','Dagmar Zwilling','neben Aquarium rechts'],['6.','Schulgarten','Antonios Anastasatos','Treppe zur großen Schulstraße'],['6.','Technikwerkstatt','Jan-Lukas Richter','Treppe zum 5er-Nest']],
+  2:[['5.','IT-Studio','Michael Feil','vor den Computerräumen'],['5.','Koch- und Nähstudio','Nina Kreuzberger','neben Aquarium links'],['5.','Kunstatelier','Julia Bachmair Neu','Fundbüro'],['5.','Musikatelier','Tobias Karpf','Busausgang / Elterntaxi'],['5.','Musik – eigenständiges Üben','Friedrich Mück',''],['5.','Naturwissenschaftliches Labor','Dagmar Zwilling','neben Aquarium rechts'],['5.','Schulgarten','Nicole Oursin','Treppe zur großen Schulstraße'],['5.','Sportangebot','Robin Steinle','vor Glastür Stichgang 6/7'],['5.','Technikwerkstatt','Marie Lang','Treppe zum 5er-Nest'],['6.','Koch- und Nähstudio','Nina Kreuzberger','neben Aquarium links'],['6.','Kunstatelier','Julia Bachmair Neu','Fundbüro'],['6.','Musikatelier','Tobias Karpf','Busausgang / Elterntaxi'],['6.','Musik – eigenständiges Üben','Friedrich Mück',''],['6.','Naturwissenschaftliches Labor','Dagmar Zwilling','neben Aquarium rechts'],['6.','Schulgarten','Nicole Oursin','Treppe zur großen Schulstraße'],['6.','Sportangebot','Robin Steinle','vor Glastür Stichgang 6/7'],['6.','Technikwerkstatt','Marie Lang','Treppe zum 5er-Nest']],
+  3:[['5.','IT-Studio','Jörg Vogt','vor den Computerräumen'],['5.','Kunstatelier','Maria Kasatkin','Fundbüro'],['5.','Musikatelier','Friedrich Mück','Busausgang / Elterntaxi'],['5.','Musik – eigenständiges Üben','Friedrich Mück',''],['5.','Naturwissenschaftliches Labor','Dagmar Zwilling','neben Aquarium rechts'],['5.','Schulgarten','Nicole Oursin','Treppe zur großen Schulstraße'],['5.','Sportangebot','Robin Steinle','vor Glastür Stichgang 6/7'],['5.','Technikwerkstatt','Marie Lang','Treppe zum 5er-Nest'],['6.','IT-Studio','Jörg Vogt','vor den Computerräumen'],['6.','Kunstatelier','Maria Kasatkin','Fundbüro'],['6.','Musikatelier','Friedrich Mück','Busausgang / Elterntaxi'],['6.','Naturwissenschaftliches Labor','Dagmar Zwilling','neben Aquarium rechts'],['6.','Schulgarten','Nicole Oursin','Treppe zur großen Schulstraße'],['6.','Sportangebot','Robin Steinle','vor Glastür Stichgang 6/7'],['6.','Technikwerkstatt','Marie Lang','Treppe zum 5er-Nest']],
+  4:[['5.','Kunstatelier','Maria Kasatkin','vor dem Sekretariat'],['5.','Musik – eigenständiges Üben','Friedrich Mück',''],['5.','Sportangebot','Robin Steinle','Stichgang 6/7']],
+  5:[['5.','Kunstatelier','Maria Kasatkin','vor dem Sekretariat'],['5.','Musik – eigenständiges Üben','Friedrich Mück',''],['5.','Schulgarten','Melanie Schnepf','Treppe 6-/7-Stichgang'],['5.','Sportangebot','Robin Steinle','Stichgang 6/7']]
+};
+const LA_SPORT_OFFERS={1:[['2.','Tischtennis und Ballspiele','Pavlos Moraintinis','Foyer vor Sporthalle 1'],['3.','Tischtennis und Ballspiele','Pavlos Moraintinis','Foyer vor Sporthalle 1']],3:[['3.–4.','Turnen','Robin Steinle','Foyer Sporthalle']],5:[['3.','Tischtennis und Ballspiele','Pavlos Moraintinis','Halle 1'],['4.','Turnen','Robin Steinle','Foyer Sporthalle']]};
+const LA_FLEX_OFFERS=[
+ ['2026-10-12','3.','Englisch','Speaking Activities','Ribanna Tsehaye'],['2026-10-12','4.','Mathematik','Schriftliche Division in kleinen Schritten','Melanie Schnepf'],
+ ['2026-10-13','3.','Deutsch','QUOP / FLINK','Nicole Oursin'],['2026-10-13','4.','Deutsch','QUOP / FLINK','Julia Bachmair Neu'],['2026-10-13','3.','Mathematik','Parallelen & Senkrechten','Heike von Vietinghoff'],['2026-10-13','4.','Mathematik','Uhrzeit und Zeitspannen','Miriam Bay'],
+ ['2026-10-14','2.','Deutsch','QUOP / FLINK','Jörg Vogt'],['2026-10-14','4.','Deutsch','QUOP / FLINK','Peter Brusda-Gleichmann'],['2026-10-14','4.','Englisch','Grammar Time','Ribanna Tsehaye'],['2026-10-14','3.','Mathematik','Schriftliche Subtraktion','Marcel Moser'],
+ ['2026-10-15','3.','Deutsch','QUOP / FLINK','Nicole Oursin'],
+ ['2026-10-16','4.','Englisch','Sketches & Board Games','Dagmar Zwilling'],['2026-10-16','5.','Englisch','Story Time','Ribanna Tsehaye'],['2026-10-16','2.','Mathematik','Runden & Überschlagen','Marcel Moser'],['2026-10-16','3.','Mathematik','Schriftliche Division','Heike von Vietinghoff'],['2026-10-16','4.','Mathematik','Schriftliche Subtraktion','Marcel Moser']
+];
+function laDayData(){const d=new Date(), day=d.getDay();return {day,date:[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-'),label:d.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'})};}
+function laTodayBoard(){
+ const d=laDayData();const config=Store.data.settings?.laDailyBoard||{};
+ const current=config[d.date]||{};const published=current.published===true;
+ const list=(items)=>items.length?'<div class="laTodayItems">'+items.map(x=>'<div class="laTodayItem"><b>'+esc(x[0])+'. Std. · '+esc(x[1])+'</b><span>'+esc(x[2])+(x[3]?' · Treff: '+esc(x[3]):'')+'</span></div>').join('')+'</div>':'<p class="mini">Keine Angebote eingetragen.</p>';
+ const flex=LA_FLEX_OFFERS.filter(x=>x[0]===d.date).map(x=>[x[1],x[2]+' · '+x[3],x[4],'']);
+ const notes=published?String(current.notes||'').trim():'';
+ const news=published?String(current.news||'').trim():'';
+ return '<section class="laTodayBoard"><div class="laTodayHeading"><h2>☀️ Heute bei uns</h2><span>'+esc(d.label)+'</span></div>'+
+ '<div class="laTodayGrid"><div class="laTodaySection"><h3>📣 Infos & Vertretungen</h3><p>'+ (notes?esc(notes).replace(/\\n/g,'<br>'):'Heute sind noch keine Änderungen veröffentlicht.')+'</p></div>'+
+ '<div class="laTodaySection"><h3>🎨 Kreativband</h3>'+list(LA_DAY_OFFERS[d.day]||[])+'</div>'+
+ '<div class="laTodaySection"><h3>📘 Flexstunden</h3>'+list(flex)+'</div>'+
+ '<div class="laTodaySection"><h3>🏀 Weitere Sportangebote</h3>'+list(LA_SPORT_OFFERS[d.day]||[])+'</div>'+
+ '<div class="laTodaySection"><h3>🌍 Neues aus der Welt</h3><p>'+(news?esc(news).replace(/\\n/g,'<br>'):'Noch keine geprüfte Nachricht veröffentlicht.')+'</p></div></div>'+
+ (published&&current.updatedAt?'<p class="mini">Zuletzt aktualisiert: '+esc(new Date(current.updatedAt).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}))+'</p>':'')+'</section>';
+}
+function laEditDailyBoard(){
+ if(!Auth.isAdmin()&&!Auth.canLead(6))return;
+ const d=laDayData(),entry=Store.data.settings?.laDailyBoard?.[d.date]||{};
+ State.dialog={mode:'laDailyBoard',date:d.date};renderDialog();
+}
+function laSaveDailyBoard(){
+ if(!Auth.isAdmin()&&!Auth.canLead(6))return;
+ const date=State.dialog?.date;if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(date||''))return;
+ Store.data.settings=Store.data.settings||{};
+ Store.data.settings.laDailyBoard=Store.data.settings.laDailyBoard||{};
+ Store.data.settings.laDailyBoard[date]={notes:document.getElementById('laDailyNotes')?.value||'',news:document.getElementById('laDailyNews')?.value||'',published:!!document.getElementById('laDailyPublish')?.checked,updatedAt:new Date().toISOString()};
+ Store.save('Tagesübersicht gespeichert',{date});State.dialog=null;render();
+}
+
 function laStudentPreview(){
  if(!Auth.canAccessGrade(6))return;
  const all=laPupils();
@@ -187,6 +234,7 @@ function laStudentPreview(){
  let html='<div class="laBoardTop"><div><div class="mini">KOMPASS · Jahrgang 6</div><h1>🏫 '+esc(laSelectedRoom)+'</h1></div><div class="laTopActions"><div class="laCompactNoise">'+noiseData[0]+' '+noiseData[1]+'</div><button class="chip" onclick="laExitStudentPreview()">🔒 Lehrkraftmodus</button></div></div>';
  html+='<div class="laRoomSwitcher">'+LA_ROOMS.map(room=>'<button class="chip '+(room===laSelectedRoom?'dark':'')+'" onclick="laSelectedRoom=\''+room+'\';laBoardSelectedId=\'\';render()">'+room+' · '+all.filter(p=>laRoom(p)===room).length+'</button>').join('')+'</div>';
  
+ html+=laTodayBoard();
  html+='<p class="laBoardInstructions">Namen antippen oder mit dem Finger in einen anderen Bereich ziehen.</p>';
  html+='<div class="laPublicBoard laCompactBoard">';
  for(const place of laPlaces()){
