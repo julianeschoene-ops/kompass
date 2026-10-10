@@ -246,3 +246,5 @@
 .laStudentFullscreen .laTodayMasonry .laTodayColumn:nth-child(4) .laTodaySection{background:#f3f0ff;border-color:#e4ddfa}
 @media(max-width:900px){.laStudentFullscreen .laTodayGrid.laTodayMasonry{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media(max-width:540px){.laStudentFullscreen .laTodayGrid.laTodayMasonry{grid-template-columns:1fr!important}}
+
+.loginCard{box-sizing:border-box}.loginCard input:not([type="checkbox"]),.loginCard textarea{box-sizing:border-box;max-width:100%}.loginCard .loginPasswordCheck{display:flex;align-items:center;justify-content:flex-start;gap:10px;width:max-content;max-width:100%;margin:0 0 16px;font-size:14px;font-weight:600;cursor:pointer}.loginCard .loginPasswordCheck input[type="checkbox"]{width:18px;height:18px;flex:0 0 18px;margin:0;accent-color:#233451}.loginCard .loginPasswordCheck span{white-space:nowrap}
