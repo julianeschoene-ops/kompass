@@ -599,19 +599,14 @@ function laLimitedSignOut(){
  Auth.logout();
 }
 function laLimitedNews(){
- const d=laDayData(),payload=laLimitedPayloads[laGrade]||{};
- const board=payload.dailyBoard?.[d.date]||{};
- const published=board.published===true;
- const notes=published?String(board.notes||''):'';
- const news=published?String(board.news||''):'';
- const motivation=published&&board.motivation?String(board.motivation):laMotivationForDate(d.date);
- const events=(payload.calendarEvents||[]).filter(e=>e.date<=d.date&&d.date<=(e.endDate||e.date));
- return '<section class="laTodayBoard"><div class="laTodayHeading"><h2>☀️ Heute bei uns</h2><span>'+esc(d.label)+'</span></div>'+
- '<div class="laMotivation"><div class="laMotivationEyebrow">✨ Dein Gedanke für heute</div><div class="laMotivationQuote">'+esc(motivation)+'</div></div>'+
- '<div class="laTodayGrid laTodayMasonry"><div class="laTodayColumn"><div class="laTodaySection"><h3>📅 Aus dem Kalender</h3>'+(events.length?'<div class="laTodayItems">'+events.map(e=>'<div class="laTodayItem"><b>'+esc((e.time?e.time+' · ':'')+e.title)+'</b><span>'+esc(e.location||'')+'</span></div>').join('')+'</div>':'<p class="mini">Keine Kalendereinträge für diesen Tag.</p>')+'</div></div>'+
- '<div class="laTodayColumn"><div class="laTodaySection"><h3>📣 Infos & Vertretungen</h3><p>'+esc(notes||'Heute sind noch keine Änderungen veröffentlicht.').replace(/\\n/g,'<br>')+'</p></div><div class="laTodaySection"><h3>🌍 Neues aus der Welt</h3><p>'+esc(news||'Noch keine geprüfte Nachricht veröffentlicht.').replace(/\\n/g,'<br>')+'</p></div></div>'+
- '<div class="laTodayColumn"><div class="laTodaySection"><h3>🎨 Kreativband</h3><p class="mini">Veröffentlichte Angebote erscheinen nach der Datensynchronisierung.</p></div></div>'+
- '<div class="laTodayColumn"><div class="laTodaySection"><h3>📘 Flexstunden</h3><p class="mini">Veröffentlichte Flexstunden erscheinen nach der Datensynchronisierung.</p></div></div></div></section>';
+ const previous=Store.calendarEvents;
+ const safe=laLimitedPayloads[laGrade]?.calendarEvents||[];
+ try{
+  Store.calendarEvents=safe;
+  return laTodayBoard();
+ }finally{
+  Store.calendarEvents=previous;
+ }
 }
 function laLimitedSetTab(tab){if(tab!=='room'&&tab!=='news')return;laStudentTab=tab;laLimitedTab=tab;laLimitedSelectedId='';laLimitedView();}
 function laLimitedView(){
