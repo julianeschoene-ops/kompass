@@ -275,11 +275,18 @@ const LA_MOTIVATION_QUOTES=[
 'Sei mutig und stell deine Fragen.'
 ];
 function laMotivationForDate(date){let hash=0;for(const c of date)hash=(hash*31+c.charCodeAt(0))>>>0;return LA_MOTIVATION_QUOTES[hash%LA_MOTIVATION_QUOTES.length];}
+function laTeacherShort(name){
+ const known={Viet:'H. Vietinghoff',Schnepf:'M. Schnepf',Tsehaye:'R. Tsehaye',Bay:'M. Bay',Oursin:'N. Oursin',Bachmair:'J. Bachmair',Moser:'M. Moser',Vogt:'J. Vogt',Brusda:'P. Brusda',Zwilling:'D. Zwilling',Schöne:'J. Schöne'};
+ if(known[name])return known[name];
+ const parts=String(name||'').trim().split(/\s+/);
+ if(parts.length<2)return name;
+ return parts[0].charAt(0)+'. '+parts.slice(1).join(' ');
+}
 function laTodayBoard(){
  const d=laDayData();const config=Store.data.settings?.laDailyBoard||{};
  const current=config[d.date]||{};const published=current.published===true;
  const events=(Store.calendarEvents||[]).filter(e=>e.date<=d.date&&d.date<=(e.endDate||e.date)&&(!e.grade||e.grade==='all'||Number(e.grade)===6)&&(!e.visibility||e.visibility==='all'||e.visibility==='students'));
- const list=(items,isFlex=false)=>items.length?'<div class="laTodayItems">'+items.map(x=>'<div class="laTodayItem"><b>'+esc(x[0])+' Std. · '+esc(x[1])+'</b><span>'+esc(x[2])+(x[3]?(isFlex?' · Raum: ':' · Treff: ')+esc(x[3]):'')+(isFlex&&x[4]?'<br>Teams: '+esc(x[4]):'')+'</span></div>').join('')+'</div>':'<p class="mini">Keine Angebote eingetragen.</p>';
+ const list=(items,isFlex=false)=>items.length?'<div class="laTodayItems">'+items.map(x=>'<div class="laTodayItem"><b>'+esc(x[0])+' Std. · '+esc(x[1])+'</b><span>'+esc(laTeacherShort(x[2]))+(x[3]?(isFlex?' · Raum: ':' · Treff: ')+esc(x[3]):'')+(isFlex&&x[4]?'<br>Teams: '+esc(x[4]):'')+'</span></div>').join('')+'</div>':'<p class="mini">Keine Angebote eingetragen.</p>';
  const flex=laFlexForDate(d);
  const notes=published?String(current.notes||'').trim():'';
  const news=published?String(current.news||'').trim():'';
