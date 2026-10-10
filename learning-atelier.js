@@ -551,6 +551,7 @@ function laLimitedTeacher(){
  }).catch(()=>alert('Entsperren fehlgeschlagen.'));
 }
 async function laLimitedAction(id,action,value){
+ if(!Auth.isLernatelier()||!Auth.canAccessGrade(laGrade))return;
  try{
   const {error}=await Auth.cloudClient.rpc('kompass_la_change',{p_grade:laGrade,p_pupil_id:id,p_action:action,p_value:value});
   if(error)throw error;
