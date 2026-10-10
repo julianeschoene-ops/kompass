@@ -35,13 +35,16 @@ let laPreviewPupilId='';
 function laPupils(){return (Store.pupils||[]).filter(p=>!p.archived&&Number(p.year||String(p.className||'').charAt(0))===laGrade);}
 function laRoom(p){return LA_ROOMS.includes(p.learningAtelier)?p.learningAtelier:'';}
 function laSafeId(id){return esc(String(id));}
-function laUpdate(id,key,value){
+async function laUpdate(id,key,value){
   if(!Auth.canLead(laGrade)&&!Auth.isAdmin()){toast('Nur Stufenleitung darf diese Zuordnung ändern.');return;}
   const p=laPupils().find(x=>String(x.id)===String(id));if(!p)return;
   if(key==='learningAtelier'&&!LA_ROOMS.includes(value))return;
   if(key==='graduation'&&!LA_LEVELS.includes(value))return;
   if(key==='learningPlace'&&!laPlaces(laRoom(p)).includes(value))return;
-  p[key]=value;Store.save();render();
+  if(key==='learningPlace'){
+  try{await laTeacherCloudChange(id,'place',value);}catch(e){alert('Lernort nicht gespeichert: '+e.message);return;}
+ }
+ p[key]=value;Store.save();render();
 }
 function laAssignUnassigned(room){
  if(!Auth.canLead(laGrade)&&!Auth.isAdmin())return;
