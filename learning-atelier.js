@@ -605,7 +605,7 @@ function laLimitedView(){
      board+='<section class="laPublicPlace '+(place==='Lernatelier'?'laHomePlace':'')+' '+(group.length?'laOccupied':'laEmpty')+'"><h2>'+esc(place)+' <span>'+group.length+'</span></h2><div class="laPublicNames">';
      board+=group.map(p=>{
        const id=encodeURIComponent(String(p.id)).replace(/'/g,'%27');
-       return '<button type="button" class="laPublicName '+(String(p.id)===laLimitedSelectedId?'laChosen':'')+'" onclick="laLimitedSelect(decodeURIComponent(\\''+id+'\\'))"><span class="laNameLine">'+esc(p.short||[p.first,p.last].filter(Boolean).join(' '))+(p.laNeedsHelp?' ✋':'')+'</span></button>';
+       return '<button type="button" class="laPublicName '+(String(p.id)===laLimitedSelectedId?'laChosen':'')+'" onclick="laLimitedSelect(decodeURIComponent(\''+id+'\'))"><span class="laNameLine">'+esc(p.short||[p.first,p.last].filter(Boolean).join(' '))+(p.laNeedsHelp?' ✋':'')+'</span></button>';
      }).join('')||'<p class="mini">Hier ist gerade niemand.</p>';
      board+='</div></section>';
    }
@@ -613,9 +613,9 @@ function laLimitedView(){
    if(selected){
      const id=encodeURIComponent(String(selected.id)).replace(/'/g,'%27');
      const current=selected.learningPlace||'Lernatelier';
-     board+='<div class="laActionPanel"><div class="laActionHead"><div><span class="mini">Ausgewählt</span><h2>'+esc(selected.short||selected.first+' '+selected.last)+'</h2><span class="mini">Aktuell: '+esc(current)+'</span></div><button class="chip" onclick="laLimitedSelectedId=\\'\\';laLimitedView()">✕ Schließen</button></div>';
-     board+='<div class="laActionPlaces">'+places.filter(x=>x!==current).map(place=>'<button class="laPlaceButton" onclick="laLimitedAction(decodeURIComponent(\\''+id+'\\'),\\'request\\',this.textContent)"><strong>'+esc(place)+'</strong></button>').join('')+'</div>';
-     board+='<button class="chip dark laHelpButton" onclick="laLimitedAction(decodeURIComponent(\\''+id+'\\'),\\'help\\',\\''+(!selected.laNeedsHelp)+'\\')">'+(selected.laNeedsHelp?'✓ Hilfehand zurücknehmen':'✋ Ich brauche Hilfe')+'</button>';
+     board+='<div class="laActionPanel"><div class="laActionHead"><div><span class="mini">Ausgewählt</span><h2>'+esc(selected.short||selected.first+' '+selected.last)+'</h2><span class="mini">Aktuell: '+esc(current)+'</span></div><button class="chip" onclick="laLimitedSelectedId=\'\';laLimitedView()">✕ Schließen</button></div>';
+     board+='<div class="laActionPlaces">'+places.filter(x=>x!==current).map(place=>'<button class="laPlaceButton" onclick="laLimitedAction(decodeURIComponent(\''+id+'\'),\'request\',this.textContent)"><strong>'+esc(place)+'</strong></button>').join('')+'</div>';
+     board+='<button class="chip dark laHelpButton" onclick="laLimitedAction(decodeURIComponent(\''+id+'\'),\'help\',\''+(!selected.laNeedsHelp)+'\')">'+(selected.laNeedsHelp?'✓ Hilfehand zurücknehmen':'✋ Ich brauche Hilfe')+'</button>';
      if(selected.laRequest?.status==='pending')board+='<p class="mini">Lernort angefragt: '+esc(selected.laRequest.place||'')+' · wartet auf Freigabe</p>';
      board+='</div>';
    }
