@@ -400,7 +400,7 @@ function laCurrentPlace(p){
 }
 function laStudentPupilCard(p,selectedId,onSelect){
  const id=encodeURIComponent(String(p.id)).replace(/'/g,'%27');
- return '<button type="button" class="laPublicName '+(String(p.id)===String(selectedId)?'laChosen':'')+'" onclick="'+onSelect+'(decodeURIComponent(\''+id+'\'))"><span class="laPupilStars">'+LA_STAR_SUBJECTS.filter(x=>laStars(p).includes(x[0])).map(x=>'<span class="laStar laStar-'+x[2]+'" title="Teamstar '+esc(x[1])+'">★</span>').join('')+'</span><span class="laNameLine"><span class="dot '+teamColor(p.team)+'"></span><span>'+esc(p.short||p.first+' '+p.last)+'</span>'+(p.laNeedsHelp?' <span title="Braucht Hilfe">✋</span>':'')+LA_DUTIES.filter(x=>laDuties(p).includes(x[0])).map(x=>'<span title="'+esc(x[2])+'">'+x[1]+'</span>').join('')+'</span></button>';
+ return '<button type="button" class="laPublicName '+(String(p.id)===String(selectedId)?'laChosen':'')+'" onclick="'+onSelect+'(decodeURIComponent(\''+id+'\')'+(onSelect==='laSelectBoardPupil'?',this':'')+')"><span class="laPupilStars">'+LA_STAR_SUBJECTS.filter(x=>laStars(p).includes(x[0])).map(x=>'<span class="laStar laStar-'+x[2]+'" title="Teamstar '+esc(x[1])+'">★</span>').join('')+'</span><span class="laNameLine"><span class="dot '+teamColor(p.team)+'"></span><span>'+esc(p.short||p.first+' '+p.last)+'</span>'+(p.laNeedsHelp?' <span title="Braucht Hilfe">✋</span>':'')+LA_DUTIES.filter(x=>laDuties(p).includes(x[0])).map(x=>'<span title="'+esc(x[2])+'">'+x[1]+'</span>').join('')+'</span></button>';
 }
 function laStudentPreview(){
  if(!Auth.canAccessGrade(laGrade))return;
