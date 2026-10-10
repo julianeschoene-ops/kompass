@@ -595,6 +595,33 @@ function laLimitedView(){
    const places='<select onchange="laLimitedAction(decodeURIComponent(\''+id+'\'),\''+(laLimitedMode==='teacher'?'place':'request')+'\',this.value);this.selectedIndex=0"><option value="">Lernort wählen</option>'+LA_DEFAULT_PLACES.filter(v=>v!=='Lernatelier').map(v=>'<option value="'+esc(v)+'">'+esc(v)+'</option>').join('')+'</select>';
    return '<div class="laQueue" data-la-name="'+esc([p.first,p.last,p.short,p.className].join(' ').toLocaleLowerCase('de'))+'"><div><b>'+name+'</b>'+(laLimitedMode==='teacher'?'<div class="mini">'+room+' · '+esc(p.className||'')+'</div>':'')+'</div><span class="statusPill">'+place+'</span>'+pending+actions+places+'</div>';
  }).join('')||'<p class="mini">Keine passenden Schüler*innen.</p>';
+ if(laLimitedMode==='student'){
+   const roomPupils=pupils.filter(p=>!p.archived&&p.learningAtelier===laLimitedRoom);
+   const selected=roomPupils.find(p=>String(p.id)===laLimitedSelectedId);
+   const places=[...new Set([...LA_DEFAULT_PLACES,...roomPupils.map(p=>p.learningPlace).filter(Boolean)])];
+   let board='<div class="laPublicBoard laCompactBoard">';
+   for(const place of places){
+     const group=roomPupils.filter(p=>(p.learningPlace||'Lernatelier')===place);
+     board+='<section class="laPublicPlace '+(place==='Lernatelier'?'laHomePlace':'')+' '+(group.length?'laOccupied':'laEmpty')+'"><h2>'+esc(place)+' <span>'+group.length+'</span></h2><div class="laPublicNames">';
+     board+=group.map(p=>{
+       const id=encodeURIComponent(String(p.id)).replace(/'/g,'%27');
+       return '<button type="button" class="laPublicName '+(String(p.id)===laLimitedSelectedId?'laChosen':'')+'" onclick="laLimitedSelect(decodeURIComponent(\\''+id+'\\'))"><span class="laNameLine">'+esc(p.short||[p.first,p.last].filter(Boolean).join(' '))+(p.laNeedsHelp?' ✋':'')+'</span></button>';
+     }).join('')||'<p class="mini">Hier ist gerade niemand.</p>';
+     board+='</div></section>';
+   }
+   board+='</div>';
+   if(selected){
+     const id=encodeURIComponent(String(selected.id)).replace(/'/g,'%27');
+     const current=selected.learningPlace||'Lernatelier';
+     board+='<div class="laActionPanel"><div class="laActionHead"><div><span class="mini">Ausgewählt</span><h2>'+esc(selected.short||selected.first+' '+selected.last)+'</h2><span class="mini">Aktuell: '+esc(current)+'</span></div><button class="chip" onclick="laLimitedSelectedId=\\'\\';laLimitedView()">✕ Schließen</button></div>';
+     board+='<div class="laActionPlaces">'+places.filter(x=>x!==current).map(place=>'<button class="laPlaceButton" onclick="laLimitedAction(decodeURIComponent(\\''+id+'\\'),\\'request\\',this.textContent)"><strong>'+esc(place)+'</strong></button>').join('')+'</div>';
+     board+='<button class="chip dark laHelpButton" onclick="laLimitedAction(decodeURIComponent(\\''+id+'\\'),\\'help\\',\\''+(!selected.laNeedsHelp)+'\\')">'+(selected.laNeedsHelp?'✓ Hilfehand zurücknehmen':'✋ Ich brauche Hilfe')+'</button>';
+     if(selected.laRequest?.status==='pending')board+='<p class="mini">Lernort angefragt: '+esc(selected.laRequest.place||'')+' · wartet auf Freigabe</p>';
+     board+='</div>';
+   }
+   root.innerHTML='<main class="laStudentFullscreen"><div class="laBoardTop"><div><div class="mini">KOMPASS · Stufe '+laGrade+'</div><h1>🏫 '+esc(laLimitedRoom)+'</h1></div><div class="laTopActions"><button class="chip" onclick="laLimitedTeacher()">🔒 Lehrkraftmodus</button></div></div><div class="laRoomSwitcher laMainTabs">'+roomTabs+'</div><p class="laBoardInstructions">Namen antippen und einen Lernort anfragen oder Hilfe melden.</p>'+board+'</main>';
+   return;
+ }
  const controls=laLimitedMode==='teacher'
    ?'<div class="toolbar"><button class="chip" onclick="laLimitedRefresh()">↻ Aktualisieren</button><button class="chip" onclick="laLimitedSignOut()">Abmelden</button><button class="chip dark" onclick="laLimitedStudent()">👩‍🎓 Schüleransicht</button></div><div class="card"><h2>🔎 Schüler finden · gesamte Stufe</h2><input type="search" placeholder="Name suchen …" value="'+esc(laLimitedQuery)+'" oninput="laLimitedSearch(this.value)"><p class="mini">Alle drei Lernateliers · schreibgeschützte Übersicht</p></div>'
    :'<div class="toolbar"><button class="chip" onclick="laLimitedTeacher()">🔒 Lehrkraftmodus</button></div><div class="toolbar">'+roomTabs+'</div>';
