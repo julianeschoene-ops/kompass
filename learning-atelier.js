@@ -87,6 +87,7 @@ async function laExitStudentPreview(){
 }
 
 let laBoardSelectedId='';
+let laStudentTab='news';
 function laBoardMove(id,place){
  if(!Auth.canAccessGrade(6)||!laPlaces(laSelectedRoom).includes(place))return;
  const p=laPupils().find(x=>String(x.id)===String(id));
@@ -286,10 +287,14 @@ function laStudentPreview(){
  const noise=Store.data.settings?.laNoise?.[laSelectedRoom]||'green';
  const noiseData={green:['🟢','Leise sprechen'],yellow:['🟡','Flüstern'],red:['🔴','Ruhe']}[noise];
  const info=Store.data.settings?.laBoardInfo?.[laSelectedRoom]||{};
- let html='<div class="laBoardTop"><div><div class="mini">KOMPASS · Jahrgang 6</div><h1>🏫 '+esc(laSelectedRoom)+'</h1></div><div class="laTopActions"><div class="laCompactNoise">'+noiseData[0]+' '+noiseData[1]+'</div><button class="chip" onclick="laExitStudentPreview()">🔒 Lehrkraftmodus</button></div></div>';
- html+='<div class="laRoomSwitcher">'+LA_ROOMS.map(room=>'<button class="chip '+(room===laSelectedRoom?'dark':'')+'" onclick="laSelectedRoom=\''+room+'\';laBoardSelectedId=\'\';render()">'+room+' · '+all.filter(p=>laRoom(p)===room).length+'</button>').join('')+'</div>';
- 
- html+='<div class="laTodayDateNav"><button class="chip" onclick="laMoveBoardDay(-1)">‹ Vortag</button><button class="chip" onclick="laBoardDate=\'\';render()">Heute</button><button class="chip" onclick="laMoveBoardDay(1)">Nächster Tag ›</button></div>';html+=laTodayBoard();
+ let html='<div class="laBoardTop"><div><div class="mini">KOMPASS · Jahrgang 6</div><h1>'+ (laStudentTab==='news'?'📰 News':'🏫 '+esc(laSelectedRoom))+'</h1></div><div class="laTopActions">'+(laStudentTab==='news'?'':'<div class="laCompactNoise">'+noiseData[0]+' '+noiseData[1]+'</div>')+'<button class="chip" onclick="laExitStudentPreview()">🔒 Lehrkraftmodus</button></div></div>';
+ html+='<div class="laRoomSwitcher laMainTabs"><button class="chip '+(laStudentTab==='news'?'dark':'')+'" onclick="laStudentTab=\'news\';laBoardSelectedId=\'\';render()">📰 News</button>'+LA_ROOMS.map(room=>'<button class="chip '+(laStudentTab==='room'&&room===laSelectedRoom?'dark':'')+'" onclick="laStudentTab=\'room\';laSelectedRoom=\''+room+'\';laBoardSelectedId=\'\';render()">'+room+'</button>').join('')+'</div>';
+ if(laStudentTab==='news'){
+  html+='<div class="laTodayDateNav"><button class="chip" onclick="laMoveBoardDay(-1)">‹ Vortag</button><button class="chip" onclick="laBoardDate=\'\';render()">Heute</button><button class="chip" onclick="laMoveBoardDay(1)">Nächster Tag ›</button></div>';
+  html+=laTodayBoard();
+  document.getElementById('app').innerHTML='<main class="laStudentFullscreen">'+html+'</main>';
+  return;
+ }
  html+='<p class="laBoardInstructions">Namen antippen oder mit dem Finger in einen anderen Bereich ziehen.</p>';
  html+='<div class="laPublicBoard laCompactBoard">';
  for(const place of laPlaces()){
