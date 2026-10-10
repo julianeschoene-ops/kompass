@@ -337,3 +337,5 @@
  .laStudentFullscreen>.laBoardTop{grid-column:1!important;grid-row:2!important}
  .laStudentFullscreen>.laMainTabs{grid-row:3!important}
 }
+
+.laStudentFullscreen:has(.laTodayBoard) > .laBoardTop h1 { display: none !important; }
