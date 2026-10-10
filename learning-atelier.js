@@ -560,6 +560,7 @@ async function laLimitedAction(id,action,value){
  }catch(e){alert('Nicht gespeichert: '+e.message);}
 }
 function laLimitedSignOut(){
+ laSetKioskLock(false);
  laLimitedRows={};
  laLimitedMode='teacher';
  laLimitedQuery='';
