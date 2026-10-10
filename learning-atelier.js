@@ -62,23 +62,34 @@ function laNoise(room,value){
   Store.save();render();
 }
 
-function laRequestPlace(id,place){
+async function laTeacherCloudChange(id,action,value){
+ if(Auth.session?.mode!=='cloud'||!Auth.cloudClient)return;
+ const {error}=await Auth.cloudClient.rpc('kompass_la_change',{
+  p_grade:laGrade,p_pupil_id:String(id),p_action:action,
+  p_value:value==null?null:String(value)
+ });
+ if(error)throw error;
+}
+async function laRequestPlace(id,place){
  if(!Auth.canAccessGrade(laGrade)||!laPlaces(laSelectedRoom).includes(place)||place==='Lernatelier')return;
  const p=laPupils().find(x=>String(x.id)===String(id));if(!p||!laRoom(p))return;
+ try{await laTeacherCloudChange(id,'request',place);}catch(e){alert('Anfrage nicht gespeichert: '+e.message);return;}
  p.laRequest={place,status:'pending',at:new Date().toISOString()};
  Store.save('Lernort-Anfrage erstellt',{pupilId:p.id,place});render();
 }
-function laAnswerRequest(id,yes){
+async function laAnswerRequest(id,yes){
  if(!Auth.canAccessGrade(laGrade))return;
  const p=laPupils().find(x=>String(x.id)===String(id));if(!p||p.laRequest?.status!=='pending')return;
  const place=p.laRequest.place;
+ try{await laTeacherCloudChange(id,yes?'approve':'deny',null);}catch(e){alert('Entscheidung nicht gespeichert: '+e.message);return;}
  p.laRequest={...p.laRequest,status:yes?'approved':'denied',decidedAt:new Date().toISOString()};
  if(yes)p.learningPlace=place;
  Store.save('Lernort-Anfrage entschieden',{pupilId:p.id,approved:yes});render();
 }
-function laSetHelp(id,enabled){
+async function laSetHelp(id,enabled){
  if(!Auth.canAccessGrade(laGrade))return;
  const p=laPupils().find(x=>String(x.id)===String(id));if(!p)return;
+ try{await laTeacherCloudChange(id,'help',String(!!enabled));}catch(e){alert('Hilfehand nicht gespeichert: '+e.message);return;}
  p.laNeedsHelp=!!enabled;Store.save('Hilfehand geändert',{pupilId:p.id});render();
 }
 
