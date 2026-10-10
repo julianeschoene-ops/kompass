@@ -548,7 +548,7 @@ async function laLoadLimited(grade){
 function laLimitedRefresh(){delete laLimitedRows[laGrade];laLimitedView();}
 function laLimitedGrade(g){if(!Auth.canAccessGrade(g))return;laGrade=Number(g);laLimitedQuery='';laLimitedView();}
 function laLimitedSearch(v){laLimitedQuery=String(v||'');const q=laLimitedQuery.toLocaleLowerCase('de').trim();document.querySelectorAll('[data-la-name]').forEach(el=>{el.style.display=!q||el.getAttribute('data-la-name').includes(q)?'':'none';});}
-function laLimitedSetRoom(r){if(!LA_ROOMS.includes(r))return;laLimitedRoom=r;laLimitedSelectedId='';laLimitedView();}
+function laLimitedSetRoom(r){if(!LA_ROOMS.includes(r))return;laLimitedTab='room';laLimitedRoom=r;laLimitedSelectedId='';laLimitedView();}
 function laLimitedSelect(id){laLimitedSelectedId=String(id);laLimitedView();}
 function laLimitedStudent(){laLimitedMode='student';laLimitedSelectedId='';laLimitedQuery='';laSetKioskLock(true);laLimitedView();}
 function laLimitedTeacher(){
@@ -577,6 +577,22 @@ function laLimitedSignOut(){
  laLimitedQuery='';
  Auth.logout();
 }
+function laLimitedNews(){
+ const d=laDayData(),payload=laLimitedPayloads[laGrade]||{};
+ const board=payload.dailyBoard?.[d.date]||{};
+ const published=board.published===true;
+ const notes=published?String(board.notes||''):'';
+ const news=published?String(board.news||''):'';
+ const motivation=published&&board.motivation?String(board.motivation):laMotivationForDate(d.date);
+ const events=(payload.calendarEvents||[]).filter(e=>e.date<=d.date&&d.date<=(e.endDate||e.date));
+ return '<section class="laTodayBoard"><div class="laTodayHeading"><h2>☀️ Heute bei uns</h2><span>'+esc(d.label)+'</span></div>'+
+ '<div class="laMotivation"><div class="laMotivationEyebrow">✨ Dein Gedanke für heute</div><div class="laMotivationQuote">'+esc(motivation)+'</div></div>'+
+ '<div class="laTodayGrid laTodayMasonry"><div class="laTodayColumn"><div class="laTodaySection"><h3>📅 Aus dem Kalender</h3>'+(events.length?'<div class="laTodayItems">'+events.map(e=>'<div class="laTodayItem"><b>'+esc((e.time?e.time+' · ':'')+e.title)+'</b><span>'+esc(e.location||'')+'</span></div>').join('')+'</div>':'<p class="mini">Keine Kalendereinträge für diesen Tag.</p>')+'</div></div>'+
+ '<div class="laTodayColumn"><div class="laTodaySection"><h3>📣 Infos & Vertretungen</h3><p>'+esc(notes||'Heute sind noch keine Änderungen veröffentlicht.').replace(/\\n/g,'<br>')+'</p></div><div class="laTodaySection"><h3>🌍 Neues aus der Welt</h3><p>'+esc(news||'Noch keine geprüfte Nachricht veröffentlicht.').replace(/\\n/g,'<br>')+'</p></div></div>'+
+ '<div class="laTodayColumn"><div class="laTodaySection"><h3>🎨 Kreativband</h3><p class="mini">Veröffentlichte Angebote erscheinen nach der Datensynchronisierung.</p></div></div>'+
+ '<div class="laTodayColumn"><div class="laTodaySection"><h3>📘 Flexstunden</h3><p class="mini">Veröffentlichte Flexstunden erscheinen nach der Datensynchronisierung.</p></div></div></div></section>';
+}
+function laLimitedSetTab(tab){if(tab!=='room'&&tab!=='news')return;laLimitedTab=tab;laLimitedSelectedId='';laLimitedView();}
 function laLimitedView(){
  laLimitedStartPoll();
  const grades=Auth.allowedGrades();
@@ -625,6 +641,7 @@ function laLimitedView(){
      if(selected.laRequest?.status==='pending')board+='<p class="mini">Lernort angefragt: '+esc(selected.laRequest.place||'')+' · wartet auf Freigabe</p>';
      board+='</div>';
    }
+   const nav='<button class="chip '+(laLimitedTab==='news'?'dark':'')+'" onclick="laLimitedSetTab(\'news\')">📰 News</button>'+roomTabs.replaceAll('onclick="laLimitedSetRoom','onclick="laLimitedSetRoom');
    root.innerHTML='<main class="laStudentFullscreen"><div class="laBoardTop"><div><div class="mini">KOMPASS · Stufe '+laGrade+'</div><h1>🏫 '+esc(laLimitedRoom)+'</h1></div><div class="laTopActions"><button class="chip" onclick="laLimitedTeacher()">🔒 Lehrkraftmodus</button></div></div><div class="laRoomSwitcher laMainTabs">'+roomTabs+'</div><p class="laBoardInstructions">Namen antippen und einen Lernort anfragen oder Hilfe melden.</p>'+board+'</main>';
    return;
  }
