@@ -398,6 +398,10 @@ function laCurrentPlace(p){
  const today=laDayData('').date;
  return laGradeSettings('laLastPlaceReset')===today?(p.learningPlace||'Lernatelier'):'Lernatelier';
 }
+function laStudentPupilCard(p,selectedId,onSelect){
+ const id=encodeURIComponent(String(p.id)).replace(/'/g,'%27');
+ return '<button type="button" class="laPublicName '+(String(p.id)===String(selectedId)?'laChosen':'')+'" onclick="'+onSelect+'(decodeURIComponent(\''+id+'\'))"><span class="laPupilStars">'+LA_STAR_SUBJECTS.filter(x=>laStars(p).includes(x[0])).map(x=>'<span class="laStar laStar-'+x[2]+'" title="Teamstar '+esc(x[1])+'">★</span>').join('')+'</span><span class="laNameLine"><span class="dot '+teamColor(p.team)+'"></span><span>'+esc(p.short||p.first+' '+p.last)+'</span>'+(p.laNeedsHelp?' <span title="Braucht Hilfe">✋</span>':'')+LA_DUTIES.filter(x=>laDuties(p).includes(x[0])).map(x=>'<span title="'+esc(x[2])+'">'+x[1]+'</span>').join('')+'</span></button>';
+}
 function laStudentPreview(){
  if(!Auth.canAccessGrade(laGrade))return;
  laResetLearningPlacesDaily();
@@ -423,7 +427,7 @@ function laStudentPreview(){
  for(const place of laPlaces()){
   const group=pupils.filter(p=>laCurrentPlace(p)===place);
   html+='<section class="laPublicPlace '+(place==='Lernatelier'?'laHomePlace':'')+' '+(group.length?'laOccupied':'laEmpty')+'" data-place="'+esc(place)+'"><h2>'+esc(place)+' <span>'+group.length+'</span></h2><div class="laPublicNames">';
-  html+=group.map(p=>'<button type="button" data-pupil="'+esc(p.id)+'" class="laPublicName '+(String(p.id)===String(laBoardSelectedId)?'laChosen':'')+'" onclick="laSelectBoardPupil(\''+esc(p.id)+'\',this)"><span class="laPupilStars">'+LA_STAR_SUBJECTS.filter(x=>laStars(p).includes(x[0])).map(x=>'<span class="laStar laStar-'+x[2]+'" title="Teamstar '+x[1]+'">★</span>').join('')+'</span><span class="laNameLine"><span class="dot '+teamColor(p.team)+'"></span><span>'+esc(p.short||p.first+' '+p.last)+'</span>'+(p.laNeedsHelp?' <span title="Braucht Hilfe">✋</span>':'')+LA_DUTIES.filter(x=>laDuties(p).includes(x[0])).map(x=>'<span title="'+x[2]+'">'+x[1]+'</span>').join('')+'</span></button>').join('')||'<p class="mini">Hier ist gerade niemand.</p>';
+  html+=group.map(p=>laStudentPupilCard(p,laBoardSelectedId,'laSelectBoardPupil')).join('')||'<p class="mini">Hier ist gerade niemand.</p>';
   html+='</div></section>';
  }
  html+='</div>';
@@ -603,10 +607,7 @@ function laLimitedView(){
    for(const place of places){
      const group=roomPupils.filter(p=>(p.learningPlace||'Lernatelier')===place);
      board+='<section class="laPublicPlace '+(place==='Lernatelier'?'laHomePlace':'')+' '+(group.length?'laOccupied':'laEmpty')+'"><h2>'+esc(place)+' <span>'+group.length+'</span></h2><div class="laPublicNames">';
-     board+=group.map(p=>{
-       const id=encodeURIComponent(String(p.id)).replace(/'/g,'%27');
-       return '<button type="button" class="laPublicName '+(String(p.id)===laLimitedSelectedId?'laChosen':'')+'" onclick="laLimitedSelect(decodeURIComponent(\''+id+'\'))"><span class="laPupilStars">'+LA_STAR_SUBJECTS.filter(x=>Array.isArray(p.laStars)&&p.laStars.includes(x[0])).map(x=>'<span class="laStar laStar-'+x[2]+'" title="Teamstar '+esc(x[1])+'">★</span>').join('')+'</span><span class="laNameLine"><span class="dot '+teamColor(p.team)+'"></span>'+esc(p.short||[p.first,p.last].filter(Boolean).join(' '))+(p.laNeedsHelp?' ✋':'')+LA_DUTIES.filter(x=>Array.isArray(p.laDuties)&&p.laDuties.includes(x[0])).map(x=>' <span title="'+esc(x[2])+'">'+x[1]+'</span>').join('')+'</span></button>';
-     }).join('')||'<p class="mini">Hier ist gerade niemand.</p>';
+     board+=group.map(p=>laStudentPupilCard(p,laLimitedSelectedId,'laLimitedSelect')).join('')||'<p class="mini">Hier ist gerade niemand.</p>';
      board+='</div></section>';
    }
    board+='</div>';
