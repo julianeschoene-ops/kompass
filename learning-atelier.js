@@ -67,7 +67,7 @@ function laNoise(room,value){
 
 async function laTeacherRefresh(){
  if(!Sync.enabled())return;
- try{await Sync.pull();render();toast('Lernatelier aktualisiert');}
+ try{await Sync.overlayLernatelier(Auth.allowedGrades(),Store.data);render();toast('Lernatelier aktualisiert');}
  catch(e){alert('Aktualisierung fehlgeschlagen: '+(e.message||String(e)));}
 }
 async function laTeacherCloudChange(id,action,value){
