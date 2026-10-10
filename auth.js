@@ -62,6 +62,8 @@ const Auth={
     State.cloudLoadError=null;
     // Restricted accounts must never retain a previous teacher's full roster in memory.
     if(this.isLernatelier()){
+      if(typeof laSetKioskLock==='function')laSetKioskLock(true);
+      if(typeof laLimitedMode!=='undefined')laLimitedMode='student';
       Store.data={pupils:[],settings:{},auditLog:[]};
       Store._lastSnapshot=JSON.stringify(Store.data);
     }
