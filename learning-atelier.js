@@ -660,7 +660,7 @@ function laLimitedView(){
      board+='</div>';
    }
    const nav='<button class="chip '+(laLimitedTab==='news'?'dark':'')+'" onclick="laLimitedSetTab(\'news\')">📰 News</button>'+roomTabs;
-   root.innerHTML='<main class="laStudentFullscreen"><div class="laBoardTop"><div><div class="mini">KOMPASS · Stufe '+laGrade+'</div><h1>'+(laLimitedTab==='news'?'📰 News':'🏫 '+esc(laLimitedRoom))+'</h1></div><div class="laTopActions"><button class="chip" onclick="laLimitedTeacher()">🔒 Lehrkraftmodus</button></div></div><div class="laRoomSwitcher laMainTabs">'+roomTabs+'</div><p class="laBoardInstructions">Namen antippen und einen Lernort anfragen oder Hilfe melden.</p>'+board+'</main>';
+   root.innerHTML='<main class="laStudentFullscreen"><div class="laBoardTop"><div><div class="mini">KOMPASS · Stufe '+laGrade+'</div><h1>'+(laLimitedTab==='news'?'📰 News':'🏫 '+esc(laLimitedRoom))+'</h1></div><div class="laTopActions"><button class="chip" onclick="laLimitedTeacher()">🔒 Lehrkraftmodus</button></div></div><div class="laRoomSwitcher laMainTabs">'+nav+'</div>'+(laLimitedTab==='news'?laLimitedNews():'<p class="laBoardInstructions">Namen antippen und einen Lernort anfragen oder Hilfe melden.</p>'+board)+'</main>';
    return;
  }
  const controls=laLimitedMode==='teacher'
