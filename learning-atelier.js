@@ -423,6 +423,26 @@ function laStudentPupilCard(p,selectedId,onSelect){
  const id=encodeURIComponent(String(p.id)).replace(/'/g,'%27');
  return '<button type="button" class="laPublicName '+(String(p.id)===String(selectedId)?'laChosen':'')+'" data-pupil="'+esc(String(p.id))+'" onclick="'+onSelect+'(decodeURIComponent(\''+id+'\')'+(onSelect==='laSelectBoardPupil'?',this':'')+')"><span class="laPupilStars">'+LA_STAR_SUBJECTS.filter(x=>laStars(p).includes(x[0])).map(x=>'<span class="laStar laStar-'+x[2]+'" title="Teamstar '+esc(x[1])+'">★</span>').join('')+'</span><span class="laNameLine"><span class="dot '+teamColor(p.team)+'"></span><span>'+esc(p.short||p.first+' '+p.last)+'</span>'+(p.laNeedsHelp?' <span title="Braucht Hilfe">✋</span>':'')+LA_DUTIES.filter(x=>laDuties(p).includes(x[0])).map(x=>'<span title="'+esc(x[2])+'">'+x[1]+'</span>').join('')+'</span></button>';
 }
+async function laResetRoomOccupancy(){
+ if(!Auth.canAccessGrade(laGrade))return;
+ if(Auth.isLernatelier()&&laLimitedMode!=='teacher'){alert('Bitte zuerst den Lehrkraftmodus entsperren.');return;}
+ if(!Auth.isLernatelier()&&laKioskLocked()){alert('Bitte zuerst den Lehrkraftmodus entsperren.');return;}
+ const room=Auth.isLernatelier()?laLimitedRoom:laSelectedRoom;
+ if(!confirm('Besetzung von '+room+' zurücksetzen? Alle Schülerinnen und Schüler dieses Lernateliers werden zum Lernatelier zurückgesetzt. Die Zuordnung zu '+room+' bleibt erhalten.'))return;
+ if(Auth.session?.mode!=='cloud'||!Auth.cloudClient){alert('Dafür ist eine Cloud-Anmeldung erforderlich.');return;}
+ try{
+  const {error}=await Auth.cloudClient.rpc('kompass_la_reset_room',{p_grade:laGrade,p_room:room});
+  if(error)throw error;
+  if(Auth.isLernatelier()){
+   delete laLimitedRows[laGrade];laLimitedView();
+  }else{
+   for(const p of laPupils().filter(p=>laRoom(p)===room)){p.learningPlace='Lernatelier';p.laRequest=null;}
+   Store.data.settings=Store.data.settings||{};
+   Store.data.settings[laSettingKey('laLastPlaceReset')]=laDayData('').date;
+   Store.save('Besetzung zurueckgesetzt',{room});render();
+  }
+ }catch(e){alert('Zuruecksetzen fehlgeschlagen: '+e.message);}
+}
 function laStudentPreview(){
  if(!Auth.canAccessGrade(laGrade))return;
  if(!Auth.isLernatelier())laResetLearningPlacesDaily();
@@ -435,7 +455,7 @@ function laStudentPreview(){
  const noise=laGradeSettings('laNoise')?.[laSelectedRoom]||'green';
  const noiseData={green:['🟢','Leise sprechen'],yellow:['🟡','Flüstern'],red:['🔴','Ruhe']}[noise];
  const info=laGradeSettings('laBoardInfo')?.[laSelectedRoom]||{};
- let html=laGradeTabs()+'<div class="laBoardTop"><div><div class="mini">KOMPASS · Jahrgang '+laGrade+'</div><h1>'+ (laStudentTab==='news'?'📰 News':'🏫 '+esc(laSelectedRoom))+'</h1></div><div class="laTopActions">'+(laStudentTab==='news'?'':'<div class="laCompactNoise">'+noiseData[0]+' '+noiseData[1]+'</div>')+'<button class="chip" onclick="laExitStudentPreview()">🔒 Lehrkraftmodus</button></div></div>';
+ let html=laGradeTabs()+'<div class="laBoardTop"><div><div class="mini">KOMPASS · Jahrgang '+laGrade+'</div><h1>'+ (laStudentTab==='news'?'📰 News':'🏫 '+esc(laSelectedRoom))+'</h1></div><div class="laTopActions">'+(laStudentTab==='news'?'':'<div class="laCompactNoise">'+noiseData[0]+' '+noiseData[1]+'</div>')+(laStudentTab==='room'&&!Auth.isLernatelier()&&!laKioskLocked()?'<button class="chip" onclick="laResetRoomOccupancy()">↺ Besetzung zurücksetzen</button>':'')+'<button class="chip" onclick="laExitStudentPreview()">🔒 Lehrkraftmodus</button></div></div>';
  html+='<div class="laRoomSwitcher laMainTabs"><button class="chip '+(laStudentTab==='news'?'dark':'')+'" onclick="laStudentTab=\'news\';laBoardSelectedId=\'\';render()">📰 News</button>'+LA_ROOMS.map(room=>'<button class="chip '+(laStudentTab==='room'&&room===laSelectedRoom?'dark':'')+'" onclick="laStudentTab=\'room\';laSelectedRoom=\''+room+'\';laBoardSelectedId=\'\';render()">'+room+'</button>').join('')+'</div>';
  if(laStudentTab==='news'){
   const dateNav='<div class="laTodayDateNav"><button class="chip" onclick="laMoveBoardDay(-1)">‹ Vortag</button><button class="chip" onclick="laBoardDate=\'\';render()">Heute</button><button class="chip" onclick="laMoveBoardDay(1)">Nächster Tag ›</button></div>';
