@@ -142,11 +142,12 @@ async function laConfirmExitStudentPreview(event){
 
 let laBoardSelectedId='';
 let laStudentTab='news';
-function laBoardMove(id,place){
+async function laBoardMove(id,place){
  if(!Auth.canAccessGrade(laGrade)||!laPlaces(laSelectedRoom).includes(place))return;
  const p=laPupils().find(x=>String(x.id)===String(id));
  if(!p||laRoom(p)!==laSelectedRoom)return;
- // This remains a teacher-authenticated kiosk preview, not a public student login.
+ // Write the same learning-place change to the isolated shared LA state first.
+ try{await laTeacherCloudChange(id,'place',place);}catch(e){alert('Lernort nicht synchronisiert: '+e.message);return;}
  p.learningPlace=place;
  Store.data.settings=Store.data.settings||{};
  Store.data.settings[laSettingKey('laLastPlaceReset')]=laDayData('').date;
