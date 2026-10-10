@@ -65,7 +65,7 @@ const Sync={
       for(const lp of row.payload?.pupils||[]){
         const p=index.get(String(lp.id));
         if(!p)continue;
-        for(const key of ['learningPlace','laNeedsHelp','laRequest']){
+        for(const key of ['learningPlace','laNeedsHelp','laRequest','laDuties']){
           if(Object.prototype.hasOwnProperty.call(lp,key))p[key]=clone(lp[key]);
         }
       }
