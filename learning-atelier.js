@@ -1,7 +1,7 @@
 /* KOMPASS Lernatelier – erste Lehrkraft-Version. Schüler-Selbstbuchung folgt nach Rollenprüfung. */
 const LA_ROOMS=['LA 1','LA 2','LA 3'];
-let laGrade=6;
-function laSetGrade(g){g=Number(g);if(![5,6,7].includes(g)||!Auth.canAccessGrade(g))return;laGrade=g;laSelectedRoom='LA 1';laBoardSelectedId='';laPreviewPupilId='';render();}
+let laGrade=(()=>{try{const g=Number(localStorage.getItem('kompass_la_grade_v1'));return [5,6,7].includes(g)?g:6;}catch(_){return 6;}})();
+function laSetGrade(g){g=Number(g);if(![5,6,7].includes(g)||!Auth.canAccessGrade(g))return;laGrade=g;try{localStorage.setItem('kompass_la_grade_v1',String(g));}catch(_){}laSelectedRoom='LA 1';laBoardSelectedId='';laPreviewPupilId='';render();}
 function laGradeTabs(){return '<div class="laRoomSwitcher">'+[5,6,7].filter(g=>Auth.canAccessGrade(g)).map(g=>'<button class="chip '+(laGrade===g?'dark':'')+'" onclick="laSetGrade('+g+')">Stufe '+g+'</button>').join('')+'</div>';}
 function laSettingKey(k){return laGrade===6?k:k+'Grade'+laGrade;}
 function laGradeSettings(k){return Store.data.settings?.[laSettingKey(k)];}
@@ -404,7 +404,8 @@ async function laRetryCloudPupils(){
  }catch(e){alert('Schülerdaten konnten nicht geladen werden: '+(e?.message||String(e))+'\n\nEs wurden keine Schülerdaten verändert.');}
 }
 function learningAtelier(){
-  if(Auth.canAccessGrade(laGrade))laEnsureWeeklyDuties();
+  if(!Auth.canAccessGrade(laGrade)&&Auth.allowedGrades().length)laGrade=Auth.allowedGrades()[0];
+  if(Auth.canAccessGrade(laGrade)&&laPupils().some(p=>laRoom(p)))laEnsureWeeklyDuties();
   if(Auth.canAccessGrade(laGrade))laResetLearningPlacesDaily();
   if(!Auth.canAccessGrade(laGrade)){shell(header('Lernatelier')+laGradeTabs()+'<div class="card">Kein Zugriff auf Jahrgang '+laGrade+'.</div>');return;}
   if(!laPupils().length){shell(header('Lernatelier')+laGradeTabs()+'<div class="card"><h2>Schülerdaten noch nicht geladen</h2><p>Die Oberfläche ist verfügbar, aber für Jahrgang '+laGrade+' wurden keine Schülerdaten geladen. Bitte nicht neu anlegen oder zurücksetzen.</p><button class="chip dark" onclick="laRetryCloudPupils()">☁️ Schülerdaten erneut aus der Cloud laden</button><p class="mini">Diese Prüfung liest nur Daten. Ein fehlender Cloudbestand wird nicht überschrieben.</p></div>');return;}
