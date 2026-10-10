@@ -640,7 +640,8 @@ function laLimitedView(){
  if(laLimitedMode==='student'){
    const roomPupils=pupils.filter(p=>!p.archived&&p.learningAtelier===laLimitedRoom);
    const selected=roomPupils.find(p=>String(p.id)===laLimitedSelectedId);
-   const places=[...new Set([...LA_DEFAULT_PLACES,...roomPupils.map(p=>p.learningPlace).filter(Boolean)])];
+   const configured=laLimitedPayloads[laGrade]?.places?.[laLimitedRoom];
+   const places=[...new Set(['Lernatelier',...(Array.isArray(configured)&&configured.length?configured:LA_DEFAULT_PLACES),...roomPupils.map(p=>p.learningPlace).filter(Boolean)])];
    let board='<div class="laPublicBoard laCompactBoard">';
    for(const place of places){
      const group=roomPupils.filter(p=>(p.learningPlace||'Lernatelier')===place);
