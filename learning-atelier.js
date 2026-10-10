@@ -505,6 +505,7 @@ function learningAtelier(){
 let laLimitedRows={},laLimitedMode='teacher',laLimitedRoom='LA 1',laLimitedQuery='',laLimitedBusy=false;
 let laLimitedPollStarted=false;
 let laLimitedPollInFlight=false;
+let laLimitedSelectedId='';
 function laLimitedStartPoll(){
  if(laLimitedPollStarted)return;
  laLimitedPollStarted=true;
@@ -539,8 +540,9 @@ async function laLoadLimited(grade){
 function laLimitedRefresh(){delete laLimitedRows[laGrade];laLimitedView();}
 function laLimitedGrade(g){if(!Auth.canAccessGrade(g))return;laGrade=Number(g);laLimitedQuery='';laLimitedView();}
 function laLimitedSearch(v){laLimitedQuery=String(v||'');const q=laLimitedQuery.toLocaleLowerCase('de').trim();document.querySelectorAll('[data-la-name]').forEach(el=>{el.style.display=!q||el.getAttribute('data-la-name').includes(q)?'':'none';});}
-function laLimitedSetRoom(r){if(!LA_ROOMS.includes(r))return;laLimitedRoom=r;laLimitedView();}
-function laLimitedStudent(){laLimitedMode='student';laLimitedQuery='';laSetKioskLock(true);laLimitedView();}
+function laLimitedSetRoom(r){if(!LA_ROOMS.includes(r))return;laLimitedRoom=r;laLimitedSelectedId='';laLimitedView();}
+function laLimitedSelect(id){laLimitedSelectedId=String(id);laLimitedView();}
+function laLimitedStudent(){laLimitedMode='student';laLimitedSelectedId='';laLimitedQuery='';laSetKioskLock(true);laLimitedView();}
 function laLimitedTeacher(){
  if(!Auth.currentUser()||Auth.session?.mode!=='cloud')return;
  const password=prompt('Passwort des Lernatelier-Accounts zum Entsperren eingeben:');
