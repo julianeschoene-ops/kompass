@@ -44,6 +44,16 @@ const Sync={
     }
     return clone(local);
   },
+  // Isolated LA data read: never request general grade_state for shared LA accounts.
+  // Returns a reduced roster only; does not overwrite the existing pupil database.
+  async pullLernatelierRoster(grade){
+    if(!this.enabled()||!Auth.canAccessGrade(grade))throw new Error('Kein Cloud-Zugriff auf diesen Jahrgang.');
+    const {data,error}=await Auth.cloudClient.from('kompass_lernatelier_state')
+      .select('grade,payload,updated_at').eq('grade',Number(grade)).maybeSingle();
+    if(error)throw error;
+    if(!data||!Array.isArray(data.payload?.pupils))throw new Error('Lernatelier-Daten fehlen für Stufe '+grade+'.');
+    return {grade:Number(grade),pupils:data.payload.pupils,updatedAt:data.updated_at};
+  },
   schedule(delay=0){if(!this.enabled())return;this.dirty=true;clearTimeout(this.timer);this.timer=setTimeout(()=>this.push(),delay)},
   async pull(){
     if(!this.enabled())return;this.busy=true;
