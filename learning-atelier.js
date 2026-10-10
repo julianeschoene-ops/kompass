@@ -667,4 +667,235 @@ function laLimitedView(){
    ?'<div class="toolbar"><button class="chip" onclick="laLimitedRefresh()">↻ Aktualisieren</button><button class="chip" onclick="laLimitedSignOut()">Abmelden</button><button class="chip dark" onclick="laLimitedStudent()">👩‍🎓 Schüleransicht</button></div><div class="card"><h2>🔎 Schüler finden · gesamte Stufe</h2><input type="search" placeholder="Name suchen …" value="'+esc(laLimitedQuery)+'" oninput="laLimitedSearch(this.value)"><p class="mini">Alle drei Lernateliers · schreibgeschützte Übersicht</p></div>'
    :'<div class="toolbar"><button class="chip" onclick="laLimitedTeacher()">🔒 Lehrkraftmodus</button></div><div class="toolbar">'+roomTabs+'</div>';
  root.innerHTML='<main class="main"><h1>Lernatelier · Stufe '+laGrade+'</h1><div class="toolbar">'+tabs+'</div>'+controls+'<div class="card"><h2>'+(laLimitedMode==='teacher'?'Alle Lernateliers':esc(laLimitedRoom))+'</h2>'+entries+'</div><p class="mini">Änderungen werden in der separaten Lernatelier-Tabelle gespeichert. Voraussetzung: SQL-Migration UPDATE_LERNATELIER_AKTIONEN.sql.</p></main>';
+}'<div class="laRoomSwitcher laMainTabs">'+nav+'</div>'+(laLimitedTab==='news'?laLimitedNews():'<p class="laBoardInstructions">Namen antippen und einen Lernort anfragen oder Hilfe melden.</p>'+board)+'</main>';
+  return;
+ }
+ html+='<p class="laBoardInstructions">Namen antippen oder mit dem Finger in einen anderen Bereich ziehen.</p>';
+ html+='<div class="laPublicBoard laCompactBoard">';
+ for(const place of laPlaces()){
+  const group=pupils.filter(p=>laCurrentPlace(p)===place);
+  html+='<section class="laPublicPlace '+(place==='Lernatelier'?'laHomePlace':'')+' '+(group.length?'laOccupied':'laEmpty')+'" data-place="'+esc(place)+'"><h2>'+esc(place)+' <span>'+group.length+'</span></h2><div class="laPublicNames">';
+  html+=group.map(p=>laStudentPupilCard(p,laBoardSelectedId,'laSelectBoardPupil')).join('')||'<p class="mini">Hier ist gerade niemand.</p>';
+  html+='</div></section>';
+ }
+ html+='</div>';
+ if(selected){
+  const here=laCurrentPlace(selected);
+  html+='<div class="laActionPanel" role="dialog" aria-label="Lernort auswählen"><div class="laActionHead"><div><span class="mini">Ausgewählt</span><h2>'+esc(selected.short||selected.first+' '+selected.last)+'</h2><span class="mini">Aktuell: '+esc(here)+'</span></div><button class="chip" onclick="laBoardSelectedId=\'\';render()">✕ Schließen</button></div>';
+  html+='<div class="laActionPlaces">'+laPlaces().map(place=>'<button class="laPlaceButton" '+(place===here?'disabled':'')+' onclick="laBoardMove(\''+esc(selected.id)+'\',\''+esc(place)+'\')"><strong>'+esc(place)+'</strong></button>').join('')+'</div>';
+  html+='<button class="chip dark laHelpButton" onclick="laSetHelp(\''+esc(selected.id)+'\','+(!selected.laNeedsHelp)+')">'+(selected.laNeedsHelp?'✓ Hilfehand zurücknehmen':'✋ Ich brauche Hilfe')+'</button>';
+  html+='</div>';
+ }
+ html+='<p class="mini laBoardFoot">Vorschau im angemeldeten Lehrkraftkonto. Die Standortwechsel sind hier direkt möglich; gesicherte Schülerzugänge und automatische Bewegungsrechte werden noch entwickelt.</p>';
+ document.getElementById('app').innerHTML='<main class="laStudentFullscreen laKioskBoard">'+html+'</main>';
+ laInitDrag();
+}
+async function laRetryCloudPupils(){
+ if(!Sync.enabled()){alert('Keine aktive Cloud-Anmeldung. Bitte mit dem Lehrkraftkonto anmelden.');return;}
+ try{
+  await Sync.pull();
+  const count=laPupils().length;
+  if(!count)alert('Die Cloud-Synchronisierung ist abgeschlossen, aber für Jahrgang '+laGrade+' wurden keine Schülerdaten geladen. Bitte die Cloud-Berechtigungen und den gespeicherten Jahrgangsbestand prüfen. Es wurden keine Schülerdaten verändert.');
+  render();
+ }catch(e){alert('Schülerdaten konnten nicht geladen werden: '+(e?.message||String(e))+'\n\nEs wurden keine Schülerdaten verändert.');}
+}
+let laFindQuery='';
+function laFindPupil(value){laFindQuery=String(value||'');const target=document.getElementById('laFindResults');if(target)target.innerHTML=laFindResults();}
+function laFindResults(){
+ const q=laFindQuery.trim().toLocaleLowerCase('de');
+ if(!q)return '<p class="mini">Durchsuche alle drei Lernateliers dieses Jahrgangs.</p>';
+ const matches=laPupils().filter(p=>[p.first,p.last,p.short,p.className].some(v=>String(v||'').toLocaleLowerCase('de').includes(q))).sort((a,b)=>String(a.last||'').localeCompare(String(b.last||''),'de')).slice(0,30);
+ return matches.length?matches.map(p=>'<div class="laQueue"><div><b>'+esc(p.short||[p.first,p.last].filter(Boolean).join(' '))+'</b><div class="mini">'+esc(laRoom(p)||'Noch keinem LA zugeordnet')+' · '+esc(p.className||'')+'</div></div><span class="statusPill">'+esc(laCurrentPlace(p))+'</span></div>').join(''):'<p class="mini">Keine passenden Schülerinnen oder Schüler gefunden.</p>';
+}
+function laFindPanel(){return '<div class="card"><h2>🔎 Schüler finden · gesamte Stufe '+laGrade+'</h2><label for="laFindInput">Name suchen – LA 1, LA 2 und LA 3</label><input id="laFindInput" type="search" autocomplete="off" placeholder="Schülername eingeben …" value="'+esc(laFindQuery)+'" oninput="laFindPupil(this.value)"><div id="laFindResults">'+laFindResults()+'</div></div>';}
+function learningAtelier(){
+  if(!Auth.canAccessGrade(laGrade)&&Auth.allowedGrades().length)laGrade=Auth.allowedGrades()[0];
+  if(Auth.canAccessGrade(laGrade)&&laPupils().some(p=>laRoom(p)))laEnsureWeeklyDuties();
+  if(Auth.canAccessGrade(laGrade))laResetLearningPlacesDaily();
+  if(!Auth.canAccessGrade(laGrade)){shell(header('Lernatelier')+laGradeTabs()+'<div class="card">Kein Zugriff auf Jahrgang '+laGrade+'.</div>');return;}
+  if(!laPupils().length){shell(header('Lernatelier')+laGradeTabs()+'<div class="card"><h2>Schülerdaten noch nicht geladen</h2><p>Die Oberfläche ist verfügbar, aber für Jahrgang '+laGrade+' wurden keine Schülerdaten geladen. Bitte nicht neu anlegen oder zurücksetzen.</p><button class="chip dark" onclick="laRetryCloudPupils()">☁️ Schülerdaten erneut aus der Cloud laden</button><p class="mini">Diese Prüfung liest nur Daten. Ein fehlender Cloudbestand wird nicht überschrieben.</p></div>');return;}
+  if(laViewMode==='student')return laStudentPreview();
+  const all=laPupils(),current=all.filter(p=>laRoom(p)===laSelectedRoom);
+  const unknown=all.filter(p=>!laRoom(p));
+  const noise=laGradeSettings('laNoise')?.[laSelectedRoom]||'green';
+  const can=Auth.canLead(laGrade)||Auth.isAdmin();
+  let html=header('Lernatelier','Jahrgang '+laGrade+' · alle Farbteams gemeinsam · Lehrkraftansicht');html+=laGradeTabs();
+  html+='<div class="toolbar"><button class="chip dark" onclick="laEnterStudentKiosk()">👩‍🎓 Zur Schülersicht wechseln</button><button class="chip" onclick="laTeacherRefresh()">↻ Cloud aktualisieren</button></div>';
+  html+=laFindPanel();html+=laDailyEditor();html+=laDutyOverview();
+  html+='<div class="toolbar"><div class="laTabs">'+LA_ROOMS.map(r=>`<button class="chip ${laSelectedRoom===r?'dark':''}" onclick="laSelectedRoom='${r}';laPreviewPupilId='';render()">${r} · ${all.filter(p=>laRoom(p)===r).length}</button>`).join('')+'</div><p class="mini">Die Zuordnung zum Lernatelier bleibt auch bei einem Standortwechsel bestehen.</p></div>';
+  if(unknown.length&&can)html+='<div class="card"><b>Sammelzuordnung</b><p class="mini">Noch nicht zugeordnet: '+unknown.length+' SuS aus Stufe '+laGrade+'. Bestehende Lernatelier-Zuordnungen bleiben unverändert.</p><button class="chip dark" onclick="laAssignUnassigned(\'LA 1\')">Alle noch nicht zugeordneten SuS → LA 1</button></div>';
+  if(unknown.length)html+='<div class="card"><b>Hinweis: '+unknown.length+' SuS sind noch keinem Lernatelier zugeordnet.</b><p class="mini">Bitte unten im Bereich „Noch keinem Lernatelier zugeordnet“ die Zuordnung vornehmen. Die bisherige Auswahl wurde möglicherweise wegen eines Fehlers nicht gespeichert.</p></div>';
+  html+='<div class="card"><h2>📍 Lernorte der Tafel</h2><p class="mini">Ein Standort pro Zeile. Du kannst Lernorte hinzufügen, umbenennen oder aus der Liste entfernen. Bereits belegte Standorte bleiben sichtbar, bis die Kinder umgezogen sind.</p><textarea id="laPlaceEditor" rows="8" '+(can?'':'disabled')+'>'+esc((laGradeSettings('laPlaces')?.[laSelectedRoom]||LA_DEFAULT_PLACES).join('\n'))+'</textarea>'+(can?'<button class="chip dark" onclick="laSavePlaces()">Lernorte speichern</button>':'')+'</div>';
+  const boardInfo=laGradeSettings('laBoardInfo')?.[laSelectedRoom]||{};
+
+  html+=`<div class="card"><h2>Lärmampel · ${esc(laSelectedRoom)}</h2><div class="laLights">${[['green','🟢','Leise sprechen'],['yellow','🟡','Flüstern'],['red','🔴','Ruhe']].map(([v,i,l])=>`<button class="chip ${noise===v?'dark':''}" ${can?'':'disabled'} onclick="laNoise(laSelectedRoom,'${v}')">${i} ${l}</button>`).join('')}</div></div>`;
+  const pending=current.filter(p=>p.laRequest?.status==='pending');
+  const help=current.filter(p=>p.laNeedsHelp);
+  html+='<div class="laMetrics"><div class="card"><b>'+current.length+'</b><span>SuS in '+esc(laSelectedRoom)+'</span></div><div class="card"><b>'+current.filter(p=>(p.learningPlace||'Lernatelier')==='Lernatelier').length+'</b><span>Im Lernatelier</span></div><div class="card"><b>'+pending.length+'</b><span>Offene Anfragen</span></div><div class="card"><b>'+help.length+'</b><span>Hilfe benötigt</span></div></div>';
+  html+='<div class="laDashboardGrid"><div class="card"><h2>🔔 Genehmigungen</h2>';
+  html+=pending.length?pending.map(p=>'<div class="laQueue"><div><b>'+esc(p.short||p.first+' '+p.last)+'</b><div class="mini">'+esc(p.laRequest.place)+' · '+esc(p.graduation||'Hiker')+'</div></div><div><button class="chip dark" onclick="laAnswerRequest(\''+esc(p.id)+'\',true)">✓</button><button class="chip" onclick="laAnswerRequest(\''+esc(p.id)+'\',false)">✕</button></div></div>').join(''):'<p class="mini">Keine offenen Anfragen</p>';
+  html+='</div><div class="card"><h2>✋ Hilfehand</h2>';
+  html+=help.length?help.map(p=>'<div class="laQueue"><b>'+esc(p.short||p.first+' '+p.last)+'</b><button class="chip" onclick="laSetHelp(\''+esc(p.id)+'\',false)">Erledigt ✓</button></div>').join(''):'<p class="mini">Niemand wartet auf Hilfe</p>';
+  html+='</div></div>';
+  html+='<div class="section">Standortübersicht</div><div class="laBoard">';
+  for(const place of laPlaces()){const ps=current.filter(p=>(p.learningPlace||'Lernatelier')===place);html+=`<div class="card"><h2>${esc(place)} <span class="mini">(${ps.length})</span></h2><div class="laNames">${ps.map(p=>`<span class="laName"><span class="dot ${teamColor(p.team)}"></span>${esc(p.short||p.first+' '+p.last)}</span>`).join('')||'<span class="mini">Niemand eingetragen</span>'}</div></div>`;}
+  html+='</div><div class="section">Schülerverwaltung</div>';
+  if(!can)html+='<div class="card">Die Zuordnungen und Graduierungen können nur durch die Stufenleitung geändert werden.</div>';
+  html+='<div class="card"><div class="laTableWrap"><table class="studentTable"><thead><tr><th>Name</th><th>Team</th><th>⭐ Fach-Teamstar</th><th>🧹 Dienste</th><th>Graduierung</th><th>Standort</th><th>Stamm-LA</th><th>Aktionen</th></tr></thead><tbody>';
+  for(const p of current){
+    const id=laSafeId(p.id),sel=(key,values,currentValue)=>`<select aria-label="${esc(key)} für ${esc(p.short||p.first)}" ${can?'':'disabled'} onchange="laUpdate('${id}','${key}',this.value)">${values.map(v=>`<option value="${esc(v)}" ${currentValue===v?'selected':''}>${esc(v)}</option>`).join('')}</select>`;
+    html+=`<tr><td>${esc(p.short||p.first+' '+p.last)}</td><td>${esc(p.team||'')}</td><td><div class="laStarControls">${LA_STAR_SUBJECTS.map(([subject,label,color])=>`<button type="button" class="laStarToggle laStar-${color} ${laStars(p).includes(subject)?'selected':''}" ${can?'':'disabled'} title="Teamstar ${label}" onclick="laToggleStar('${id}','${subject}')">★</button>`).join('')}</div></td><td><div class="laDutyControls">${LA_DUTIES.map(([duty,icon,label])=>`<button type="button" class="laDutyToggle ${laDuties(p).includes(duty)?'selected':''}" ${can?'':'disabled'} title="${label}" onclick="laToggleDuty('${id}','${duty}')">${icon}</button>`).join('')}</div></td><td>${sel('graduation',LA_LEVELS,p.graduation||'Hiker')}</td><td>${sel('learningPlace',laPlaces(laRoom(p)),p.learningPlace||'Lernatelier')}</td><td>${sel('learningAtelier',LA_ROOMS,laRoom(p))}</td><td><select aria-label="Lernort anfragen" onchange="if(this.value)laRequestPlace('${id}',this.value)"><option value="">Anfrage erstellen …</option>${laPlaces().filter(v=>v!=='Lernatelier').map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('')}</select><button class="chip" onclick="laSetHelp('${id}',${!p.laNeedsHelp})">${p.laNeedsHelp?'Hilfe erledigt':'✋ Hilfe'}</button></td></tr>`;
+  }
+  html+='</tbody></table></div></div>';
+  if(unknown.length)html+=`<div class="section">Noch keinem Lernatelier zugeordnet · ${unknown.length}</div><div class="card"><p class="mini">Diese SuS sind bereits in Kompass vorhanden und müssen nur einem Lernatelier zugeordnet werden.</p><div class="laTableWrap"><table class="studentTable"><tbody>${unknown.map(p=>`<tr><td>${esc(p.short||p.first+' '+p.last)}</td><td>${esc(p.team||'')}</td><td><select ${can?'':'disabled'} onchange="laUpdate('${laSafeId(p.id)}','learningAtelier',this.value)"><option value="">Bitte wählen</option>${LA_ROOMS.map(r=>`<option value="${r}">${r}</option>`).join('')}</select></td></tr>`).join('')}</tbody></table></div></div>`;
+  html+='<p class="mini">Erste Ausbaustufe: Die Standortänderung erfolgt durch berechtigte Lehrkräfte. Schüler-Selbstbuchung und digitale Genehmigungen werden erst nach Einrichtung gesicherter Schülerzugänge freigeschaltet.</p>';
+  shell(html);
+}
+
+
+/* Restricted account: isolated LA data only. Never load full grade records. */
+let laLimitedRows={},laLimitedMode='teacher',laLimitedRoom='LA 1',laLimitedQuery='',laLimitedBusy=false;
+let laLimitedPollStarted=false;
+let laLimitedPollInFlight=false;
+let laLimitedSelectedId='';
+let laLimitedTab='room';
+let laLimitedPayloads={};
+function laLimitedStartPoll(){
+ if(laLimitedPollStarted)return;
+ laLimitedPollStarted=true;
+ setInterval(()=>{
+  if(!Auth.isLernatelier()||laLimitedBusy||laLimitedPollInFlight||document.hidden||!Auth.cloudClient)return;
+  laLimitedPollInFlight=true;
+  const grade=laGrade;
+  Auth.cloudClient.from('kompass_lernatelier_state').select('payload').eq('grade',grade).maybeSingle().then(({data,error})=>{
+   if(error||!Array.isArray(data?.payload?.pupils))return;
+   if(JSON.stringify(laLimitedPayloads[grade])!==JSON.stringify(data.payload)){
+    laLimitedRows[grade]=data.payload.pupils;
+    laLimitedPayloads[grade]=data.payload;
+    if(Auth.isLernatelier()&&grade===laGrade)laLimitedView();
+   }
+  }).catch(()=>{}).finally(()=>{laLimitedPollInFlight=false;});
+ },20000);
+}
+async function laLoadLimited(grade){
+ if(laLimitedBusy)return;
+ laLimitedBusy=true;
+ try{
+   const {data,error}=await Auth.cloudClient.from('kompass_lernatelier_state')
+     .select('payload').eq('grade',Number(grade)).maybeSingle();
+   if(error)throw error;
+   if(!Array.isArray(data?.payload?.pupils))throw new Error('Für diese Stufe fehlen Lernatelier-Daten.');
+   laLimitedRows[grade]=data.payload.pupils;
+   laLimitedPayloads[grade]=data.payload;
+   if(Auth.isLernatelier())laLimitedView();
+ }catch(e){
+   const root=document.getElementById('app');
+   if(root)root.textContent='Lernatelier konnte nicht geladen werden: '+(e.message||String(e));
+ }finally{laLimitedBusy=false;}
+}
+function laLimitedRefresh(){delete laLimitedRows[laGrade];laLimitedView();}
+function laLimitedGrade(g){if(!Auth.canAccessGrade(g))return;laGrade=Number(g);laLimitedQuery='';laLimitedView();}
+function laLimitedSearch(v){laLimitedQuery=String(v||'');const q=laLimitedQuery.toLocaleLowerCase('de').trim();document.querySelectorAll('[data-la-name]').forEach(el=>{el.style.display=!q||el.getAttribute('data-la-name').includes(q)?'':'none';});}
+function laLimitedSetRoom(r){if(!LA_ROOMS.includes(r))return;laLimitedTab='room';laLimitedRoom=r;laLimitedSelectedId='';laLimitedView();}
+function laLimitedSelect(id){laLimitedSelectedId=String(id);laLimitedView();}
+function laLimitedStudent(){laLimitedMode='student';laLimitedSelectedId='';laLimitedQuery='';laSetKioskLock(true);laLimitedView();}
+function laLimitedTeacher(){
+ if(!Auth.currentUser()||Auth.session?.mode!=='cloud')return;
+ const password=prompt('Passwort des Lernatelier-Accounts zum Entsperren eingeben:');
+ if(!password)return;
+ Auth.verifyCloudPassword(Auth.currentUser().username,password).then(ok=>{
+   if(!ok){alert('Passwort nicht korrekt.');return;}
+   laSetKioskLock(false);laLimitedMode='teacher';laLimitedView();
+ }).catch(()=>alert('Entsperren fehlgeschlagen.'));
+}
+async function laLimitedAction(id,action,value){
+ if(!Auth.isLernatelier()||!Auth.canAccessGrade(laGrade))return;
+ try{
+  const {error}=await Auth.cloudClient.rpc('kompass_la_change',{p_grade:laGrade,p_pupil_id:id,p_action:action,p_value:value});
+  if(error)throw error;
+  delete laLimitedRows[laGrade];
+  laLimitedView();
+ }catch(e){alert('Nicht gespeichert: '+e.message);}
+}
+function laLimitedSignOut(){
+ laSetKioskLock(false);
+ laLimitedRows={};
+ laLimitedPayloads={};
+ laLimitedMode='teacher';
+ laLimitedQuery='';
+ Auth.logout();
+}
+function laLimitedNews(){
+ const d=laDayData(),payload=laLimitedPayloads[laGrade]||{};
+ const board=payload.dailyBoard?.[d.date]||{};
+ const published=board.published===true;
+ const notes=published?String(board.notes||''):'';
+ const news=published?String(board.news||''):'';
+ const motivation=published&&board.motivation?String(board.motivation):laMotivationForDate(d.date);
+ const events=(payload.calendarEvents||[]).filter(e=>e.date<=d.date&&d.date<=(e.endDate||e.date));
+ return '<section class="laTodayBoard"><div class="laTodayHeading"><h2>☀️ Heute bei uns</h2><span>'+esc(d.label)+'</span></div>'+
+ '<div class="laMotivation"><div class="laMotivationEyebrow">✨ Dein Gedanke für heute</div><div class="laMotivationQuote">'+esc(motivation)+'</div></div>'+
+ '<div class="laTodayGrid laTodayMasonry"><div class="laTodayColumn"><div class="laTodaySection"><h3>📅 Aus dem Kalender</h3>'+(events.length?'<div class="laTodayItems">'+events.map(e=>'<div class="laTodayItem"><b>'+esc((e.time?e.time+' · ':'')+e.title)+'</b><span>'+esc(e.location||'')+'</span></div>').join('')+'</div>':'<p class="mini">Keine Kalendereinträge für diesen Tag.</p>')+'</div></div>'+
+ '<div class="laTodayColumn"><div class="laTodaySection"><h3>📣 Infos & Vertretungen</h3><p>'+esc(notes||'Heute sind noch keine Änderungen veröffentlicht.').replace(/\\n/g,'<br>')+'</p></div><div class="laTodaySection"><h3>🌍 Neues aus der Welt</h3><p>'+esc(news||'Noch keine geprüfte Nachricht veröffentlicht.').replace(/\\n/g,'<br>')+'</p></div></div>'+
+ '<div class="laTodayColumn"><div class="laTodaySection"><h3>🎨 Kreativband</h3><p class="mini">Veröffentlichte Angebote erscheinen nach der Datensynchronisierung.</p></div></div>'+
+ '<div class="laTodayColumn"><div class="laTodaySection"><h3>📘 Flexstunden</h3><p class="mini">Veröffentlichte Flexstunden erscheinen nach der Datensynchronisierung.</p></div></div></div></section>';
+}
+function laLimitedSetTab(tab){if(tab!=='room'&&tab!=='news')return;laLimitedTab=tab;laLimitedSelectedId='';laLimitedView();}
+function laLimitedView(){
+ laLimitedStartPoll();
+ const grades=Auth.allowedGrades();
+ if(!grades.includes(laGrade))laGrade=grades[0]||6;
+ const root=document.getElementById('app');
+ if(!root)return;
+ if(!grades.length){root.textContent='Für diesen Account sind noch keine Stufen freigegeben.';return;}
+ if(typeof laKioskLocked==='function'&&laKioskLocked())laLimitedMode='student';
+ const pupils=laLimitedRows[laGrade];
+ if(!pupils){root.textContent='Lernatelier wird geladen …';laLoadLimited(laGrade);return;}
+ const tabs=laLimitedMode==='teacher'?grades.map(g=>'<button class="chip '+(g===laGrade?'dark':'')+'" onclick="laLimitedGrade('+g+')">Stufe '+g+'</button>').join(''):'';
+ const roomTabs=LA_ROOMS.map(r=>'<button class="chip '+(r===laLimitedRoom?'dark':'')+'" onclick="laLimitedSetRoom(\''+r+'\')">'+r+'</button>').join('');
+ const visible=laLimitedMode==='student'?pupils.filter(p=>p.learningAtelier===laLimitedRoom):pupils;
+ const query=laLimitedMode==='teacher'?laLimitedQuery.toLocaleLowerCase('de').trim():'';
+ const filtered=visible.filter(p=>!p.archived&&(!query||[p.first,p.last,p.short,p.className].some(x=>String(x||'').toLocaleLowerCase('de').includes(query))));
+ const entries=filtered.map(p=>{
+   const name=esc(p.short||[p.first,p.last].filter(Boolean).join(' '));
+   const room=esc(p.learningAtelier||'Ohne LA');
+   const place=esc(p.learningPlace||'Lernatelier');
+   const id=encodeURIComponent(String(p.id)).replace(/'/g,'%27');
+   const actions='<button class="chip" onclick="laLimitedAction(decodeURIComponent(\''+id+'\'),\'help\',\''+(!p.laNeedsHelp)+'\')">'+(p.laNeedsHelp?'✓ Erledigt':'✋ Hilfe')+'</button>';
+   const pending=p.laRequest?.status==='pending'
+     ?'<div class="mini">Anfrage: '+esc(p.laRequest.place||'')+'</div>'+(laLimitedMode==='teacher'?'<button class="chip" onclick="laLimitedAction(decodeURIComponent(\''+id+'\'),\'approve\',null)">✓ Erlauben</button><button class="chip" onclick="laLimitedAction(decodeURIComponent(\''+id+'\'),\'deny\',null)">Ablehnen</button>':'')
+     :'';
+   const places='<select onchange="laLimitedAction(decodeURIComponent(\''+id+'\'),\''+(laLimitedMode==='teacher'?'place':'request')+'\',this.value);this.selectedIndex=0"><option value="">Lernort wählen</option>'+LA_DEFAULT_PLACES.filter(v=>v!=='Lernatelier').map(v=>'<option value="'+esc(v)+'">'+esc(v)+'</option>').join('')+'</select>';
+   return '<div class="laQueue" data-la-name="'+esc([p.first,p.last,p.short,p.className].join(' ').toLocaleLowerCase('de'))+'"><div><b>'+name+'</b>'+(laLimitedMode==='teacher'?'<div class="mini">'+room+' · '+esc(p.className||'')+'</div>':'')+'</div><span class="statusPill">'+place+'</span>'+pending+actions+places+'</div>';
+ }).join('')||'<p class="mini">Keine passenden Schüler*innen.</p>';
+ if(laLimitedMode==='student'){
+   const roomPupils=pupils.filter(p=>!p.archived&&p.learningAtelier===laLimitedRoom);
+   const selected=roomPupils.find(p=>String(p.id)===laLimitedSelectedId);
+   const configured=laLimitedPayloads[laGrade]?.places?.[laLimitedRoom];
+   const places=[...new Set(['Lernatelier',...(Array.isArray(configured)&&configured.length?configured:LA_DEFAULT_PLACES),...roomPupils.map(p=>p.learningPlace).filter(Boolean)])];
+   let board='<div class="laPublicBoard laCompactBoard">';
+   for(const place of places){
+     const group=roomPupils.filter(p=>(p.learningPlace||'Lernatelier')===place);
+     board+='<section class="laPublicPlace '+(place==='Lernatelier'?'laHomePlace':'')+' '+(group.length?'laOccupied':'laEmpty')+'"><h2>'+esc(place)+' <span>'+group.length+'</span></h2><div class="laPublicNames">';
+     board+=group.map(p=>laStudentPupilCard(p,laLimitedSelectedId,'laLimitedSelect')).join('')||'<p class="mini">Hier ist gerade niemand.</p>';
+     board+='</div></section>';
+   }
+   board+='</div>';
+   if(selected){
+     const id=encodeURIComponent(String(selected.id)).replace(/'/g,'%27');
+     const current=selected.learningPlace||'Lernatelier';
+     board+='<div class="laActionPanel"><div class="laActionHead"><div><span class="mini">Ausgewählt</span><h2>'+esc(selected.short||selected.first+' '+selected.last)+'</h2><span class="mini">Aktuell: '+esc(current)+'</span></div><button class="chip" onclick="laLimitedSelectedId=\'\';laLimitedView()">✕ Schließen</button></div>';
+     board+='<div class="laActionPlaces">'+places.filter(x=>x!==current).map(place=>'<button class="laPlaceButton" onclick="laLimitedAction(decodeURIComponent(\''+id+'\'),\'request\',this.textContent)"><strong>'+esc(place)+'</strong></button>').join('')+'</div>';
+     board+='<button class="chip dark laHelpButton" onclick="laLimitedAction(decodeURIComponent(\''+id+'\'),\'help\',\''+(!selected.laNeedsHelp)+'\')">'+(selected.laNeedsHelp?'✓ Hilfehand zurücknehmen':'✋ Ich brauche Hilfe')+'</button>';
+     if(selected.laRequest?.status==='pending')board+='<p class="mini">Lernort angefragt: '+esc(selected.laRequest.place||'')+' · wartet auf Freigabe</p>';
+     board+='</div>';
+   }
+   const nav='<button class="chip '+(laLimitedTab==='news'?'dark':'')+'" onclick="laLimitedSetTab(\'news\')">📰 News</button>'+roomTabs;
+   root.innerHTML='<main class="laStudentFullscreen"><div class="laBoardTop"><div><div class="mini">KOMPASS · Stufe '+laGrade+'</div><h1>'+(laLimitedTab==='news'?'📰 News':'🏫 '+esc(laLimitedRoom))+'</h1></div><div class="laTopActions"><button class="chip" onclick="laLimitedTeacher()">🔒 Lehrkraftmodus</button></div></div><div class="laRoomSwitcher laMainTabs">'+roomTabs+'</div><p class="laBoardInstructions">Namen antippen und einen Lernort anfragen oder Hilfe melden.</p>'+board+'</main>';
+   return;
+ }
+ const controls=laLimitedMode==='teacher'
+   ?'<div class="toolbar"><button class="chip" onclick="laLimitedRefresh()">↻ Aktualisieren</button><button class="chip" onclick="laLimitedSignOut()">Abmelden</button><button class="chip dark" onclick="laLimitedStudent()">👩‍🎓 Schüleransicht</button></div><div class="card"><h2>🔎 Schüler finden · gesamte Stufe</h2><input type="search" placeholder="Name suchen …" value="'+esc(laLimitedQuery)+'" oninput="laLimitedSearch(this.value)"><p class="mini">Alle drei Lernateliers · schreibgeschützte Übersicht</p></div>'
+   :'<div class="toolbar"><button class="chip" onclick="laLimitedTeacher()">🔒 Lehrkraftmodus</button></div><div class="toolbar">'+roomTabs+'</div>';
+ root.innerHTML='<main class="main"><h1>Lernatelier · Stufe '+laGrade+'</h1><div class="toolbar">'+tabs+'</div>'+controls+'<div class="card"><h2>'+(laLimitedMode==='teacher'?'Alle Lernateliers':esc(laLimitedRoom))+'</h2>'+entries+'</div><p class="mini">Änderungen werden in der separaten Lernatelier-Tabelle gespeichert. Voraussetzung: SQL-Migration UPDATE_LERNATELIER_AKTIONEN.sql.</p></main>';
 }
