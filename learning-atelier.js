@@ -513,6 +513,14 @@ function laLimitedTeacher(){
    laSetKioskLock(false);laLimitedMode='teacher';laLimitedView();
  }).catch(()=>alert('Entsperren fehlgeschlagen.'));
 }
+async function laLimitedAction(id,action,value){
+ try{
+  const {error}=await Auth.cloudClient.rpc('kompass_la_change',{p_grade:laGrade,p_pupil_id:id,p_action:action,p_value:value});
+  if(error)throw error;
+  delete laLimitedRows[laGrade];
+  laLimitedView();
+ }catch(e){alert('Nicht gespeichert: '+e.message);}
+}
 function laLimitedView(){
  const grades=Auth.allowedGrades();
  if(!grades.includes(laGrade))laGrade=grades[0]||6;
