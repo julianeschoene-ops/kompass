@@ -21,7 +21,10 @@ function laSavePlaces(){
 }
 
 let laSelectedRoom='LA 1';
-let laViewMode='teacher';
+const LA_KIOSK_LOCK_KEY='kompass_la_kiosk_lock_v1';
+function laKioskLocked(){try{return localStorage.getItem(LA_KIOSK_LOCK_KEY)==='1';}catch(e){return true;}}
+function laSetKioskLock(locked){if(locked)localStorage.setItem(LA_KIOSK_LOCK_KEY,'1');else localStorage.removeItem(LA_KIOSK_LOCK_KEY);}
+let laViewMode=laKioskLocked()?'student':'teacher';
 let laPreviewPupilId='';
 function laPupils(){return (Store.pupils||[]).filter(p=>!p.archived&&Number(p.year||String(p.className||'').charAt(0))===6);}
 function laRoom(p){return LA_ROOMS.includes(p.learningAtelier)?p.learningAtelier:'';}
@@ -73,6 +76,7 @@ function laSetHelp(id,enabled){
  p.laNeedsHelp=!!enabled;Store.save('Hilfehand geändert',{pupilId:p.id});render();
 }
 
+function laEnterStudentKiosk(){try{laSetKioskLock(true);laViewMode='student';State.view='learningAtelier';render();}catch(e){alert('Schülermodus konnte nicht gesichert werden.');}}
 async function laExitStudentPreview(){
  const user=Auth.currentUser();
  if(!user)return;
@@ -82,7 +86,7 @@ async function laExitStudentPreview(){
  try{
   const ok=await Auth.verifyCloudPassword(user.username,password);
   if(!ok){alert('Passwort nicht korrekt. Die Schülersicht bleibt geöffnet.');return;}
-  laViewMode='teacher';laPreviewPupilId='';render();
+  laSetKioskLock(false);laViewMode='teacher';laPreviewPupilId='';render();
  }catch(e){alert('Überprüfung fehlgeschlagen: '+(e?.message||String(e)));}
 }
 
@@ -392,7 +396,7 @@ function learningAtelier(){
   const noise=Store.data.settings?.laNoise?.[laSelectedRoom]||'green';
   const can=Auth.canLead(6)||Auth.isAdmin();
   let html=header('Lernatelier','Jahrgang 6 · alle Farbteams gemeinsam · Lehrkraftansicht');
-  html+='<div class="toolbar"><button class="chip dark" onclick="laViewMode=\'student\';render()">👩‍🎓 Zur Schülersicht wechseln</button></div>';
+  html+='<div class="toolbar"><button class="chip dark" onclick="laEnterStudentKiosk()">👩‍🎓 Zur Schülersicht wechseln</button></div>';
   html+=laDailyEditor();html+=laDutyOverview();
   html+='<div class="toolbar"><div class="laTabs">'+LA_ROOMS.map(r=>`<button class="chip ${laSelectedRoom===r?'dark':''}" onclick="laSelectedRoom='${r}';laPreviewPupilId='';render()">${r} · ${all.filter(p=>laRoom(p)===r).length}</button>`).join('')+'</div><p class="mini">Die Zuordnung zum Lernatelier bleibt auch bei einem Standortwechsel bestehen.</p></div>';
   if(unknown.length&&can)html+='<div class="card"><b>Sammelzuordnung</b><p class="mini">Noch nicht zugeordnet: '+unknown.length+' SuS aus Stufe 6. Bestehende Lernatelier-Zuordnungen bleiben unverändert.</p><button class="chip dark" onclick="laAssignUnassigned(\'LA 1\')">Alle noch nicht zugeordneten SuS → LA 1</button></div>';
