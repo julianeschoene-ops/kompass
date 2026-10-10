@@ -226,3 +226,10 @@
 .laStudentFullscreen:not(.laKioskBoard) .laTodayItem span{font-size:.82rem!important}
 .laStudentFullscreen:not(.laKioskBoard) .laTodayItems{max-height:225px!important}
 @media(min-width:901px){.laStudentFullscreen:not(.laKioskBoard) .laTodayBoard{padding:17px!important}}
+
+/* Alle Kreativband- und Flexangebote ohne innere Abschneidung anzeigen */
+.laStudentFullscreen:not(.laKioskBoard) .laTodaySection:nth-child(3) .laTodayItems,
+.laStudentFullscreen:not(.laKioskBoard) .laTodaySection:nth-child(4) .laTodayItems{max-height:none!important;overflow:visible!important}
+.laStudentFullscreen:not(.laKioskBoard) .laTodayGrid{align-items:start}
+.laStudentFullscreen:not(.laKioskBoard) .laTodaySection:nth-child(3),
+.laStudentFullscreen:not(.laKioskBoard) .laTodaySection:nth-child(4){height:auto!important;min-height:0!important}
