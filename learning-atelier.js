@@ -13,7 +13,9 @@ function laPlaces(room=laSelectedRoom){
  const configured=laGradeSettings('laPlaces')?.[room];
  const names=Array.isArray(configured)&&configured.length?configured:LA_DEFAULT_PLACES;
  const used=laPupils().filter(p=>laRoom(p)===room).map(p=>p.learningPlace).filter(Boolean);
- return [...new Set(['Lernatelier',...names,...used].filter(n=>n!=='LA 3 / Extraraum'&&n!=='SMV'))];
+ const ordered=['Lernatelier','Input Deutsch','Input Mathematik','Input Englisch','Bibliothek','Stichgang','Marktplatz','WC','Zu Hause','VKL','Chor / Bläserklasse','Sport','Club','Bäcker','Teamstunde','Coaching','Schülersozialarbeit','Sonstiges'];
+ const all=[...new Set(['Lernatelier',...names,...used].filter(n=>n!=='LA 3 / Extraraum'&&n!=='SMV'))];
+ return [...ordered.filter(n=>all.includes(n)),...all.filter(n=>!ordered.includes(n))];
 }
 function laSavePlaces(){
  if(!Auth.canLead(laGrade)&&!Auth.isAdmin())return;
