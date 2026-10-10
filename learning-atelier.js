@@ -471,15 +471,15 @@ async function laResetRoomOccupancy(){
  }catch(e){alert('Zuruecksetzen fehlgeschlagen: '+e.message);}
 }
 // Lokale Mikrofon-Lärmampel: Audiodaten verlassen das Gerät nicht.
-const laNoiseMeter={stream:null,context:null,analyser:null,buffer:null,frame:0,active:false,level:0,peak:0,threshold:35,room:'',grade:0,lastPaint:0};
+const laNoiseMeter={stream:null,context:null,analyser:null,buffer:null,frame:0,active:false,level:0,peak:0,threshold:8,room:'',grade:0,lastPaint:0};
 function laNoiseMeterKey(){return 'kompass_noise_threshold_v1';}
-function laNoiseMeterThreshold(){try{return Math.max(10,Math.min(90,Number(localStorage.getItem(laNoiseMeterKey()))||35));}catch(e){return 35;}}
+function laNoiseMeterThreshold(){try{return Math.max(1,Math.min(90,Number(localStorage.getItem(laNoiseMeterKey()))||8));}catch(e){return 35;}}
 function laNoiseMeterUI(){
  const m=laNoiseMeter;
- return '<div class="laNoiseMeter" aria-label="Automatische Lärmampel"><div class="laNoiseLamp '+(m.active?(m.level>=m.threshold?'laNoiseRed':m.level>=m.threshold*.75?'laNoiseYellow':'laNoiseGreen'):'laNoiseOff')+'" id="laNoiseLamp"><span id="laNoiseFace">'+(m.active?(m.level>=m.threshold?'🔴':m.level>=m.threshold*.75?'🟡':'🟢'):'🎙️')+'</span><span id="laNoiseText">'+(m.active?(m.level>=m.threshold?'Zu laut!':m.level>=m.threshold*.75?'Etwas leiser':'Gut so!'):'Lärmampel starten')+'</span></div><button type="button" class="chip" onclick="laNoiseToggle()">'+(m.active?'⏹ Messung stoppen':'🎙️ Messung starten')+'</button><label class="laNoiseSensitivity">Grenzwert <input type="range" min="10" max="90" step="5" value="'+m.threshold+'" oninput="laNoiseThreshold(this.value)"><span id="laNoiseThresholdValue">'+m.threshold+'</span></label><div class="laNoiseLevel"><span id="laNoiseBar" style="width:'+m.level+'%"></span></div></div>';
+ return '<div class="laNoiseMeter" aria-label="Automatische Lärmampel"><div class="laNoiseLamp '+(m.active?(m.level>=m.threshold?'laNoiseRed':m.level>=m.threshold*.75?'laNoiseYellow':'laNoiseGreen'):'laNoiseOff')+'" id="laNoiseLamp"><span id="laNoiseFace">'+(m.active?(m.level>=m.threshold?'🔴':m.level>=m.threshold*.75?'🟡':'🟢'):'🎙️')+'</span><span id="laNoiseText">'+(m.active?(m.level>=m.threshold?'Zu laut!':m.level>=m.threshold*.75?'Etwas leiser':'Gut so!'):'Lärmampel starten')+'</span></div><button type="button" class="chip" onclick="laNoiseToggle()">'+(m.active?'⏹ Messung stoppen':'🎙️ Messung starten')+'</button><label class="laNoiseSensitivity">Grenzwert <input type="range" min="1" max="90" step="1" value="'+m.threshold+'" oninput="laNoiseThreshold(this.value)"><span id="laNoiseThresholdValue">'+m.threshold+'</span></label><div class="laNoiseLevel"><span id="laNoiseBar" style="width:'+m.level+'%"></span></div></div>';
 }
 function laNoiseThreshold(v){
- laNoiseMeter.threshold=Math.max(10,Math.min(90,Number(v)||35));
+ laNoiseMeter.threshold=Math.max(1,Math.min(90,Number(v)||8));
  try{localStorage.setItem(laNoiseMeterKey(),String(laNoiseMeter.threshold));}catch(e){}
  const el=document.getElementById('laNoiseThresholdValue');if(el)el.textContent=laNoiseMeter.threshold;
 }
