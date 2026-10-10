@@ -463,7 +463,7 @@ function learningAtelier(){
   const noise=laGradeSettings('laNoise')?.[laSelectedRoom]||'green';
   const can=Auth.canLead(laGrade)||Auth.isAdmin();
   let html=header('Lernatelier','Jahrgang '+laGrade+' · alle Farbteams gemeinsam · Lehrkraftansicht');html+=laGradeTabs();
-  html+='<div class="toolbar"><button class="chip dark" onclick="laEnterStudentKiosk()">👩‍🎓 Zur Schülersicht wechseln</button></div>';
+  html+='<div class="toolbar"><button class="chip dark" onclick="laEnterStudentKiosk()">👩‍🎓 Zur Schülersicht wechseln</button><button class="chip" onclick="laTeacherRefresh()">↻ Cloud aktualisieren</button></div>';
   html+=laFindPanel();html+=laDailyEditor();html+=laDutyOverview();
   html+='<div class="toolbar"><div class="laTabs">'+LA_ROOMS.map(r=>`<button class="chip ${laSelectedRoom===r?'dark':''}" onclick="laSelectedRoom='${r}';laPreviewPupilId='';render()">${r} · ${all.filter(p=>laRoom(p)===r).length}</button>`).join('')+'</div><p class="mini">Die Zuordnung zum Lernatelier bleibt auch bei einem Standortwechsel bestehen.</p></div>';
   if(unknown.length&&can)html+='<div class="card"><b>Sammelzuordnung</b><p class="mini">Noch nicht zugeordnet: '+unknown.length+' SuS aus Stufe '+laGrade+'. Bestehende Lernatelier-Zuordnungen bleiben unverändert.</p><button class="chip dark" onclick="laAssignUnassigned(\'LA 1\')">Alle noch nicht zugeordneten SuS → LA 1</button></div>';
