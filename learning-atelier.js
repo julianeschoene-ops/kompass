@@ -539,6 +539,8 @@ function laLimitedView(){
    const name=esc(p.short||[p.first,p.last].filter(Boolean).join(' '));
    const room=esc(p.learningAtelier||'Ohne LA');
    const place=esc(p.learningPlace||'Lernatelier');
+   const id=String(p.id).replace(/[^a-zA-Z0-9_-]/g,'');
+   const actions='<button class="chip" onclick="laLimitedAction(\''+id+'\',\'help\',\''+(!p.laNeedsHelp)+'\')">'+(p.laNeedsHelp?'✓ Erledigt':'✋ Hilfe')+'</button>';
    return '<div class="laQueue" data-la-name="'+esc([p.first,p.last,p.short,p.className].join(' ').toLocaleLowerCase('de'))+'"><div><b>'+name+'</b>'+(laLimitedMode==='teacher'?'<div class="mini">'+room+' · '+esc(p.className||'')+'</div>':'')+'</div><span class="statusPill">'+place+'</span></div>';
  }).join('')||'<p class="mini">Keine passenden Schüler*innen.</p>';
  const controls=laLimitedMode==='teacher'
