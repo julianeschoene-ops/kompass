@@ -141,12 +141,15 @@ function laEnsureWeeklyDuties(){
  if(!Auth.isAdmin()&&!Auth.canLead(6))return;
  const assignments={};
  for(const room of LA_ROOMS){
-  const pupils=laPupils().filter(p=>laRoom(p)===room).sort((a,b)=>String(a.id).localeCompare(String(b.id)));
+  const pupils=laPupils().filter(p=>laRoom(p)===room);
   const used=new Set();
   for(const [duty] of LA_DUTIES){
-   const candidates=pupils.filter(p=>!used.has(String(p.id))).sort((a,b)=>laDutyCount(a.id,duty)-laDutyCount(b.id,duty)||Object.values(laDutyHistory()).filter(w=>w.assignments?.[String(a.id)]?.length).length-Object.values(laDutyHistory()).filter(w=>w.assignments?.[String(b.id)]?.length).length||String(a.id).localeCompare(String(b.id)));
-   const chosen=candidates[0];if(!chosen)continue;
-   used.add(String(chosen.id));assignments[String(chosen.id)]=[duty];
+   const chosenTeams=new Set();
+   for(let slot=0;slot<3;slot++){
+    const candidates=pupils.filter(p=>!used.has(String(p.id))&&!chosenTeams.has(String(p.team||''))).sort((a,b)=>laDutyCount(a.id,duty)-laDutyCount(b.id,duty)||Object.values(laDutyHistory()).filter(w=>w.assignments?.[String(a.id)]?.length).length-Object.values(laDutyHistory()).filter(w=>w.assignments?.[String(b.id)]?.length).length||String(a.id).localeCompare(String(b.id)));
+    const chosen=candidates[0];if(!chosen)break;
+    used.add(String(chosen.id));chosenTeams.add(String(chosen.team||''));assignments[String(chosen.id)]=[duty];
+   }
   }
  }
  settings.laDutyHistory[week]={createdAt:new Date().toISOString(),assignments};
@@ -160,6 +163,7 @@ function laToggleDuty(id,duty){
  const p=laPupils().find(x=>String(x.id)===String(id));if(!p)return;
  const week=laWeekKey(),history=Store.data.settings.laDutyHistory;
  const old=laDuties(p),adding=!old.includes(duty);
+ if(adding){const others=laPupils().filter(x=>laRoom(x)===laRoom(p)&&String(x.id)!==String(id)&&laDuties(x).includes(duty));if(others.length>=3&&!confirm('Für diesen Dienst sind bereits drei Kinder eingeteilt. Trotzdem hinzufügen?'))return;if(others.some(x=>String(x.team||'')===String(p.team||''))&&!confirm('Ein Kind aus demselben Farbteam ist bereits eingeteilt. Trotzdem hinzufügen?'))return;}
  if(adding&&laDutyCount(id,duty)>=2&&!confirm((p.short||p.first)+' hatte diesen Dienst bereits '+laDutyCount(id,duty)+'-mal. Trotzdem einteilen?'))return;
  p.laDuties=adding?[...old,duty]:old.filter(x=>x!==duty);
  history[week]=history[week]||{createdAt:new Date().toISOString(),assignments:{}};
@@ -169,7 +173,7 @@ function laToggleDuty(id,duty){
 function laDutyOverview(){
  if(!Auth.isAdmin()&&!Auth.canLead(6))return '';
  const room=laSelectedRoom,people=laPupils().filter(p=>laRoom(p)===room);
- return '<div class="card"><h2>🧹 Wochendienste · '+esc(room)+' · '+esc(laWeekKey())+'</h2><p class="mini">Wird beim ersten Aufruf in einer neuen Kalenderwoche automatisch eingeteilt. Manuelle Änderungen sind in der Tabelle möglich.</p><div class="laTodayItems">'+LA_DUTIES.map(([id,icon,label])=>{const assigned=people.filter(p=>laDuties(p).includes(id));return '<div class="laTodayItem"><b>'+icon+' '+esc(label)+'</b><span>'+(assigned.length?assigned.map(p=>esc(p.short||p.first)+' (bisher '+laDutyCount(p.id,id)+'×)').join(', '):'Noch niemand eingeteilt')+'</span></div>';}).join('')+'</div></div>';
+ return '<div class="card"><h2>🧹 Wochendienste · '+esc(room)+' · '+esc(laWeekKey())+'</h2><p class="mini">Wird beim ersten Aufruf in einer neuen Kalenderwoche automatisch eingeteilt. Pro Dienst werden drei Kinder aus unterschiedlichen Farbteams vorgeschlagen. Falls nicht genügend Kinder verfügbar sind, bleiben Plätze offen. Manuelle Änderungen sind in der Tabelle möglich.</p><div class="laTodayItems">'+LA_DUTIES.map(([id,icon,label])=>{const assigned=people.filter(p=>laDuties(p).includes(id));return '<div class="laTodayItem"><b>'+icon+' '+esc(label)+'</b><span>'+(assigned.length?assigned.map(p=>esc(p.short||p.first)+' (bisher '+laDutyCount(p.id,id)+'×)').join(', '):'Noch niemand eingeteilt')+'</span></div>';}).join('')+'</div></div>';
 }
 function laInitDrag(){
  const root=document.querySelector('.laKioskBoard');if(!root)return;
