@@ -349,3 +349,14 @@
 .laNoiseMeter .mini{font-size:10px}
 @keyframes laNoisePulse{50%{background:#fecaca;transform:scale(1.035)}}
 @media(max-width:750px){.laNoiseMeter{justify-content:flex-start}.laNoiseMeter .mini{display:none}.laNoiseMeter .chip{padding:7px 9px}}
+
+/* Clean, single-row Lernatelier toolbar */
+.laStudentFullscreen .laBoardTopClean{display:flex;align-items:center;gap:16px;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}
+.laStudentFullscreen .laBoardTopClean>.laRoomSwitcher{display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex:0 0 auto;margin:0}
+.laStudentFullscreen .laBoardTopClean>.laBoardMeta{font-size:12px;color:#64748b;white-space:nowrap;margin-right:auto}
+.laStudentFullscreen .laBoardTopClean>.laTopActions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end;margin:0}
+.laStudentFullscreen .laBoardTopClean .laNoiseMeter{display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:flex-end}
+.laStudentFullscreen .laBoardTopClean .laNoiseSensitivity{gap:5px}
+.laStudentFullscreen .laBoardTopClean .laNoiseLevel{width:54px}
+@media(max-width:1050px){.laStudentFullscreen .laBoardTopClean>.laBoardMeta{display:none}.laStudentFullscreen .laBoardTopClean>.laTopActions{flex:1}}
+@media(max-width:650px){.laStudentFullscreen .laBoardTopClean{align-items:flex-start}.laStudentFullscreen .laBoardTopClean>.laTopActions{justify-content:flex-start;flex-basis:100%}}
