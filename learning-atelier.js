@@ -83,17 +83,41 @@ function laSetHelp(id,enabled){
 }
 
 function laEnterStudentKiosk(){try{laSetKioskLock(true);laViewMode='student';State.view='learningAtelier';render();}catch(e){alert('Schülermodus konnte nicht gesichert werden.');}}
-async function laExitStudentPreview(){
+function laCloseExitDialog(){
+ const dialog=document.getElementById('laExitDialog');
+ if(dialog)dialog.remove();
+}
+function laExitStudentPreview(){
  const user=Auth.currentUser();
  if(!user)return;
  if(Auth.session?.mode!=='cloud'){alert('Die geschützte Rückkehr benötigt ein Cloud-Lehrkraftkonto.');return;}
- const password=prompt('Lehrkraft-Passwort eingeben, um die Schülersicht zu verlassen:');
- if(password===null)return;
+ if(document.getElementById('laExitDialog'))return;
+ const overlay=document.createElement('div');
+ overlay.id='laExitDialog';
+ overlay.className='laExitOverlay';
+ overlay.innerHTML='<form class="laExitCard" onsubmit="laConfirmExitStudentPreview(event)"><h2>🔒 Lehrkraftmodus</h2><p>Bitte bestätige dein KOMPASS-Passwort.</p><label for="laExitUsername">Schul-E-Mail</label><input id="laExitUsername" type="email" autocomplete="username" readonly value="'+esc(user.username||'')+'"><label for="laExitPassword">Passwort</label><input id="laExitPassword" type="password" autocomplete="current-password" required><label class="laExitShow"><input id="laExitShowPassword" type="checkbox" onchange="document.getElementById(\\'laExitPassword\\').type=this.checked?\\'text\\':\\'password\\'"><span>Passwort anzeigen</span></label><p id="laExitError" class="loginError" role="alert"></p><div class="laExitActions"><button class="chip" type="button" onclick="laCloseExitDialog()">Abbrechen</button><button class="chip dark" type="submit">Lehrkraftmodus öffnen</button></div></form>';
+ document.body.appendChild(overlay);
+ document.getElementById('laExitPassword')?.focus();
+}
+async function laConfirmExitStudentPreview(event){
+ event.preventDefault();
+ const input=document.getElementById('laExitPassword');
+ const error=document.getElementById('laExitError');
+ const form=document.querySelector('#laExitDialog form');
+ if(!input||!form)return;
+ const password=input.value;
+ const user=Auth.currentUser();
+ if(!user||!password)return;
+ const submit=form.querySelector('[type="submit"]');
+ submit.disabled=true;
+ if(error)error.textContent='';
  try{
   const ok=await Auth.verifyCloudPassword(user.username,password);
-  if(!ok){alert('Passwort nicht korrekt. Die Schülersicht bleibt geöffnet.');return;}
-  laSetKioskLock(false);laViewMode='teacher';laPreviewPupilId='';render();
- }catch(e){alert('Überprüfung fehlgeschlagen: '+(e?.message||String(e)));}
+  if(!ok){if(error)error.textContent='Passwort nicht korrekt. Bitte erneut versuchen.';return;}
+  laCloseExitDialog();
+  laSetKioskLock(false);laViewMode='teacher';laPreviewPupilId='';State.view='dashboard';render();
+ }catch(e){if(error)error.textContent='Überprüfung fehlgeschlagen: '+(e?.message||String(e));}
+ finally{if(submit.isConnected)submit.disabled=false;input.value='';}
 }
 
 let laBoardSelectedId='';
