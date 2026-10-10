@@ -233,3 +233,16 @@
 .laStudentFullscreen:not(.laKioskBoard) .laTodayGrid{align-items:start}
 .laStudentFullscreen:not(.laKioskBoard) .laTodaySection:nth-child(3),
 .laStudentFullscreen:not(.laKioskBoard) .laTodaySection:nth-child(4){height:auto!important;min-height:0!important}
+
+/* Unabhängige Spalten: untere Karten rücken direkt nach oben */
+.laStudentFullscreen .laTodayGrid.laTodayMasonry{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;align-items:start!important;gap:11px!important}
+.laStudentFullscreen .laTodayMasonry .laTodayColumn{display:flex;flex-direction:column;gap:11px;min-width:0}
+.laStudentFullscreen .laTodayMasonry .laTodaySection{height:auto!important;min-height:0!important}
+.laStudentFullscreen .laTodayMasonry .laTodayColumn:nth-child(1) .laTodaySection:nth-child(1){background:#eef6ff;border-color:#d8e7fa}
+.laStudentFullscreen .laTodayMasonry .laTodayColumn:nth-child(1) .laTodaySection:nth-child(2){background:#fff0f1;border-color:#f1dfe3}
+.laStudentFullscreen .laTodayMasonry .laTodayColumn:nth-child(2) .laTodaySection:nth-child(1){background:#fff5e8;border-color:#f1e3cd}
+.laStudentFullscreen .laTodayMasonry .laTodayColumn:nth-child(2) .laTodaySection:nth-child(2){background:#ebf8f6;border-color:#d7ebe8}
+.laStudentFullscreen .laTodayMasonry .laTodayColumn:nth-child(3) .laTodaySection{background:#f0f8ed;border-color:#dcebd7}
+.laStudentFullscreen .laTodayMasonry .laTodayColumn:nth-child(4) .laTodaySection{background:#f3f0ff;border-color:#e4ddfa}
+@media(max-width:900px){.laStudentFullscreen .laTodayGrid.laTodayMasonry{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:540px){.laStudentFullscreen .laTodayGrid.laTodayMasonry{grid-template-columns:1fr!important}}
