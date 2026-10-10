@@ -428,6 +428,15 @@ async function laRetryCloudPupils(){
   render();
  }catch(e){alert('Schülerdaten konnten nicht geladen werden: '+(e?.message||String(e))+'\n\nEs wurden keine Schülerdaten verändert.');}
 }
+let laFindQuery='';
+function laFindPupil(value){laFindQuery=String(value||'');const target=document.getElementById('laFindResults');if(target)target.innerHTML=laFindResults();}
+function laFindResults(){
+ const q=laFindQuery.trim().toLocaleLowerCase('de');
+ if(!q)return '<p class="mini">Durchsuche alle drei Lernateliers dieses Jahrgangs.</p>';
+ const matches=laPupils().filter(p=>[p.first,p.last,p.short,p.className].some(v=>String(v||'').toLocaleLowerCase('de').includes(q))).sort((a,b)=>String(a.last||'').localeCompare(String(b.last||''),'de')).slice(0,30);
+ return matches.length?matches.map(p=>'<div class="laQueue"><div><b>'+esc(p.short||[p.first,p.last].filter(Boolean).join(' '))+'</b><div class="mini">'+esc(laRoom(p)||'Noch keinem LA zugeordnet')+' · '+esc(p.className||'')+'</div></div><span class="statusPill">'+esc(laCurrentPlace(p))+'</span></div>').join(''):'<p class="mini">Keine passenden Schülerinnen oder Schüler gefunden.</p>';
+}
+function laFindPanel(){return '<div class="card"><h2>🔎 Schüler finden · gesamte Stufe '+laGrade+'</h2><label for="laFindInput">Name suchen – LA 1, LA 2 und LA 3</label><input id="laFindInput" type="search" autocomplete="off" placeholder="Schülername eingeben …" value="'+esc(laFindQuery)+'" oninput="laFindPupil(this.value)"><div id="laFindResults">'+laFindResults()+'</div></div>';}
 function learningAtelier(){
   if(!Auth.canAccessGrade(laGrade)&&Auth.allowedGrades().length)laGrade=Auth.allowedGrades()[0];
   if(Auth.canAccessGrade(laGrade)&&laPupils().some(p=>laRoom(p)))laEnsureWeeklyDuties();
@@ -441,7 +450,7 @@ function learningAtelier(){
   const can=Auth.canLead(laGrade)||Auth.isAdmin();
   let html=header('Lernatelier','Jahrgang '+laGrade+' · alle Farbteams gemeinsam · Lehrkraftansicht');html+=laGradeTabs();
   html+='<div class="toolbar"><button class="chip dark" onclick="laEnterStudentKiosk()">👩‍🎓 Zur Schülersicht wechseln</button></div>';
-  html+=laDailyEditor();html+=laDutyOverview();
+  html+=laFindPanel();html+=laDailyEditor();html+=laDutyOverview();
   html+='<div class="toolbar"><div class="laTabs">'+LA_ROOMS.map(r=>`<button class="chip ${laSelectedRoom===r?'dark':''}" onclick="laSelectedRoom='${r}';laPreviewPupilId='';render()">${r} · ${all.filter(p=>laRoom(p)===r).length}</button>`).join('')+'</div><p class="mini">Die Zuordnung zum Lernatelier bleibt auch bei einem Standortwechsel bestehen.</p></div>';
   if(unknown.length&&can)html+='<div class="card"><b>Sammelzuordnung</b><p class="mini">Noch nicht zugeordnet: '+unknown.length+' SuS aus Stufe '+laGrade+'. Bestehende Lernatelier-Zuordnungen bleiben unverändert.</p><button class="chip dark" onclick="laAssignUnassigned(\'LA 1\')">Alle noch nicht zugeordneten SuS → LA 1</button></div>';
   if(unknown.length)html+='<div class="card"><b>Hinweis: '+unknown.length+' SuS sind noch keinem Lernatelier zugeordnet.</b><p class="mini">Bitte unten im Bereich „Noch keinem Lernatelier zugeordnet“ die Zuordnung vornehmen. Die bisherige Auswahl wurde möglicherweise wegen eines Fehlers nicht gespeichert.</p></div>';
