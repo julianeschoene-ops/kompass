@@ -193,10 +193,11 @@ function laDutyHistory(){return laGradeSettings('laDutyHistory')||{};}
 function laDutyCount(id,duty){return Object.values(laDutyHistory()).filter(w=>w&&w.assignments&&w.assignments[String(id)]?.includes(duty)).length;}
 function laDuties(p){return Array.isArray(p.laDuties)?p.laDuties:[];}
 let laWeekAssignPending={};
+let laWeekAssignDone={};
 async function laEnsureCloudWeeklyDuties(){
  if(Auth.isLernatelier()||Auth.session?.mode!=='cloud'||!Auth.cloudClient||!Auth.canAccessGrade(laGrade))return;
  const grade=laGrade,week=laWeekKey(),key=grade+':'+week;
- if(laWeekAssignPending[key])return;
+ if(laWeekAssignPending[key]||laWeekAssignDone[key])return;
  laWeekAssignPending[key]=true;
  try{
   const {data,error}=await Auth.cloudClient.rpc('kompass_la_assign_week',{p_grade:grade,p_week:week});
@@ -207,12 +208,14 @@ async function laEnsureCloudWeeklyDuties(){
   history[laSettingKey('laDutyHistory')]=history[laSettingKey('laDutyHistory')]||{};
   history[laSettingKey('laDutyHistory')][week]=data;
   for(const p of laPupils())p.laDuties=assignments[String(p.id)]||[];
+  laWeekAssignDone[key]=true;
   Store.save('Wochendienste aus Lernatelier-Cloud synchronisiert',{week});
   render();
  }catch(e){console.warn('Wochendienste konnten nicht geladen werden:',e.message);}
  finally{delete laWeekAssignPending[key];}
 }
 async function laAssignDutiesNow(){
+ delete laWeekAssignDone[laGrade+':'+laWeekKey()];
  if(Auth.isLernatelier()){alert('Die Wochendienste werden im Lehrkraftkonto eingeteilt.');return;}
  await laEnsureCloudWeeklyDuties();
 }
