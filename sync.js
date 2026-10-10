@@ -55,6 +55,21 @@ const Sync={
     return {grade:Number(grade),pupils:data.payload.pupils,updatedAt:data.updated_at};
   },
   schedule(delay=0){if(!this.enabled())return;this.dirty=true;clearTimeout(this.timer);this.timer=setTimeout(()=>this.push(),delay)},
+  async overlayLernatelier(years,merged){
+    const {data,error}=await Auth.cloudClient.from('kompass_lernatelier_state')
+      .select('grade,payload').in('grade',years);
+    if(error)throw error;
+    const index=new Map((merged.pupils||[]).map(p=>[String(p.id),p]));
+    for(const row of data||[]){
+      for(const lp of row.payload?.pupils||[]){
+        const p=index.get(String(lp.id));
+        if(!p)continue;
+        for(const key of ['learningPlace','laNeedsHelp','laRequest']){
+          if(Object.prototype.hasOwnProperty.call(lp,key))p[key]=clone(lp[key]);
+        }
+      }
+    }
+  },
   async pull(){
     if(!this.enabled())return;this.busy=true;
     try{
@@ -72,7 +87,7 @@ const Sync={
       if(hasCloud){
         const emptyGrades=years.filter(grade=>{const row=(grades||[]).find(x=>Number(x.grade)===Number(grade));return !row||!Array.isArray(row?.payload?.pupils)||row.payload.pupils.length===0;});
         if(emptyGrades.length)throw new Error('Der Cloudbestand für Jahrgang '+emptyGrades.join(', ')+' enthält 0 Schüler*innen. Ein möglicherweise vorhandener lokaler Stand bleibt geschützt und wird nicht überschrieben.');
-        const merged=this.blankFromShared(shared?.payload||{});this.baseGrades={};for(const row of (grades||[])){this.baseGrades[row.grade]=clone(row.payload||{});this.mergeGrade(merged,row.payload||{});}Store.data=merged;Store._rosterChanged=false;Store.migrate();if(Auth.isAdmin())await this.pullAudit();Store.saveLocalOnly();this.lastPull=new Date().toISOString();if(Auth.isAdmin()&&Store._rosterChanged){this.busy=false;await this.push(true);return;}
+        const merged=this.blankFromShared(shared?.payload||{});this.baseGrades={};for(const row of (grades||[])){this.baseGrades[row.grade]=clone(row.payload||{});this.mergeGrade(merged,row.payload||{});}await this.overlayLernatelier(years,merged);Store.data=merged;Store._rosterChanged=false;Store.migrate();if(Auth.isAdmin())await this.pullAudit();Store.saveLocalOnly();this.lastPull=new Date().toISOString();if(Auth.isAdmin()&&Store._rosterChanged){this.busy=false;await this.push(true);return;}
       }
     }catch(e){console.error('Cloud pull',e);throw e}finally{this.busy=false}
   },
