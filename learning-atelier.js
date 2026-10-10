@@ -223,13 +223,32 @@ const LA_DAY_OFFERS={
   5:[['5.','Kunstatelier','Maria Kasatkin','vor dem Sekretariat'],['5.','Musik – eigenständiges Üben','Friedrich Mück',''],['5.','Schulgarten','Melanie Schnepf','Treppe 6-/7-Stichgang'],['5.','Sportangebot','Robin Steinle','Stichgang 6/7']]
 };
 const LA_SPORT_OFFERS={1:[['2.','Tischtennis und Ballspiele','Pavlos Moraintinis','Foyer vor Sporthalle 1'],['3.','Tischtennis und Ballspiele','Pavlos Moraintinis','Foyer vor Sporthalle 1']],3:[['3.–4.','Turnen','Robin Steinle','Foyer Sporthalle']],5:[['3.','Tischtennis und Ballspiele','Pavlos Moraintinis','Halle 1'],['4.','Turnen','Robin Steinle','Foyer Sporthalle']]};
-const LA_FLEX_OFFERS=[
- ['2026-10-12','3.','Englisch','Speaking Activities','Ribanna Tsehaye'],['2026-10-12','4.','Mathematik','Schriftliche Division in kleinen Schritten','Melanie Schnepf'],
- ['2026-10-13','3.','Deutsch','QUOP / FLINK','Nicole Oursin'],['2026-10-13','4.','Deutsch','QUOP / FLINK','Julia Bachmair Neu'],['2026-10-13','3.','Mathematik','Parallelen & Senkrechten','Heike von Vietinghoff'],['2026-10-13','4.','Mathematik','Uhrzeit und Zeitspannen','Miriam Bay'],
- ['2026-10-14','2.','Deutsch','QUOP / FLINK','Jörg Vogt'],['2026-10-14','4.','Deutsch','QUOP / FLINK','Peter Brusda-Gleichmann'],['2026-10-14','4.','Englisch','Grammar Time','Ribanna Tsehaye'],['2026-10-14','3.','Mathematik','Schriftliche Subtraktion','Marcel Moser'],
- ['2026-10-15','3.','Deutsch','QUOP / FLINK','Nicole Oursin'],
- ['2026-10-16','4.','Englisch','Sketches & Board Games','Dagmar Zwilling'],['2026-10-16','5.','Englisch','Story Time','Ribanna Tsehaye'],['2026-10-16','2.','Mathematik','Runden & Überschlagen','Marcel Moser'],['2026-10-16','3.','Mathematik','Schriftliche Division','Heike von Vietinghoff'],['2026-10-16','4.','Mathematik','Schriftliche Subtraktion','Marcel Moser']
+const LA_FLEX_SCHEDULE=[
+ // [weekday, hour, subject, topic, teacher, room, teams] – 29.09.–23.10.2026
+ [1,'3.','Mathematik','Parallelen & Senkrechten','Viet','10b','(Violett), Rot'],
+ [1,'4.','Mathematik','Schriftliche Division in kleinen Schritten','Schnepf','','(Blau), Grün, Rot'],
+ [1,'3.','Englisch','Thema noch festlegen','Tsehaye','10a','Rot, Violett'],
+ [2,'3.','Mathematik','Parallelen & Senkrechten','Viet','OS 2','Grün, Rot'],
+ [2,'4.','Mathematik','Uhrzeit & Zeitspannen','Bay','OS 2','(Blau), (Violett), (Gelb)'],
+ [2,'3.','Deutsch','QUOP / FLINK','Oursin','OS 1','Rot, Grün'],
+ [2,'4.','Deutsch','QUOP / FLINK','Bachmair','OS 1','(Blau), (Gelb), (Violett)'],
+ [3,'3.','Mathematik','Schriftliche Subtraktion','Moser','Nawi 2','Blau, Violett, Gelb, (Grün), (Rot)'],
+ [3,'2.','Deutsch','QUOP / FLINK','Vogt','Sprachenraum','(Blau), Gelb, (Violett), Grün, Rot'],
+ [3,'4.','Deutsch','QUOP / FLINK','Brusda','9b','Blau, (Rot), Gelb, Violett, (Grün)'],
+ [3,'2.','Englisch','Story Time – Geschichten lesen und schreiben','Schöne','Flexraum','(Blau), Rot, Gelb, (Violett), Grün'],
+ [3,'4.','Englisch','Thema noch festlegen','Tsehaye','9a','Blau, (Rot), Gelb, Violett, (Grün)'],
+ [4,'4.','Mathematik','Uhrzeit & Zeitspannen','Bay','9a','Grün'],
+ [4,'3.','Deutsch','QUOP / FLINK','Oursin','9a','Rot'],
+ [4,'4.','Englisch','Sketches & Board Games – Grammatik & Verständigung','Zwilling','9b','Blau, (Rot), Gelb, Violett, (Grün)'],
+ [5,'4.','Mathematik','Schriftliche Subtraktion','Moser','9a','Blau, (Grün), Gelb, (Rot)'],
+ [5,'3.','Mathematik','Schriftliche Division in kleinen Schritten','Viet','Matheraum','Violett, Gelb'],
+ [5,'2.','Mathematik','Runden & Überschlagen','Moser','Flexraum','Blau, Grün, Violett, Gelb, Rot'],
+ [5,'5.','Englisch','Thema noch festlegen','Tsehaye','OS 2','Blau, Gelb, Grün, Violett, Rot']
 ];
+function laFlexForDate(d){
+ if(d.date<'2026-09-29'||d.date>'2026-10-23')return [];
+ return LA_FLEX_SCHEDULE.filter(x=>x[0]===d.day).sort((a,b)=>parseInt(a[1])-parseInt(b[1])||a[2].localeCompare(b[2],'de')).map(x=>[x[1],x[2]+' · '+x[3],x[4],x[5],x[6]]);
+}
 let laBoardDate='';
 function laDayData(date=laBoardDate){const d=date?new Date(date+'T12:00:00'):new Date(), day=d.getDay();return {day,date:[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-'),label:d.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'})};}
 function laMoveBoardDay(n){const d=laDayData(),next=new Date(d.date+'T12:00:00');next.setDate(next.getDate()+n);laBoardDate=[next.getFullYear(),String(next.getMonth()+1).padStart(2,'0'),String(next.getDate()).padStart(2,'0')].join('-');render();}
@@ -260,15 +279,15 @@ function laTodayBoard(){
  const d=laDayData();const config=Store.data.settings?.laDailyBoard||{};
  const current=config[d.date]||{};const published=current.published===true;
  const events=(Store.calendarEvents||[]).filter(e=>e.date<=d.date&&d.date<=(e.endDate||e.date)&&(!e.grade||e.grade==='all'||Number(e.grade)===6)&&(!e.visibility||e.visibility==='all'||e.visibility==='students'));
- const list=(items)=>items.length?'<div class="laTodayItems">'+items.map(x=>'<div class="laTodayItem"><b>'+esc(x[0])+'. Std. · '+esc(x[1])+'</b><span>'+esc(x[2])+(x[3]?' · Treff: '+esc(x[3]):'')+'</span></div>').join('')+'</div>':'<p class="mini">Keine Angebote eingetragen.</p>';
- const flex=LA_FLEX_OFFERS.filter(x=>x[0]===d.date).map(x=>[x[1],x[2]+' · '+x[3],x[4],'']);
+ const list=(items,isFlex=false)=>items.length?'<div class="laTodayItems">'+items.map(x=>'<div class="laTodayItem"><b>'+esc(x[0])+' Std. · '+esc(x[1])+'</b><span>'+esc(x[2])+(x[3]?(isFlex?' · Raum: ':' · Treff: ')+esc(x[3]):'')+(isFlex&&x[4]?'<br>Teams: '+esc(x[4]):'')+'</span></div>').join('')+'</div>':'<p class="mini">Keine Angebote eingetragen.</p>';
+ const flex=laFlexForDate(d);
  const notes=published?String(current.notes||'').trim():'';
  const news=published?String(current.news||'').trim():'';
  const motivation=published&&String(current.motivation||'').trim()?String(current.motivation).trim():laMotivationForDate(d.date);
  return '<section class="laTodayBoard"><div class="laTodayHeading"><h2>☀️ Heute bei uns</h2><span>'+esc(d.label)+'</span></div>'+
  '<div class="laMotivation"><div class="laMotivationEyebrow">✨ Dein Gedanke für heute</div><div class="laMotivationQuote">'+esc(motivation)+'</div></div><div class="laTodayGrid"><div class="laTodaySection"><h3>📅 Aus dem Kalender</h3>'+(events.length?'<div class="laTodayItems">'+events.map(e=>'<div class="laTodayItem"><b>'+esc((e.time?e.time+' · ':'')+e.title)+'</b><span>'+esc(e.location||'')+'</span></div>').join('')+'</div>':'<p class="mini">Keine Kalendereinträge für diesen Tag.</p>')+'</div><div class="laTodaySection"><h3>📣 Infos & Vertretungen</h3><p>'+ (notes?esc(notes).replace(/\n/g,'<br>'):'Heute sind noch keine Änderungen veröffentlicht.')+'</p></div>'+
  '<div class="laTodaySection"><h3>🎨 Kreativband</h3>'+list(LA_DAY_OFFERS[d.day]||[])+'</div>'+
- '<div class="laTodaySection"><h3>📘 Flexstunden</h3>'+list(flex)+'</div>'+
+ '<div class="laTodaySection"><h3>📘 Flexstunden</h3>'+list(flex,true)+'</div>'+
  '<div class="laTodaySection"><h3>🏀 Weitere Sportangebote</h3>'+list(LA_SPORT_OFFERS[d.day]||[])+'</div>'+
  '<div class="laTodaySection"><h3>🌍 Neues aus der Welt</h3><p>'+(news?esc(news).replace(/\n/g,'<br>'):'Noch keine geprüfte Nachricht veröffentlicht.')+'</p></div></div>'+
  (published&&current.updatedAt?'<p class="mini">Zuletzt aktualisiert: '+esc(new Date(current.updatedAt).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}))+'</p>':'')+'</section>';
