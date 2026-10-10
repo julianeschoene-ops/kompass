@@ -339,3 +339,13 @@
 }
 
 .laStudentFullscreen:has(.laTodayBoard) > .laBoardTop h1 { display: none !important; }
+
+/* Live microphone noise traffic light */
+.laNoiseMeter{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;max-width:100%;font-size:12px}
+.laNoiseLamp{display:flex;align-items:center;gap:5px;border-radius:999px;padding:7px 12px;font-weight:800;transition:background .25s ease}
+.laNoiseGreen{background:#dcfce7;color:#166534}.laNoiseYellow{background:#fef3c7;color:#92400e}.laNoiseRed{background:#fee2e2;color:#991b1b;animation:laNoisePulse 1s ease-in-out infinite}.laNoiseOff{background:#e5e7eb;color:#374151}
+.laNoiseSensitivity{display:flex;align-items:center;gap:6px;white-space:nowrap;font-weight:600}.laNoiseSensitivity input{width:82px;accent-color:#64748b}
+.laNoiseLevel{height:7px;width:64px;border-radius:999px;background:#e2e8f0;overflow:hidden}.laNoiseLevel span{display:block;height:100%;background:#64748b;transition:width .12s linear}
+.laNoiseMeter .mini{font-size:10px}
+@keyframes laNoisePulse{50%{background:#fecaca;transform:scale(1.035)}}
+@media(max-width:750px){.laNoiseMeter{justify-content:flex-start}.laNoiseMeter .mini{display:none}.laNoiseMeter .chip{padding:7px 9px}}
