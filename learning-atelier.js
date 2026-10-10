@@ -8,12 +8,12 @@ function laGradeSettings(k){if(Auth.isLernatelier()){const p=laLimitedPayloads[l
 
 const LA_PLACES=['Lernatelier','Stichgang','Marktplatz','Bibliothek','Input','Coaching'];
 const LA_LEVELS=['Hiker','Climber','Free-Climber'];
-const LA_DEFAULT_PLACES=['Lernatelier','Input Deutsch','Input Mathematik','Input Englisch','Stichgang','Bibliothek','Marktplatz','WC','Zu Hause','VKL','Chor / Bläserklasse','Sport','Club','SMV','Bäcker','Teamstunde','Coaching','Schülersozialarbeit','LA 3 / Extraraum'];
+const LA_DEFAULT_PLACES=['Lernatelier','Input Deutsch','Input Mathematik','Input Englisch','Stichgang','Bibliothek','Marktplatz','WC','Zu Hause','VKL','Chor / Bläserklasse','Sport','Club','Bäcker','Teamstunde','Coaching','Schülersozialarbeit','Sonstiges'];
 function laPlaces(room=laSelectedRoom){
  const configured=laGradeSettings('laPlaces')?.[room];
  const names=Array.isArray(configured)&&configured.length?configured:LA_DEFAULT_PLACES;
  const used=laPupils().filter(p=>laRoom(p)===room).map(p=>p.learningPlace).filter(Boolean);
- return [...new Set(['Lernatelier',...names,...used])];
+ return [...new Set(['Lernatelier',...names,...used].filter(n=>n!=='LA 3 / Extraraum'&&n!=='SMV'))];
 }
 function laSavePlaces(){
  if(!Auth.canLead(laGrade)&&!Auth.isAdmin())return;
@@ -472,8 +472,8 @@ async function laResetRoomOccupancy(){
 }
 // Lokale Mikrofon-Lärmampel: Audiodaten verlassen das Gerät nicht.
 const laNoiseMeter={stream:null,context:null,analyser:null,buffer:null,frame:0,active:false,level:0,peak:0,threshold:8,room:'',grade:0,lastPaint:0};
-function laNoiseMeterKey(){return 'kompass_noise_threshold_v1';}
-function laNoiseMeterThreshold(){try{return Math.max(1,Math.min(90,Number(localStorage.getItem(laNoiseMeterKey()))||8));}catch(e){return 35;}}
+function laNoiseMeterKey(){return 'kompass_noise_threshold_v2_'+laGrade+'_'+laSelectedRoom;}
+function laNoiseMeterThreshold(){try{return Math.max(1,Math.min(90,Number(localStorage.getItem(laNoiseMeterKey()))||8));}catch(e){return 8;}}
 
 const laNoiseChallenge={greenSince:0,points:0,lastRoom:'',lastGrade:0,lastWeek:'',lastTime:0};
 function laNoiseMinutes(){try{return Math.max(1,Math.min(30,Number(localStorage.getItem('kompass_noise_minutes'))||5));}catch(e){return 5;}}
@@ -516,12 +516,14 @@ function laNoiseChallengeTick(){
 }
 function laNoiseMeterUI(){
  const m=laNoiseMeter;
- return '<div class="laNoiseMeter" aria-label="Automatische Lärmampel"><div class="laNoiseLamp '+(m.active?(m.level>=m.threshold?'laNoiseRed':m.level>=m.threshold*.75?'laNoiseYellow':'laNoiseGreen'):'laNoiseOff')+'" id="laNoiseLamp"><span id="laNoiseFace">'+(m.active?(m.level>=m.threshold?'🔴':m.level>=m.threshold*.75?'🟡':'🟢'):'🎙️')+'</span><span id="laNoiseText">'+(m.active?(m.level>=m.threshold?'Zu laut!':m.level>=m.threshold*.75?'Etwas leiser':'Gut so!'):'Lärmampel starten')+'</span></div><button type="button" class="chip" onclick="laNoiseToggle()">'+(m.active?'⏹ Messung stoppen':'🎙️ Messung starten')+'</button><label class="laNoiseSensitivity">Grenzwert <input type="range" min="1" max="90" step="1" value="'+m.threshold+'" oninput="laNoiseThreshold(this.value)"><span id="laNoiseThresholdValue">'+m.threshold+'</span></label><div class="laNoiseLevel"><span id="laNoiseBar" style="width:'+m.level+'%"></span></div>'+laNoiseChallengeUI()+'</div>';
+ m.threshold=laNoiseMeterThreshold();
+ return '<div class="laNoiseMeter" aria-label="Automatische Lärmampel"><div class="laNoiseLamp '+(m.active?(m.level>=m.threshold?'laNoiseRed':m.level>=m.threshold*.75?'laNoiseYellow':'laNoiseGreen'):'laNoiseOff')+'" id="laNoiseLamp"><span id="laNoiseFace">'+(m.active?(m.level>=m.threshold?'🔴':m.level>=m.threshold*.75?'🟡':'🟢'):'🎙️')+'</span><span id="laNoiseText">'+(m.active?(m.level>=m.threshold?'Zu laut!':m.level>=m.threshold*.75?'Etwas leiser':'Gut so!'):'Lärmampel starten')+'</span></div><button type="button" class="chip" onclick="laNoiseToggle()">'+(m.active?'⏹ Messung stoppen':'🎙️ Messung starten')+'</button><label class="laNoiseSensitivity">Grenzwert <button type="button" class="laNoiseAdjust" onclick="laNoiseThreshold(laNoiseMeter.threshold-1)">−</button><input type="number" inputmode="numeric" min="1" max="90" value="'+m.threshold+'" onchange="laNoiseThreshold(this.value)" id="laNoiseThresholdInput"><button type="button" class="laNoiseAdjust" onclick="laNoiseThreshold(laNoiseMeter.threshold+1)">+</button><span id="laNoiseThresholdValue">'+m.threshold+'</span></label><div class="laNoiseLevel"><span id="laNoiseBar" style="width:'+m.level+'%"></span></div>'+laNoiseChallengeUI()+'</div>';
 }
 function laNoiseThreshold(v){
  laNoiseMeter.threshold=Math.max(1,Math.min(90,Number(v)||8));
  try{localStorage.setItem(laNoiseMeterKey(),String(laNoiseMeter.threshold));}catch(e){}
  const el=document.getElementById('laNoiseThresholdValue');if(el)el.textContent=laNoiseMeter.threshold;
+ const input=document.getElementById('laNoiseThresholdInput');if(input)input.value=laNoiseMeter.threshold;
 }
 async function laNoiseToggle(){
  if(laNoiseMeter.active){laNoiseStop();return;}
@@ -592,7 +594,7 @@ function laStudentPreview(){
  html+='<p class="laBoardInstructions">Namen antippen oder mit dem Finger in einen anderen Bereich ziehen.</p>';
  html+='<div class="laPublicBoard laCompactBoard">';
  for(const place of laPlaces()){
-  const group=pupils.filter(p=>laCurrentPlace(p)===place);
+  const group=pupils.filter(p=>{const current=laCurrentPlace(p);return place==='Sonstiges'?(current==='SMV'||current==='Sonstiges'):current===place;});
   html+='<section class="laPublicPlace '+(place==='Lernatelier'?'laHomePlace':'')+' '+(group.length?'laOccupied':'laEmpty')+'" data-place="'+esc(place)+'"><h2>'+esc(place)+' <span>'+group.length+'</span></h2><div class="laPublicNames">';
   html+=group.map(p=>laStudentPupilCard(p,laBoardSelectedId,'laSelectBoardPupil')).join('')||'<p class="mini">Hier ist gerade niemand.</p>';
   html+='</div></section>';
