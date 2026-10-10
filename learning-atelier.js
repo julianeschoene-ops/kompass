@@ -320,7 +320,7 @@ function laTodayBoard(){
  '<div class="laTodaySection"><h3>🏀 Weitere Sportangebote</h3>'+list(laMergeConsecutiveOffers(laGrade===6?(LA_SPORT_OFFERS[d.day]||[]):[]))+'</div></div>'+
  '<div class="laTodayColumn"><div class="laTodaySection"><h3>📣 Infos & Vertretungen</h3><p>'+(notes?esc(notes).replace(/\n/g,'<br>'):'Heute sind noch keine Änderungen veröffentlicht.')+'</p></div>'+
  '<div class="laTodaySection"><h3>🌍 Neues aus der Welt</h3><p>'+(news?esc(news).replace(/\n/g,'<br>'):'Noch keine geprüfte Nachricht veröffentlicht.')+'</p></div></div>'+
- '<div class="laTodayColumn"><div class="laTodaySection"><h3>🎨 Kreativband</h3>'+list(laMergeConsecutiveOffers(laGrade===6?(LA_DAY_OFFERS[d.day]||[]):[]))+'</div></div>'+
+ '<div class="laTodayColumn"><div class="laTodaySection"><h3>🎨 Kreativband</h3>'+list(laMergeConsecutiveOffers(LA_DAY_OFFERS[d.day]||[]))+'</div></div>'+
  '<div class="laTodayColumn"><div class="laTodaySection"><h3>📘 Flexstunden</h3>'+list(flex,true)+'</div></div></div>'+
  (published&&current.updatedAt?'<p class="mini">Zuletzt aktualisiert: '+esc(new Date(current.updatedAt).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}))+'</p>':'')+'</section>';
 }
