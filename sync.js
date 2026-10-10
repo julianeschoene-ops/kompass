@@ -1,6 +1,6 @@
 const Sync={
   timer:null,busy:false,dirty:false,lastPull:null,baseGrades:{},
-  enabled(){return Auth.session?.mode==='cloud'&&!!Auth.cloudClient},
+  enabled(){return Auth.session?.mode==='cloud'&&!Auth.isLernatelier()&&!!Auth.cloudClient},
   gradeOf(p){return Number(p?.year||String(p?.className||'').charAt(0))||0},
   filterObject(obj,pred){return Object.fromEntries(Object.entries(obj||{}).filter(([k,v])=>pred(k,v)))},
   sharedPayload(){const d=Store.data;return {version:d.version,subjects:d.subjects,coreSubjects:d.coreSubjects,competencies:d.competencies,settings:d.settings,projectTemplates:d.projectTemplates,creativeRooms:d.creativeRooms,timetable:d.timetable,calendarEvents:(d.calendarEvents||[]).filter(e=>!e.grade||e.grade==='all'),metadata:d.metadata,activities:(d.activities||[]).filter(a=>a.type==='Kreativband')};},
