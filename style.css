@@ -404,3 +404,9 @@
 .laStudentFullscreen .laTodayMasonry .laWorldStory p{margin:7px 0;font-size:.9rem;line-height:1.45}
 .laStudentFullscreen .laTodayMasonry .laWorldStory a{font-size:.8rem;color:#375b86;text-decoration:underline;text-underline-offset:2px}
 .laStudentFullscreen .laTodayMasonry .laTodaySection>p:not(.mini){background:rgba(255,253,247,.82);border:1px solid rgba(170,152,124,.16);border-radius:11px;padding:10px 12px;overflow-wrap:anywhere}
+
+/* iPad: use the unused vertical space above the News / LA tabs */
+@media(min-width:701px){
+ .laStudentFullscreen:has(.laTodayBoard)>.laMainTabs{margin-top:-17px!important;margin-bottom:-5px!important}
+ .laStudentFullscreen:has(.laTodayBoard)>.laTodayBoard{margin-top:-5px!important}
+}
