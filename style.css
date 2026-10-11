@@ -457,3 +457,10 @@
   font-weight:750!important;white-space:nowrap!important;
  }
 }
+
+/* Slightly narrow Flexstunden and distribute the saved space to the left */
+@media(min-width:901px){
+ .laStudentFullscreen .laTodayGrid.laTodayMasonry{
+  grid-template-columns:minmax(0,.84fr) minmax(0,1.06fr) minmax(0,1.37fr) minmax(0,1.03fr)!important;
+ }
+}
