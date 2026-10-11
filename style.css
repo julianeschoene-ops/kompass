@@ -377,3 +377,12 @@
 .laStudentFullscreen .laNoiseSensitivity input[type=number]{width:45px;padding:4px 3px;border:1px solid #cbd5e1;border-radius:7px;text-align:center;font-size:13px;font-weight:700}
 .laStudentFullscreen .laNoiseSensitivity .laNoiseAdjust{border:1px solid #cbd5e1;background:#fff;border-radius:7px;min-width:26px;min-height:28px;font-size:17px;cursor:pointer}
 .laStudentFullscreen .laNoiseSensitivity #laNoiseThresholdValue{display:none}
+
+/* News: calm reading order and individually separated notices */
+.laStudentFullscreen .laTodayMasonry .laTodayColumn:nth-child(1) .laTodaySection:nth-child(2){background:#eef8f8;border-color:#d7ebe8}
+.laStudentFullscreen .laTodayMasonry .laTodayColumn:nth-child(1) .laTodaySection:nth-child(3){background:#fff0f1;border-color:#f1dfe3}
+.laStudentFullscreen .laTodayMasonry .laNoticeSection{background:#fff5e8!important;border-color:#f1e3cd!important;min-height:200px}
+.laStudentFullscreen .laNoticeList{display:flex;flex-direction:column;gap:9px}
+.laStudentFullscreen .laNotice{padding:10px 12px;background:rgba(255,255,255,.72);border:1px solid rgba(182,157,119,.18);border-radius:11px;font-size:.94rem;line-height:1.45;overflow-wrap:anywhere}
+.laStudentFullscreen .laWorldNews p{overflow-wrap:anywhere;line-height:1.45}
+@media(min-width:901px){.laStudentFullscreen .laTodayGrid.laTodayMasonry{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,1.2fr)!important}}
