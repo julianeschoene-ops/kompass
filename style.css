@@ -433,3 +433,16 @@
  .laStudentFullscreen .laBoardTopClean>.laTopActions{grid-column:8!important;grid-row:1!important;align-self:center!important;justify-content:flex-end!important}
  .laStudentFullscreen .laBoardTopClean>.laTopActions>.chip{white-space:nowrap}
 }
+
+/* News dashboard: narrower information column, more room for long activity lists */
+@media(min-width:901px){
+ .laStudentFullscreen .laTodayGrid.laTodayMasonry{
+  grid-template-columns:minmax(0,.78fr) minmax(0,1fr) minmax(0,1.32fr) minmax(0,1.15fr)!important;
+  gap:10px!important;
+ }
+ .laStudentFullscreen .laTodayMasonry .laTodayColumn{gap:9px!important}
+ .laStudentFullscreen .laTodayMasonry .laTodaySection{padding:12px!important}
+ .laStudentFullscreen .laTodayMasonry .laTodayItems{gap:5px!important}
+ .laStudentFullscreen .laTodayMasonry .laTodayItem{padding:8px 10px!important}
+ .laStudentFullscreen .laTodayMasonry .laNotice{padding:9px 10px!important}
+}
