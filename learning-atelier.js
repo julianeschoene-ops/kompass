@@ -395,7 +395,7 @@ function laTodayBoard(){
  const flex=laGrade===6?laFlexForDate(d):[];
  const mondayNotes=(laGrade===6&&d.date==='2026-10-12')?'🏀 Sportangebot: Heute noch buchbar (siehe Sportangebote).\n📘 Lernnachweise im Blick? Prüfe, ob du noch eine Flexstunde brauchst.':'';
  const scheduledNotes=(laGrade===6&&d.date==='2026-10-13')?'🥾 Wandertag der Stufe 6.\n🤒 Frau May ist weiterhin krank; Französisch entfällt.':(laGrade===6&&d.date==='2026-10-14')?'📸 Gruppenfoto der Bläserklasse: Alle Bläserklassenkinder treffen sich in der 4. Stunde um 10:15 Uhr in der Aula.':'';
- const flexChangeNotes=(laGrade===6&&d.date==='2026-10-12')?'📘 Flexstunden aktualisiert: Bitte prüfe die neuen Themen und deine Buchungen.':'';
+ const flexChangeNotes=(laGrade===6&&d.date==='2026-10-12')?'📘 Jetzt Flexstunden buchen und optimal auf deine Lernnachweise vorbereiten!':'';
  const notes=[flexChangeNotes,mondayNotes,scheduledNotes,published?String(current.notes||'').trim():''].filter(Boolean).join('\n');
  const news=published?String(current.news||'').trim():'';
  const motivation=published&&String(current.motivation||'').trim()?String(current.motivation).trim():laMotivationForDate(d.date);
