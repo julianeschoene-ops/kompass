@@ -386,3 +386,21 @@
 .laStudentFullscreen .laNotice{padding:10px 12px;background:rgba(255,255,255,.72);border:1px solid rgba(182,157,119,.18);border-radius:11px;font-size:.94rem;line-height:1.45;overflow-wrap:anywhere}
 .laStudentFullscreen .laWorldNews p{overflow-wrap:anywhere;line-height:1.45}
 @media(min-width:901px){.laStudentFullscreen .laTodayGrid.laTodayMasonry{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,1.2fr)!important}}
+
+/* Consistent softly cream-tinted inset cards throughout the News dashboard */
+.laStudentFullscreen .laTodayMasonry .laTodayItems{display:flex;flex-direction:column;gap:7px;max-height:none!important;overflow:visible!important}
+.laStudentFullscreen .laTodayMasonry .laTodayItem,
+.laStudentFullscreen .laTodayMasonry .laNotice,
+.laStudentFullscreen .laTodayMasonry .laWorldStory{
+ background:rgba(255,253,247,.82)!important;
+ border:1px solid rgba(170,152,124,.16)!important;
+ border-radius:11px!important;
+ padding:10px 12px!important;
+ box-shadow:0 1px 3px rgba(50,57,76,.025);
+}
+.laStudentFullscreen .laTodayMasonry .laTodayItem + .laTodayItem{border-top:1px solid rgba(170,152,124,.16)!important}
+.laStudentFullscreen .laTodayMasonry .laTodayItem b{display:block;margin-bottom:3px}
+.laStudentFullscreen .laTodayMasonry .laWorldStory strong{display:block;line-height:1.35}
+.laStudentFullscreen .laTodayMasonry .laWorldStory p{margin:7px 0;font-size:.9rem;line-height:1.45}
+.laStudentFullscreen .laTodayMasonry .laWorldStory a{font-size:.8rem;color:#375b86;text-decoration:underline;text-underline-offset:2px}
+.laStudentFullscreen .laTodayMasonry .laTodaySection>p:not(.mini){background:rgba(255,253,247,.82);border:1px solid rgba(170,152,124,.16);border-radius:11px;padding:10px 12px;overflow-wrap:anywhere}
