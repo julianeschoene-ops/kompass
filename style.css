@@ -410,3 +410,15 @@
  .laStudentFullscreen:has(.laTodayBoard)>.laMainTabs{margin-top:-17px!important;margin-bottom:-5px!important}
  .laStudentFullscreen:has(.laTodayBoard)>.laTodayBoard{margin-top:-5px!important}
 }
+
+/* Grade selector and News / LA tabs share one horizontal toolbar */
+@media(min-width:901px){
+ .laStudentFullscreen .laBoardTopClean{flex-wrap:nowrap!important;gap:16px!important;margin-bottom:12px!important}
+ .laStudentFullscreen .laBoardTopClean>.laMainTabs{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;flex:1 1 auto!important;min-width:0!important;margin:0!important;gap:9px!important}
+ .laStudentFullscreen .laBoardTopClean>.laMainTabs .chip{min-height:48px!important;padding:9px 8px!important;font-size:1rem!important}
+ .laStudentFullscreen .laBoardTopClean>.laBoardMeta{display:none!important}
+ .laStudentFullscreen .laBoardTopClean>.laTopActions{flex:0 0 auto!important}
+}
+@media(max-width:900px){
+ .laStudentFullscreen .laBoardTopClean>.laMainTabs{flex-basis:100%!important;margin:0!important}
+}
