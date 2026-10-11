@@ -312,30 +312,34 @@ const LA_DAY_OFFERS={
 const LA_CANCELLED_CREATIVE_2026_10_13=['Schulgarten','Naturwissenschaftliches Labor','Kunstatelier'];
 const LA_SPORT_OFFERS={1:[['2.','Tischtennis und Ballspiele','Pavlos Moraintinis','Foyer vor Sporthalle 1'],['3.','Tischtennis und Ballspiele','Pavlos Moraintinis','Foyer vor Sporthalle 1']],3:[['3.–4.','Turnen','Robin Steinle','Foyer Sporthalle']],5:[['3.','Tischtennis und Ballspiele','Pavlos Moraintinis','Halle 1'],['4.','Turnen','Robin Steinle','Foyer Sporthalle']]};
 const LA_FLEX_SCHEDULE=[
- // [weekday, hour, subject, topic, teacher, room, teams] – 29.09.–23.10.2026
- [1,'3.','Mathematik','Parallelen & Senkrechten','Viet','10b','(Violett), Rot'],
+ // [weekday, hour, subject, topic, teacher, room, teams, start?, end?]
+ [1,'3.','Mathematik','Parallelen & Senkrechten','Viet','10b','(Violett), Rot','2026-09-29','2026-10-11'],
+ [1,'3.','Mathematik','Geometrische Figuren zeichnen (LWL 5.4)','Viet','10b','(Violett), Rot','2026-10-12','2026-10-23'],
  [1,'4.','Mathematik','Schriftliche Division in kleinen Schritten','Schnepf','','(Blau), Grün, Rot'],
- [1,'3.','Englisch','Thema noch festlegen','Tsehaye','10a','Rot, Violett'],
- [2,'3.','Mathematik','Parallelen & Senkrechten','Viet','OS 2','Grün, Rot'],
- [2,'4.','Mathematik','Uhrzeit & Zeitspannen','Bay','OS 2','(Blau), (Violett), (Gelb)'],
+ [1,'3.','Englisch','Englisch üben mit dem iPad – Vokabel- und Grammatiktraining','Tsehaye','10a','Rot, Violett'],
+ [2,'3.','Mathematik','Parallelen & Senkrechten','Viet','OS 2','Grün, Rot','2026-09-29','2026-10-11'],
+ [2,'3.','Mathematik','Rechenvorteile & Rechengesetze (LWL 5.5)','Viet','OS 2','Grün, Rot','2026-10-12','2026-10-23'],
+ [2,'4.','Mathematik','Uhrzeit: Zeitpunkt bestimmen & Zeitspannen berechnen','Bay','OS 2','(Blau), (Violett), (Gelb)'],
  [2,'3.','Deutsch','QUOP / FLINK','Oursin','OS 1','Rot, Grün'],
  [2,'4.','Deutsch','QUOP / FLINK','Bachmair','OS 1','(Blau), (Gelb), (Violett)'],
  [3,'3.','Mathematik','Schriftliche Subtraktion','Moser','Nawi 2','Blau, Violett, Gelb, (Grün), (Rot)'],
  [3,'2.','Deutsch','QUOP / FLINK','Vogt','Sprachenraum','(Blau), Gelb, (Violett), Grün, Rot'],
  [3,'4.','Deutsch','QUOP / FLINK','Brusda','9b','Blau, (Rot), Gelb, Violett, (Grün)'],
  [3,'2.','Englisch','Story Time – Geschichten lesen und schreiben','Schöne','Flexraum','(Blau), Rot, Gelb, (Violett), Grün'],
- [3,'4.','Englisch','Thema noch festlegen','Tsehaye','9a','Blau, (Rot), Gelb, Violett, (Grün)'],
- [4,'4.','Mathematik','Uhrzeit & Zeitspannen','Bay','9a','Grün'],
+ [3,'4.','Englisch','Englisch üben mit dem iPad – Vokabel- und Grammatiktraining','Tsehaye','9a','Blau, (Rot), Gelb, Violett, (Grün)'],
+ [4,'4.','Mathematik','Uhrzeit: Zeitpunkt bestimmen & Zeitspannen berechnen','Bay','9a','Grün'],
  [4,'3.','Deutsch','QUOP / FLINK','Oursin','9a','Rot'],
- [4,'4.','Englisch','Sketches & Board Games – Grammatik & Verständigung','Zwilling','9b','Blau, (Rot), Gelb, Violett, (Grün)'],
  [5,'4.','Mathematik','Schriftliche Subtraktion','Moser','9a','Blau, (Grün), Gelb, (Rot)'],
  [5,'3.','Mathematik','Schriftliche Division in kleinen Schritten','Viet','Matheraum','Violett, Gelb'],
  [5,'2.','Mathematik','Runden & Überschlagen','Moser','Flexraum','Blau, Grün, Violett, Gelb, Rot'],
- [5,'5.','Englisch','Thema noch festlegen','Tsehaye','OS 2','Blau, Gelb, Grün, Violett, Rot']
+ [5,'5.','Englisch','Story Time – Geschichten lesen und schreiben','Tsehaye','OS 2','Blau, Gelb, Grün, Violett, Rot'],
+ [5,'4.','Englisch','Sketches & Board Games – Grammatik & Verständigung','Zwilling','9b','Blau, (Rot), Gelb, Violett, (Grün)']
 ];
 function laFlexForDate(d){
  if(d.date<'2026-09-29'||d.date>'2026-10-23')return [];
- return LA_FLEX_SCHEDULE.filter(x=>x[0]===d.day).sort((a,b)=>parseInt(a[1])-parseInt(b[1])||a[2].localeCompare(b[2],'de')).map(x=>[x[1],x[2]+' · '+x[3],x[4],x[5],x[6]]);
+ return LA_FLEX_SCHEDULE.filter(x=>x[0]===d.day&&(!x[7]||d.date>=x[7])&&(!x[8]||d.date<=x[8]))
+  .sort((a,b)=>parseInt(a[1])-parseInt(b[1])||a[2].localeCompare(b[2],'de'))
+  .map(x=>[x[1],x[2]+' · '+x[3],x[4],x[5],x[6]]);
 }
 let laBoardDate='';
 function laDayData(date=laBoardDate){const d=date?new Date(date+'T12:00:00'):new Date(), day=d.getDay();return {day,date:[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-'),label:d.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'})};}
@@ -391,7 +395,8 @@ function laTodayBoard(){
  const flex=laGrade===6?laFlexForDate(d):[];
  const mondayNotes=(laGrade===6&&d.date==='2026-10-12')?'🏀 Sportangebot: Heute noch buchbar (siehe Sportangebote).\n📘 Lernnachweise im Blick? Prüfe, ob du noch eine Flexstunde brauchst.':'';
  const scheduledNotes=(laGrade===6&&d.date==='2026-10-13')?'🥾 Wandertag der Stufe 6.\n🤒 Frau May ist weiterhin krank; Französisch entfällt.':(laGrade===6&&d.date==='2026-10-14')?'📸 Gruppenfoto der Bläserklasse: Alle Bläserklassenkinder treffen sich in der 4. Stunde um 10:15 Uhr in der Aula.':'';
- const notes=[mondayNotes,scheduledNotes,published?String(current.notes||'').trim():''].filter(Boolean).join('\n');
+ const flexChangeNotes=(laGrade===6&&d.date==='2026-10-12')?'📘 Flexstunden aktualisiert: Bitte prüfe die neuen Themen und deine Buchungen.':'';
+ const notes=[flexChangeNotes,mondayNotes,scheduledNotes,published?String(current.notes||'').trim():''].filter(Boolean).join('\n');
  const news=published?String(current.news||'').trim():'';
  const motivation=published&&String(current.motivation||'').trim()?String(current.motivation).trim():laMotivationForDate(d.date);
  return '<section class="laTodayBoard"><div class="laTodayHeading"><h2>☀️ Heute bei uns</h2><span>'+esc(d.label)+'</span></div>'+
