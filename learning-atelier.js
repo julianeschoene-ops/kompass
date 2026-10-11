@@ -309,6 +309,7 @@ const LA_DAY_OFFERS={
   4:[['5.','Kunstatelier','Maria Kasatkin','vor dem Sekretariat'],['5.','Musik – eigenständiges Üben','Friedrich Mück',''],['5.','Sportangebot','Robin Steinle','Stichgang 6/7']],
   5:[['5.','Kunstatelier','Maria Kasatkin','vor dem Sekretariat'],['5.','Musik – eigenständiges Üben','Friedrich Mück',''],['5.','Schulgarten','Melanie Schnepf','Treppe 6-/7-Stichgang'],['5.','Sportangebot','Robin Steinle','Stichgang 6/7']]
 };
+const LA_CANCELLED_CREATIVE_2026_10_13=['Schulgarten','Naturwissenschaftliches Labor','Kunstatelier'];
 const LA_SPORT_OFFERS={1:[['2.','Tischtennis und Ballspiele','Pavlos Moraintinis','Foyer vor Sporthalle 1'],['3.','Tischtennis und Ballspiele','Pavlos Moraintinis','Foyer vor Sporthalle 1']],3:[['3.–4.','Turnen','Robin Steinle','Foyer Sporthalle']],5:[['3.','Tischtennis und Ballspiele','Pavlos Moraintinis','Halle 1'],['4.','Turnen','Robin Steinle','Foyer Sporthalle']]};
 const LA_FLEX_SCHEDULE=[
  // [weekday, hour, subject, topic, teacher, room, teams] – 29.09.–23.10.2026
@@ -397,7 +398,7 @@ function laTodayBoard(){
  '<div class="laTodaySection"><h3>🏀 Weitere Sportangebote</h3>'+list(laGrade===6?(LA_SPORT_OFFERS[d.day]||[]):[])+'</div></div>'+
  '<div class="laTodayColumn"><div class="laTodaySection"><h3>📣 Infos & Vertretungen</h3><p>'+(notes?esc(notes).replace(/\n/g,'<br>'):'Heute sind noch keine Änderungen veröffentlicht.')+'</p></div>'+
  '<div class="laTodaySection"><h3>🌍 Neues aus der Welt</h3><p>'+(news?esc(news).replace(/\n/g,'<br>'):'Noch keine geprüfte Nachricht veröffentlicht.')+'</p></div></div>'+
- '<div class="laTodayColumn"><div class="laTodaySection"><h3>🎨 Kreativband</h3>'+list(laMergeConsecutiveOffers(LA_DAY_OFFERS[d.day]||[]))+'</div></div>'+
+ '<div class="laTodayColumn"><div class="laTodaySection"><h3>🎨 Kreativband</h3>'+list(laMergeConsecutiveOffers((LA_DAY_OFFERS[d.day]||[]).filter(x=>!(d.date==='2026-10-13'&&LA_CANCELLED_CREATIVE_2026_10_13.includes(x[1])))))+(d.date==='2026-10-13'?'<p class="mini"><b>⚠️ Entfällt wegen des Wandertags der Stufe 6:</b> Schulgarten, Naturwissenschaftliches Labor und Kunstatelier.</p>':'')+'</div></div>'+
  '<div class="laTodayColumn"><div class="laTodaySection"><h3>📘 Flexstunden</h3>'+list(flex,true)+'</div></div></div>'+
  (published&&current.updatedAt?'<p class="mini">Zuletzt aktualisiert: '+esc(new Date(current.updatedAt).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}))+'</p>':'')+'</section>';
 }
