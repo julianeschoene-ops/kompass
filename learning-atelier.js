@@ -393,18 +393,18 @@ function laTodayBoard(){
  const events=(Store.calendarEvents||[]).filter(e=>e.date<=d.date&&d.date<=(e.endDate||e.date)&&(!e.grade||e.grade==='all'||Number(e.grade)===laGrade)&&(!e.visibility||e.visibility==='all'||e.visibility==='students'));
  const list=(items,isFlex=false)=>items.length?'<div class="laTodayItems">'+items.map(x=>'<div class="laTodayItem"><b>'+esc(x[0])+' Std. · '+esc(x[1])+'</b><span>'+esc(laTeacherShort(x[2]))+(x[3]?(isFlex?' · Raum: ':' · Treff: ')+esc(x[3]):'')+(isFlex&&x[4]?'<br>Teams: '+esc(x[4]):'')+'</span></div>').join('')+'</div>':'<p class="mini">Keine Angebote eingetragen.</p>';
  const flex=laGrade===6?laFlexForDate(d):[];
- const mondayNotes=(laGrade===6&&d.date==='2026-10-12')?'🏀 Sportangebot: Heute noch buchbar (siehe Sportangebote).\n📘 Lernnachweise im Blick? Prüfe, ob du noch eine Flexstunde brauchst.':'';
+ const mondayNotes=(laGrade===6&&d.date==='2026-10-12')?'🏀 Sportangebote für heute können noch gebucht werden.':'';
  const scheduledNotes=(laGrade===6&&d.date==='2026-10-13')?'🥾 Wandertag der Stufe 6.\n🤒 Frau May ist weiterhin krank; Französisch entfällt.':(laGrade===6&&d.date==='2026-10-14')?'📸 Gruppenfoto der Bläserklasse: Alle Bläserklassenkinder treffen sich in der 4. Stunde um 10:15 Uhr in der Aula.':'';
- const flexChangeNotes=(laGrade===6&&d.date==='2026-10-12')?'📘 Jetzt Flexstunden buchen und optimal auf deine Lernnachweise vorbereiten!':'';
+ const flexChangeNotes=(laGrade===6&&d.date==='2026-10-12')?'📘 Jetzt Flexstunden buchen – so bist du gut auf deine Lernnachweise vorbereitet!':'';
  const notes=[flexChangeNotes,mondayNotes,scheduledNotes,published?String(current.notes||'').trim():''].filter(Boolean).join('\n');
  const news=published?String(current.news||'').trim():'';
  const motivation=published&&String(current.motivation||'').trim()?String(current.motivation).trim():laMotivationForDate(d.date);
  return '<section class="laTodayBoard"><div class="laTodayHeading"><h2>☀️ Heute bei uns</h2><span>'+esc(d.label)+'</span></div>'+
  '<div class="laMotivation"><div class="laMotivationEyebrow">✨ Dein Gedanke für heute</div><div class="laMotivationQuote">'+esc(motivation)+'</div></div><div class="laTodayGrid laTodayMasonry">'+
  '<div class="laTodayColumn"><div class="laTodaySection"><h3>📅 Aus dem Kalender</h3>'+(events.length?'<div class="laTodayItems">'+events.map(e=>'<div class="laTodayItem"><b>'+esc((e.time?e.time+' · ':'')+e.title)+'</b><span>'+esc(e.location||'')+'</span></div>').join('')+'</div>':'<p class="mini">Keine Kalendereinträge für diesen Tag.</p>')+'</div>'+
+ '<div class="laTodaySection"><h3>🌍 Neues aus der Welt</h3><p>'+(news?esc(news).replace(/\n/g,'<br>'):'Noch keine geprüfte Nachricht veröffentlicht.')+'</p></div>'+
  '<div class="laTodaySection"><h3>🏀 Weitere Sportangebote</h3>'+list(laGrade===6?(LA_SPORT_OFFERS[d.day]||[]):[])+'</div></div>'+
- '<div class="laTodayColumn"><div class="laTodaySection"><h3>📣 Infos & Vertretungen</h3><p>'+(notes?esc(notes).replace(/\n/g,'<br>'):'Heute sind noch keine Änderungen veröffentlicht.')+'</p></div>'+
- '<div class="laTodaySection"><h3>🌍 Neues aus der Welt</h3><p>'+(news?esc(news).replace(/\n/g,'<br>'):'Noch keine geprüfte Nachricht veröffentlicht.')+'</p></div></div>'+
+ '<div class="laTodayColumn laNoticeColumn"><div class="laTodaySection laNoticeSection"><h3>📣 Infos & Vertretungen</h3><div class="laNoticeList">'+(notes?notes.split('\\n').filter(Boolean).map(x=>'<div class="laNotice">'+esc(x)+'</div>').join(''):'<p class="mini">Heute sind noch keine Änderungen veröffentlicht.</p>')+'</div></div></div>'+
  '<div class="laTodayColumn"><div class="laTodaySection"><h3>🎨 Kreativband</h3>'+list(laMergeConsecutiveOffers((LA_DAY_OFFERS[d.day]||[]).filter(x=>!(d.date==='2026-10-13'&&LA_CANCELLED_CREATIVE_2026_10_13.includes(x[1])))))+(d.date==='2026-10-13'?'<p class="mini"><b>⚠️ Entfällt wegen des Wandertags der Stufe 6:</b> Schulgarten, Naturwissenschaftliches Labor und Kunstatelier.</p>':'')+'</div></div>'+
  '<div class="laTodayColumn"><div class="laTodaySection"><h3>📘 Flexstunden</h3>'+list(flex,true)+'</div></div></div>'+
  (published&&current.updatedAt?'<p class="mini">Zuletzt aktualisiert: '+esc(new Date(current.updatedAt).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}))+'</p>':'')+'</section>';
