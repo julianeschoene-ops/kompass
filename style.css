@@ -464,3 +464,11 @@
   grid-template-columns:minmax(0,.84fr) minmax(0,1.06fr) minmax(0,1.37fr) minmax(0,1.03fr)!important;
  }
 }
+
+/* Final navigation and News proportions */
+@media(min-width:901px){
+ .laStudentFullscreen .laBoardTopClean{grid-template-columns:repeat(8,minmax(0,1fr))!important;gap:9px!important}
+ .laStudentFullscreen .laBoardTopClean>.laTopActions{grid-column:8!important;grid-row:1!important;display:flex!important;align-items:stretch!important;justify-content:stretch!important;padding:0!important;margin:0!important;min-width:0!important}
+ .laStudentFullscreen .laBoardTopClean>.laTopActions>.chip{display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;height:49px!important;min-height:49px!important;min-width:0!important;padding:7px 3px!important;font-size:.83rem!important;letter-spacing:-.02em!important;line-height:1.1!important;white-space:nowrap!important}
+ .laStudentFullscreen .laTodayGrid.laTodayMasonry{grid-template-columns:minmax(0,1fr) minmax(0,1.1fr) minmax(0,1.23fr) minmax(0,1.03fr)!important}
+}
