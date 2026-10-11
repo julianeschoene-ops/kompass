@@ -422,3 +422,14 @@
 @media(max-width:900px){
  .laStudentFullscreen .laBoardTopClean>.laMainTabs{flex-basis:100%!important;margin:0!important}
 }
+
+/* Equal-sized grade and navigation buttons in one tidy row */
+@media(min-width:901px){
+ .laStudentFullscreen .laBoardTopClean{display:grid!important;grid-template-columns:repeat(7,minmax(0,1fr)) auto!important;column-gap:9px!important;align-items:stretch!important}
+ .laStudentFullscreen .laBoardTopClean>.laRoomSwitcher:not(.laMainTabs),
+ .laStudentFullscreen .laBoardTopClean>.laMainTabs{display:contents!important}
+ .laStudentFullscreen .laBoardTopClean>.laRoomSwitcher:not(.laMainTabs)>.chip,
+ .laStudentFullscreen .laBoardTopClean>.laMainTabs>.chip{width:100%!important;min-width:0!important;min-height:49px!important;height:49px!important;margin:0!important;padding:8px 5px!important;border-radius:14px!important;font-size:.98rem!important;font-weight:750!important;white-space:nowrap!important}
+ .laStudentFullscreen .laBoardTopClean>.laTopActions{grid-column:8!important;grid-row:1!important;align-self:center!important;justify-content:flex-end!important}
+ .laStudentFullscreen .laBoardTopClean>.laTopActions>.chip{white-space:nowrap}
+}
