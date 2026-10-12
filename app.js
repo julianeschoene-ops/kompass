@@ -36,7 +36,7 @@ async function reloadTeacherCloudData(){
   await Sync.pull();
   State.cloudLoadError=null;
   render();
-  const count=(Store.pupils||[]).length;
+  const count=(Store.data?.pupils||[]).length;
   toast('Cloud neu geladen: '+count+' Schüler*innen',5000);
  }catch(e){
   State.cloudLoadError=e?.message||String(e);
