@@ -504,3 +504,30 @@
 .laStudentFullscreen>.laRoomTools>.laNoiseMeter .laNoiseRewards{padding:3px 5px!important}
 .laStudentFullscreen>.laRoomTools>.chip{flex:0 0 auto!important;white-space:nowrap!important;padding:8px 9px!important;font-size:.78rem!important}
 .laStudentFullscreen .laTodayDateNav .laSwitchAccount{font-size:.78rem!important;padding:8px 10px!important;min-height:36px!important}
+
+/* Room view only: isolate navigation from noise controls; preserve News layout */
+@media(min-width:901px){
+ .laStudentFullscreen:has(>.laRoomTools)>.laBoardTopClean{
+  display:grid!important;grid-template-columns:repeat(8,minmax(0,1fr))!important;
+  grid-auto-flow:row!important;gap:9px!important;width:100%!important;
+  min-width:0!important;align-items:stretch!important;margin-bottom:8px!important;
+ }
+ .laStudentFullscreen:has(>.laRoomTools)>.laBoardTopClean>.laRoomSwitcher{display:contents!important}
+ .laStudentFullscreen:has(>.laRoomTools)>.laBoardTopClean>.laRoomSwitcher>.chip{
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  width:100%!important;min-width:0!important;max-width:none!important;
+  height:49px!important;min-height:49px!important;padding:7px 3px!important;
+  box-sizing:border-box!important;white-space:nowrap!important;
+ }
+ .laStudentFullscreen:has(>.laRoomTools)>.laBoardTopClean>.laTopActions{
+  grid-column:8!important;grid-row:1!important;display:block!important;
+  width:100%!important;min-width:0!important;height:49px!important;
+  align-self:stretch!important;margin:0!important;padding:0!important;
+ }
+ .laStudentFullscreen:has(>.laRoomTools)>.laBoardTopClean>.laTopActions>.chip{
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  width:100%!important;max-width:none!important;min-width:0!important;
+  height:49px!important;min-height:49px!important;box-sizing:border-box!important;
+  font-size:.83rem!important;padding:7px 2px!important;
+ }
+}
