@@ -598,9 +598,8 @@ function laStudentPreview(){
 
  if(laStudentTab==='room')html+='<div class="laRoomTools">'+laNoiseMeterUI()+(laKioskLocked()?'':'<button class="chip" onclick="laResetRoomOccupancy()">↺ Alle zurück ins Lernatelier</button>')+'<button class="chip laSwitchAccount" onclick="laSwitchAccount()">⇄ Account wechseln</button></div>';
  if(laStudentTab==='news'){
-  const dateNav='<div class="laTodayDateNav"><button class="chip" onclick="laMoveBoardDay(-1)">‹ Vortag</button><button class="chip" onclick="laBoardDate=\'\';render()">Heute</button><button class="chip" onclick="laMoveBoardDay(1)">Nächster Tag ›</button></div>';
+  const dateNav='<div class="laTodayDateNav"><button class="chip" onclick="laMoveBoardDay(-1)">‹ Vortag</button><button class="chip" onclick="laBoardDate=\'\';render()">Heute</button><button class="chip" onclick="laMoveBoardDay(1)">Nächster Tag ›</button><button class="chip laSwitchAccount" onclick="laSwitchAccount()">⇄ Account wechseln</button></div>';
   const todayHtml=Auth.isLernatelier()?laLimitedNews():laTodayBoard();
-  html+='<div class="laNewsAccount"><button class="chip laSwitchAccount" onclick="laSwitchAccount()">⇄ Account wechseln</button></div>';
   html+=todayHtml.replace(/(<div class="laTodayHeading">[\s\S]*?<\/span>)(<\/div>)/,'$1'+dateNav+'$2');
   document.getElementById('app').innerHTML='<main class="laStudentFullscreen">'+html+'</main>';
   return;
