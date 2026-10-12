@@ -594,11 +594,13 @@ function laStudentPreview(){
  const noise=laGradeSettings('laNoise')?.[laSelectedRoom]||'green';
  const noiseData={green:['🟢','Leise sprechen'],yellow:['🟡','Flüstern'],red:['🔴','Ruhe']}[noise];
  const info=laGradeSettings('laBoardInfo')?.[laSelectedRoom]||{};
- let html='<div class="laBoardTop laBoardTopClean">'+laGradeTabs()+'<div class="laTopActions">'+(laStudentTab==='room'?laNoiseMeterUI():'')+(laStudentTab==='room'&&!laKioskLocked()&&(!Auth.isLernatelier()||laLimitedMode==='teacher')?'<button class="chip" onclick="laResetRoomOccupancy()">↺ Alle zurück ins Lernatelier</button>':'')+'<button class="chip" onclick="laExitStudentPreview()">🔒 Lehrkraftmodus</button></div></div>';
- html=html.replace('<div class="laTopActions">','<div class="laRoomSwitcher laMainTabs"><button class="chip '+(laStudentTab==='news'?'dark':'')+'" onclick="laStudentTab=\'news\';laBoardSelectedId=\'\';render()">📰 News</button>'+LA_ROOMS.map(room=>'<button class="chip '+(laStudentTab==='room'&&room===laSelectedRoom?'dark':'')+'" onclick="laStudentTab=\'room\';laSelectedRoom=\''+room+'\';laBoardSelectedId=\'\';render()">'+room+'</button>').join('')+'</div>', '<div class="laTopActions">');
+ let html='<div class="laBoardTop laBoardTopClean">'+laGradeTabs()+'<div class="laRoomSwitcher laMainTabs"><button class="chip '+(laStudentTab==='news'?'dark':'')+'" onclick="laStudentTab=\'news\';laBoardSelectedId=\'\';render()">📰 News</button>'+LA_ROOMS.map(room=>'<button class="chip '+(laStudentTab==='room'&&room===laSelectedRoom?'dark':'')+'" onclick="laStudentTab=\'room\';laSelectedRoom=\''+room+'\';laBoardSelectedId=\'\';render()">'+room+'</button>').join('')+'</div><div class="laTopActions"><button class="chip" onclick="laExitStudentPreview()">🔒 Lehrkraftmodus</button></div></div>';
+
+ if(laStudentTab==='room')html+='<div class="laRoomTools">'+laNoiseMeterUI()+(laKioskLocked()?'':'<button class="chip" onclick="laResetRoomOccupancy()">↺ Alle zurück ins Lernatelier</button>')+'<button class="chip laSwitchAccount" onclick="laSwitchAccount()">⇄ Account wechseln</button></div>';
  if(laStudentTab==='news'){
   const dateNav='<div class="laTodayDateNav"><button class="chip" onclick="laMoveBoardDay(-1)">‹ Vortag</button><button class="chip" onclick="laBoardDate=\'\';render()">Heute</button><button class="chip" onclick="laMoveBoardDay(1)">Nächster Tag ›</button></div>';
   const todayHtml=Auth.isLernatelier()?laLimitedNews():laTodayBoard();
+  html+='<div class="laNewsAccount"><button class="chip laSwitchAccount" onclick="laSwitchAccount()">⇄ Account wechseln</button></div>';
   html+=todayHtml.replace(/(<div class="laTodayHeading">[\s\S]*?<\/span>)(<\/div>)/,'$1'+dateNav+'$2');
   document.getElementById('app').innerHTML='<main class="laStudentFullscreen">'+html+'</main>';
   return;
@@ -749,6 +751,12 @@ async function laLimitedAction(id,action,value){
   delete laLimitedRows[laGrade];
   laLimitedView();
  }catch(e){alert('Nicht gespeichert: '+e.message);}
+}
+function laSwitchAccount(){
+ if(!confirm('Aktuellen KOMPASS-Account abmelden und zur Anmeldung wechseln?'))return;
+ if(typeof laNoiseStop==='function'&&laNoiseMeter.active)laNoiseStop();
+ if(Auth.isLernatelier()){laLimitedSignOut();return;}
+ Auth.logout();
 }
 function laLimitedSignOut(){
  laSetKioskLock(false);
