@@ -4,11 +4,48 @@ function plannerStart(){return `<div class="grid2"><div class="card"><h2>${plann
 function parseCsv(text){const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(Boolean),sep=(lines[0].match(/;/g)||[]).length>=(lines[0].match(/,/g)||[]).length?';':',';function row(line){let a=[],v='',q=false;for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"'){if(q&&line[i+1]==='"'){v+='"';i++;}else q=!q;}else if(ch===sep&&!q){a.push(v);v='';}else v+=ch;}a.push(v);return a;}const h=row(lines[0]).map(x=>x.trim());return lines.slice(1).map(l=>Object.fromEntries(row(l).map((v,i)=>[h[i],v.trim().replace(/^"|"$/g,'')])));}
 function readChoiceCsv(file){if(!file)return;plannerTitle=document.getElementById('planner_title').value.trim();plannerCap=Number(document.getElementById('planner_cap').value||20);const r=new FileReader();r.onload=()=>{const raw=parseCsv(r.result);plannerRows=raw.map(x=>normalizeChoiceRow(x)).filter(x=>x.first&&x.last&&x.choices[0]&&findPupilForChoice(x));plannerOffers=[...new Set(plannerRows.flatMap(x=>x.choices).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'de')).map(name=>({name,capacity:plannerCap}));plannerStep='preview';render();};r.readAsText(file,'utf-8');}
 function normalizeChoiceRow(x){const vals=Object.entries(x),get=(patterns)=>vals.find(([k])=>patterns.some(p=>k.toLowerCase().includes(p)))?.[1]||'';const choiceCols=vals.filter(([k])=>/priorität|erstwunsch|zweitwunsch|drittwunsch|wähle hier deinen/i.test(k)).map(([,v])=>v).filter(Boolean);return{last:get(['nachname']),first:get(['vorname']),account:get(['account']),className:get(['klasse/information']),choices:choiceCols.slice(0,3),reason:get(['warum'])};}
-function plannerPreview(){return `<div class="card"><h2>${esc(plannerTitle)}</h2><p>${plannerRows.length} Wahlzettel erkannt · ${plannerAllRows().filter(r=>r.withoutChoice).length} Kinder ohne IServ-Wahl werden zusätzlich berücksichtigt · ${plannerOffers.length} Angebote</p><div class="offerCapacityGrid">${plannerOffers.map((o,i)=>`<div><label>${esc(o.name)}</label><input type="number" min="1" value="${o.capacity}" onchange="plannerOffers[${i}].capacity=Number(this.value)"></div>`).join('')}</div><button class="chip dark" onclick="calculateAssignment()">Automatisch einteilen</button><button class="chip" onclick="plannerStep='start';render()">zurück</button></div><div class="section">Erkannte Wünsche</div><div class="list">${plannerRows.map(r=>`<div class="row"><div><b>${esc(r.first)} ${esc(r.last)}</b><div class="mini">${esc(r.className)} · ${r.choices.map((x,i)=>`${i+1}. ${esc(x)}`).join(' · ')}</div></div>${findPupilForChoice(r)?'<span class="statusPill status-green">zugeordnet</span>':'<span class="statusPill status-yellow">nicht in Datenbank</span>'}</div>`).join('')}</div>`;}
+function plannerPreview(){return `<div class="card"><h2>${esc(plannerTitle)}</h2><p>${plannerRows.length} Wahlzettel erkannt · ${plannerAllRows().filter(r=>r.withoutChoice).length} Kinder ohne IServ-Wahl werden zusätzlich berücksichtigt · ${plannerOffers.length} Angebote</p><div class="offerCapacityGrid">${plannerOffers.map((o,i)=>`<div><label>${esc(o.name)}</label><input type="number" min="1" value="${o.capacity}" onchange="plannerOffers[${i}].capacity=Number(this.value)"></div>`).join('')}</div><button class="chip" onclick="plannerApplyPaperWishes()">✍ Handschriftliche Wünsche ergänzen (9)</button><button class="chip dark" onclick="calculateAssignment()">Automatisch einteilen</button><button class="chip" onclick="plannerStep='start';render()">zurück</button></div><div class="section">Erkannte Wünsche</div><div class="list">${plannerRows.map(r=>`<div class="row"><div><b>${esc(r.first)} ${esc(r.last)}</b><div class="mini">${esc(r.className)} · ${r.choices.map((x,i)=>`${i+1}. ${esc(x)}`).join(' · ')}</div></div>${findPupilForChoice(r)?'<span class="statusPill status-green">zugeordnet</span>':'<span class="statusPill status-yellow">nicht in Datenbank</span>'}</div>`).join('')}</div>`;}
 function findPupilForChoice(r){return (Store.pupils||[]).find(p=>!p.archived&&Number(p.year||String(p.className||'').charAt(0))===Number(State.year)&&((r.account&&p.account===r.account)||(`${p.first} ${p.last}`.toLowerCase()===`${r.first} ${r.last}`.toLowerCase())));}
 function priorCount(p,offer){const hist=plannerType==='Sprint'?Store.sprintHistory[p.id]||[]:Store.clubHistory[p.id]||[];const key=offer.toLowerCase().replace(/\([^)]*\)/g,'').trim();return hist.filter(h=>String(h.name||h.offer||'').toLowerCase().includes(key)||key.includes(String(h.name||h.offer||'').toLowerCase())).length;}
 function plannerWishRank(r,offer){const i=r.choices.indexOf(offer);return i<0?0:i+1;}
 function plannerThirdCount(p){return p?(Store.sprintHistory[p.id]||[]).filter(h=>h.priority===3).length:0;}
+
+// Handwritten wishes supplied on 13 October 2026. Kept in the draft only.
+const PLANNER_PAPER_WISHES_20261013=[
+ ['Nila',['Tech','History','IT']],['Lennard',['Tech','History','IT']],
+ ['Arik',['IT','Tech','Life']],['Ole',['Tech','Life','Geo']],
+ ['Anne',['History','Tech','IT']],['Mark',['Tech','History','IT']],
+ ['Teodora',['History','IT','Tech']],['Liam',['Tech','IT','Life']],
+ ['Muhammad',['Tech','IT','History']]
+];
+function plannerLabAlias(name){
+ const x=String(name||'').toLowerCase();
+ if(/geograph|geogr|geo/.test(x))return 'Geo';
+ if(/histor|geschicht/.test(x))return 'History';
+ if(/\b(?:it|medienbildung)\b/.test(x))return 'IT';
+ if(/tec|technik/.test(x))return 'Tech';
+ if(/life|aes/.test(x))return 'Life';
+ return '';
+}
+function plannerPaperRows(){
+ if(plannerType!=='Sprint')return [];
+ const pupils=(Store.pupils||[]).filter(p=>!p.archived&&Number(p.year||String(p.className||'').charAt(0))===Number(State.year));
+ return PLANNER_PAPER_WISHES_20261013.map(([first,aliases])=>{
+  const matches=pupils.filter(p=>String(p.first||'').trim().toLocaleLowerCase('de')===first.toLocaleLowerCase('de'));
+  if(matches.length!==1)return {first,aliases,issue:matches.length?'Mehrere gleichnamige Kinder':'Nicht im aktiven Jahrgang gefunden'};
+  const p=matches[0];
+  const choices=aliases.map(alias=>plannerOffers.find(o=>plannerLabAlias(o.name)===alias)?.name);
+  if(choices.some(x=>!x))return {first,aliases,issue:'Zugang nicht eindeutig gefunden'};
+  return {first:p.first,last:p.last,className:p.className,account:p.account||'',choices,pupil:p,paper:true};
+ });
+}
+function plannerApplyPaperWishes(){
+ const items=plannerPaperRows(),ok=items.filter(x=>!x.issue),issues=items.filter(x=>x.issue);
+ const ids=new Set(ok.map(x=>x.pupil.id));
+ plannerRows=plannerRows.filter(r=>!ids.has(findPupilForChoice(r)?.id)).concat(ok);
+ if(issues.length)toast('Handschriftliche Wünsche teilweise ungeklärt: '+issues.map(x=>x.first).join(', '));
+ plannerStep='preview';render();
+}
 function plannerAllRows(){
  const matched=new Set(plannerRows.map(r=>findPupilForChoice(r)?.id).filter(Boolean));
  const extras=(Store.pupils||[]).filter(p=>!p.archived&&Number(p.year||String(p.className||'').charAt(0))===Number(State.year)&&!matched.has(p.id)).map(p=>({first:p.first,last:p.last,className:p.className,account:p.account||'',choices:[],pupil:p,withoutChoice:true}));
