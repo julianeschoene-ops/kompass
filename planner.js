@@ -17,36 +17,31 @@ function plannerAllRows(){
 function calculateAssignment(){
  plannerResult=Object.fromEntries(plannerOffers.map(o=>[o.name,[]]));
  plannerResult['Nicht zugeteilt']=[];
- const rows=plannerAllRows();
- const voted=rows.filter(r=>!r.withoutChoice);
- const missing=rows.filter(r=>r.withoutChoice);
- const capacities=Object.fromEntries(plannerOffers.map(o=>[o.name,Math.max(0,Number(o.capacity)||0)]));
- // First maximize the number of first wishes, then second wishes, then third wishes.
- // Within each priority, prefer pupils who have previously received lower-ranked wishes.
+ const rows=plannerAllRows(),voted=rows.filter(r=>r.choices?.length&&!r.withoutChoice);
+ const caps=Object.fromEntries(plannerOffers.map(o=>[o.name,Math.max(0,Number(o.capacity)||0)]));
  const assigned=new Set();
- const previousThird=p=>p?plannerThirdCount(p):0;
- for(let priority=1;priority<=3;priority++){
-  const candidates=voted.filter(r=>!assigned.has(r)).sort((x,y)=>
-   previousThird(y.pupil)-previousThird(x.pupil)||
-   String(x.last+' '+x.first).localeCompare(String(y.last+' '+y.first),'de'));
-  for(const r of candidates){
-   const offer=r.choices[priority-1];
-   if(!offer||!Object.prototype.hasOwnProperty.call(capacities,offer))continue;
-   if(plannerResult[offer].length>=capacities[offer])continue;
+ // Allocate first choices before considering second and third choices.
+ // Break ties in favour of children who previously received third choices.
+ voted.sort((a,b)=>plannerThirdCount(b.pupil)-plannerThirdCount(a.pupil)||
+  String(a.last+' '+a.first).localeCompare(String(b.last+' '+b.first),'de'));
+ for(let rank=0;rank<3;rank++){
+  const remaining=voted.filter(r=>!assigned.has(r));
+  // Smaller groups are preferred only within the SAME preference rank.
+  remaining.sort((a,b)=>{
+   const ac=plannerResult[a.choices[rank]]?.length??9999;
+   const bc=plannerResult[b.choices[rank]]?.length??9999;
+   return ac-bc||plannerThirdCount(b.pupil)-plannerThirdCount(a.pupil);
+  });
+  for(const r of remaining){
+   const offer=r.choices[rank];
+   if(!offer||!(offer in caps)||plannerResult[offer].length>=caps[offer])continue;
    plannerResult[offer].push(r);assigned.add(r);
   }
  }
- // Remaining voters can use spare places; never pretend this was one of their wishes.
- for(const r of voted.filter(r=>!assigned.has(r))){
-  const choices=plannerOffers.filter(o=>plannerResult[o.name].length<capacities[o.name]).sort((x,y)=>
-   (r.pupil?priorCount(r.pupil,x.name)-priorCount(r.pupil,y.name):0)||
-   (plannerResult[x.name].length-plannerResult[y.name].length)||
-   x.name.localeCompare(y.name,'de'));
-  if(choices.length){plannerResult[choices[0].name].push(r);assigned.add(r);}
-  else plannerResult['Nicht zugeteilt'].push(r);
- }
- // No IServ choice: only the teacher may place these children.
- plannerResult['Nicht zugeteilt'].push(...missing);
+ // Children who voted but cannot get a listed choice stay visible for manual placement.
+ plannerResult['Nicht zugeteilt'].push(...voted.filter(r=>!assigned.has(r)));
+ // Never assign children who did not submit an IServ choice automatically.
+ plannerResult['Nicht zugeteilt'].push(...rows.filter(r=>r.withoutChoice));
  plannerStep='result';render();
 }
 function plannerExportCsv(a){
@@ -63,7 +58,7 @@ function plannerExportCsv(a){
  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),link=document.createElement('a');
  link.href=url;link.download='KOMPASS_Einteilung_'+State.year+'.csv';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
-function plannerResultView(){return `<div class="toolbar"><button class="chip dark" onclick="acceptAssignment()">Einteilung übernehmen</button><button class="chip" onclick="plannerStep='preview';render()">Kapazitäten ändern</button><button class="chip" onclick="plannerExportCsv()">⬇ Listen exportieren (CSV)</button><span class="badge">${Object.values(plannerResult).flat().length} Kinder</span></div><div class="assignmentBoard">${Object.entries(plannerResult).map(([offer,rows])=>`<div class="assignmentColumn"><h2>${esc(offer)}</h2><div class="mini">${rows.length} / ${plannerOffers.find(o=>o.name===offer)?.capacity||'–'}</div>${rows.map((r,i)=>`<div class="assignmentCard"><b>${esc(r.first)} ${esc(r.last)}</b><div class="mini">${plannerWishRank(r,offer)?`Wunsch ${plannerWishRank(r,offer)}`:"Kein Wunsch"}</div><select onchange="moveAssigned('${esc(offer)}',${i},this.value)">${Object.keys(plannerResult).map(x=>`<option ${x===offer?'selected':''}>${esc(x)}</option>`).join('')}</select></div>`).join('')}</div>`).join('')}</div>`;}
+function plannerResultView(){return `<div class="toolbar"><span class="badge">ENTWURF – noch nicht gespeichert</span><button class="chip" onclick="calculateAssignment()">↻ Erstwünsche neu berechnen</button><button class="chip dark" onclick="acceptAssignment()">Einteilung übernehmen</button><button class="chip" onclick="plannerStep='preview';render()">Kapazitäten ändern</button><button class="chip" onclick="plannerExportCsv()">⬇ Listen exportieren (CSV)</button><span class="badge">${Object.values(plannerResult).flat().length} Kinder</span></div><div class="assignmentBoard">${Object.entries(plannerResult).map(([offer,rows])=>`<div class="assignmentColumn"><h2>${esc(offer)}</h2><div class="mini">${rows.length} / ${plannerOffers.find(o=>o.name===offer)?.capacity||'–'}</div>${rows.map((r,i)=>`<div class="assignmentCard"><b>${esc(r.first)} ${esc(r.last)}</b><div class="mini">${plannerWishRank(r,offer)?`Wunsch ${plannerWishRank(r,offer)}`:"Kein Wunsch"}</div><select onchange="moveAssigned('${esc(offer)}',${i},this.value)">${Object.keys(plannerResult).map(x=>`<option ${x===offer?'selected':''}>${esc(x)}</option>`).join('')}</select></div>`).join('')}</div>`).join('')}</div>`;}
 function moveAssigned(from,index,to){if(from===to)return;const [r]=plannerResult[from].splice(index,1);plannerResult[to].push(r);render();}
 function acceptAssignment(){if((plannerResult['Nicht zugeteilt']||[]).length||Object.values(plannerResult).flat().some(r=>!r.pupil)){toast('Bitte fehlende Zuordnungen oder unbekannte Schülerkonten zuerst klären.');return;}const id=uid('assignment'),createdAt=new Date().toISOString(),groups={},details={};for(const [offer,rows] of Object.entries(plannerResult)){groups[offer]=rows.map(r=>r.pupil?.id||null).filter(Boolean);for(const r of rows){const p=r.pupil;if(!p)continue;details[p.id]={priority:plannerWishRank(r,offer),choices:r.choices.slice(),offer};const item={assignmentId:id,name:offer,title:plannerTitle,date:createdAt,year:State.year,priority:plannerWishRank(r,offer)};const target=plannerType==='Sprint'?Store.sprintHistory:Store.clubHistory;target[p.id]=target[p.id]||[];target[p.id].push(item);if(plannerType==='Club'){let a=Store.activities.find(x=>x.type==='Club'&&x.name===offer&&x.year===State.year);if(!a){a={id:uid('activity'),type:'Club',year:State.year,name:offer,lebEnabled:true};Store.activities.push(a);}Store.activityRecords[a.id+'|'+p.id]={activityId:a.id,pupilId:p.id,active:true,count:0,note:'',licenses:[]};}}}Store.assignments.push({id,type:plannerType,title:plannerTitle,year:State.year,createdAt,groups,details});Store.save();toast('Einteilung gespeichert – über Historie bei Bedarf in die Werkstatt-Bewertung übernehmen');plannerStep='start';plannerRows=[];plannerResult={};render();}
 function plannerApplyToWorkshop(id,number){
@@ -86,7 +81,7 @@ function plannerCompleteSavedAssignment(id){
  const existing=new Set(Object.values(a.groups||{}).flat());
  const missing=pupils.filter(p=>!existing.has(p.id));
  if(!missing.length){toast('Alle Kinder dieses Jahrgangs sind bereits zugeteilt.');return;}
- const offers=Object.keys(a.groups||{});if(!offers.length){toast('Keine Zugänge vorhanden.');return;}
+ const offers=Object.keys(a.groups||{}).filter(x=>x!=='Nicht zugeteilt');if(!offers.length){toast('Keine Zugänge vorhanden.');return;}
  if(!confirm(missing.length+' Kinder ohne Zuordnung zunächst in „Nicht zugeteilt“ sammeln? Du kannst sie anschließend selbst verteilen.'))return;
  a.details=a.details||{};
  a.groups['Nicht zugeteilt']=a.groups['Nicht zugeteilt']||[];
