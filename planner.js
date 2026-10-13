@@ -43,7 +43,7 @@ function calculateAssignment(){
   if(!small.length)break;
   let best=null;
   for(const dest of small)for(const src of names){
-   if(src===dest||plannerResult[src].length<=Math.min(target+1,cap[src]))continue;
+   if(src===dest||plannerResult[src].length<=Math.min(target,cap[src]))continue;
    for(const r of plannerResult[src]){
     const oldRank=plannerWishRank(r,src)||4,newRank=plannerWishRank(r,dest)||4;
     const cost=(newRank-oldRank)*100+(newRank===4?500:0);
