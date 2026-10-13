@@ -32,7 +32,8 @@ function plannerExportCsv(a){
  for(const [offer,rows] of Object.entries(groups))for(const item of rows){
   const p=a?(Store.pupils||[]).find(x=>x.id===item):item.pupil;
   const d=a?details[item]||{}:item;
-  const rank=a?d.priority:plannerWishRank(d,offer);
+  const historical=a&&p?(a.type==='Sprint'?Store.sprintHistory[p.id]||[]:Store.clubHistory[p.id]||[]).find(h=>h.assignmentId===a.id):null;
+  const rank=a?(d.priority??historical?.priority??0):plannerWishRank(d,offer);
   lines.push([offer,p?.last||d.last||'',p?.first||d.first||'',p?.className||d.className||'',p?.team||'',rank?'Wunsch '+rank:'Kein Wunsch',p?priorCount(p,offer):0]);
  }
  const csv='\uFEFF'+lines.map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');
