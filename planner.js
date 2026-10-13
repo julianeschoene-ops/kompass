@@ -222,7 +222,7 @@ function plannerMissingCount(a){const used=new Set(Object.values(a.groups||{}).f
 let plannerEditingSavedId=null;
 function plannerOpenSaved(id){
  const a=Store.assignments.find(x=>x.id===id);if(!a)return;
- plannerEditingSavedId=id;plannerType=a.type;plannerTitle=a.title;
+ plannerEditingSavedId=id;plannerType=a.type;plannerTitle=a.title;State.year=plannerSavedCohort(a);
  plannerOffers=Object.keys(a.groups||{}).filter(x=>x!=='Nicht zugeteilt').map(name=>({name,capacity:Math.max(24,(a.groups[name]||[]).length)}));
  plannerResult={};
  for(const [offer,ids] of Object.entries(a.groups||{}))plannerResult[offer]=ids.map(pid=>{
@@ -241,20 +241,62 @@ function plannerSaveOpened(){
   groups[offer]=rows.map(r=>r.pupil.id);
   for(const r of rows)details[r.pupil.id]={priority:plannerWishRank(r,offer),choices:r.choices.slice(),offer,withoutChoice:!!r.withoutChoice};
  }
- a.groups=groups;a.details=details;Store.save('Gespeicherte Einteilung aktualisiert');
+ a.groups=groups;a.details=details;a.year=plannerSavedCohort(a);Store.save('Gespeicherte Einteilung aktualisiert');
  plannerEditingSavedId=null;plannerStep='start';renderAssignmentHistory();
+}
+function plannerSavedCohort(a){
+ const counts={};
+ for(const id of Object.values(a.groups||{}).flat()){
+  const p=(Store.pupils||[]).find(x=>String(x.id)===String(id));
+  if(!p)continue;
+  const y=Number(p.year||String(p.className||'').charAt(0));
+  if(y)counts[y]=(counts[y]||0)+1;
+ }
+ const top=Object.entries(counts).sort((x,y)=>y[1]-x[1])[0];
+ return top?Number(top[0]):Number(a.year);
+}
+function plannerSavedMissing(){
+ const a=Store.assignments.find(x=>x.id===plannerEditingSavedId);
+ if(!a)return [];
+ const cohort=plannerSavedCohort(a);
+ const ids=new Set(Object.values(plannerResult).flat().map(r=>String(r.pupil?.id)));
+ return (Store.pupils||[]).filter(p=>!p.archived&&Number(p.year||String(p.className||'').charAt(0))===cohort&&!ids.has(String(p.id)));
 }
 function plannerSavedMissingUi(){
  const a=Store.assignments.find(x=>x.id===plannerEditingSavedId);if(!a)return '';
- const ids=new Set(Object.values(plannerResult).flat().map(r=>String(r.pupil?.id)));
- const missing=(Store.pupils||[]).filter(p=>!p.archived&&Number(p.year||String(p.className||'').charAt(0))===Number(a.year)&&!ids.has(String(p.id)));
- return missing.length?'<div class="card"><b>'+missing.length+' weitere Kinder in Jahrgang '+a.year+'</b><p>Nur bei Bedarf ergänzen.</p><button class="chip" onclick="plannerAddSavedMissing()">Fehlende Kinder in Entwurf aufnehmen</button></div>':'';
+ const cohort=plannerSavedCohort(a),missing=plannerSavedMissing();
+ const unassigned=(plannerResult['Nicht zugeteilt']||[]).map(r=>r.pupil).filter(Boolean);
+ const pupils=[...new Map([...missing,...unassigned].map(p=>[String(p.id),p])).values()].filter(p=>!(plannerManualWishes[p.id]||[]).some(Boolean));
+ const options=value=>'<option value="">Kein Wunsch</option>'+plannerOffers.map(o=>'<option value="'+esc(o.name)+'" '+(o.name===value?'selected':'')+'>'+esc(o.name)+'</option>').join('');
+ return '<div class="card"><h3>Fehlende Wahlen ergänzen ('+pupils.length+')</h3><p>Erkannter Jahrgang: '+cohort+'. Die vorhandenen '+Object.values(a.groups).flat().length+' Zuordnungen bleiben erhalten. Wünsche werden nur für bisher nicht zugeteilte Kinder ergänzt.</p>'+
+ pupils.map(p=>'<div class="row" style="gap:12px;flex-wrap:wrap;padding:8px 0"><b style="min-width:180px">'+esc(p.first+' '+p.last)+(plannerTeamLabel(p)?' ('+esc(plannerTeamLabel(p))+')':'')+'</b>'+[0,1,2].map(i=>'<label style="flex:1;min-width:145px"><span class="mini">'+(i+1)+'. Wunsch</span><select data-planner-pupil="'+esc(String(p.id))+'" data-planner-rank="'+i+'" style="width:100%">'+options((plannerManualWishes[p.id]||[])[i])+'</select></label>').join('')+'</div>').join('')+
+ '<button class="chip dark" onclick="plannerApplySavedWishes()">Wünsche ergänzen und zuordnen</button></div>';
+}
+function plannerApplySavedWishes(){
+ document.querySelectorAll('select[data-planner-pupil][data-planner-rank]').forEach(el=>plannerSetManualWish(el.dataset.plannerPupil,Number(el.dataset.plannerRank),el.value));
+ let assigned=0,entered=0;
+ for(const p of plannerSavedMissing()){
+  const choices=(plannerManualWishes[p.id]||[]).filter(Boolean);
+  if(!choices.length)continue;
+  entered++;
+  const target=choices.find(name=>plannerResult[name]&&plannerResult[name].length<(plannerOffers.find(o=>o.name===name)?.capacity||24));
+  const row={first:p.first,last:p.last,className:p.className,pupil:p,choices:(plannerManualWishes[p.id]||[]).slice(),withoutChoice:false};
+  if(target){plannerResult[target].push(row);assigned++;}
+  else plannerResult['Nicht zugeteilt'].push(row);
+ }
+ for(const row of [...(plannerResult['Nicht zugeteilt']||[])]){
+  const p=row.pupil;if(!p)continue;
+  const choices=(plannerManualWishes[p.id]||[]).filter(Boolean);
+  if(!choices.length)continue;
+  row.choices=(plannerManualWishes[p.id]||[]).slice();row.withoutChoice=false;
+  const target=choices.find(name=>plannerResult[name]&&plannerResult[name].length<(plannerOffers.find(o=>o.name===name)?.capacity||24));
+  if(target){plannerResult['Nicht zugeteilt'].splice(plannerResult['Nicht zugeteilt'].indexOf(row),1);plannerResult[target].push(row);assigned++;}
+ }
+ render();toast(assigned+' Kinder zugeteilt. Änderungen noch nicht gespeichert.');
 }
 function plannerAddSavedMissing(){
- const a=Store.assignments.find(x=>x.id===plannerEditingSavedId);if(!a)return;
- const ids=new Set(Object.values(plannerResult).flat().map(r=>String(r.pupil?.id)));
- for(const p of Store.pupils||[])if(!p.archived&&Number(p.year||String(p.className||'').charAt(0))===Number(a.year)&&!ids.has(String(p.id)))
-  plannerResult['Nicht zugeteilt'].push({first:p.first,last:p.last,className:p.className,pupil:p,choices:[],withoutChoice:true});
+ const missing=plannerSavedMissing();
+ for(const p of missing)plannerResult['Nicht zugeteilt'].push({first:p.first,last:p.last,className:p.className,pupil:p,choices:[],withoutChoice:true});
  render();
 }
 function renderAssignmentHistory(){const rows=Store.assignments.slice().reverse();shell(header('Einteilungshistorie')+`<button class="chip" onclick="State.view='planner';plannerStep='start';render()">← zurück</button><div class="list">${rows.map(a=>`<div class="row"><div><b>${esc(a.title)}</b><div class="mini">${esc(a.type)} · Jahrgang ${a.year} · ${new Date(a.createdAt).toLocaleDateString('de-DE')}</div></div><span class="badge">${Object.values(a.groups).flat().length} Kinder</span><button class="chip dark" onclick="plannerOpenSaved(\'${a.id}\')">Öffnen / bearbeiten</button><button class="chip" onclick="plannerExportCsv(Store.assignments.find(x=>x.id===this.dataset.assignment))" data-assignment="${a.id}">⬇ CSV</button>${a.type==='Sprint'&&plannerMissingCount(a)?`<button class="chip dark" onclick="plannerCompleteSavedAssignment(\'${a.id}\')">+ ${plannerMissingCount(a)} fehlende Kinder zuteilen</button>`:''}${plannerWorkshopSelector(a)}</div>`).join('')||'<div class="card empty">Noch keine Einteilungen übernommen.</div>'}</div>`);}
