@@ -62,4 +62,27 @@ function plannerWorkshopSelector(a){
  if(a.type!=='Sprint')return '';
  return '<select aria-label="Sprint für Bewertung" onchange="this.nextElementSibling.dataset.sprint=this.value">'+[1,2,3,4,5].map(n=>'<option value="'+n+'" '+(n===State.sprint?'selected':'')+'>Sprint '+n+'</option>').join('')+'</select><button class="chip" data-sprint="'+State.sprint+'" onclick="plannerApplyToWorkshop(\''+a.id+'\',Number(this.dataset.sprint))">In Bewertung übernehmen</button>';
 }
-function renderAssignmentHistory(){const rows=Store.assignments.slice().reverse();shell(header('Einteilungshistorie')+`<button class="chip" onclick="State.view='planner';plannerStep='start';render()">← zurück</button><div class="list">${rows.map(a=>`<div class="row"><div><b>${esc(a.title)}</b><div class="mini">${esc(a.type)} · Jahrgang ${a.year} · ${new Date(a.createdAt).toLocaleDateString('de-DE')}</div></div><span class="badge">${Object.values(a.groups).flat().length} Kinder</span><button class="chip" onclick="plannerExportCsv(Store.assignments.find(x=>x.id===this.dataset.assignment))" data-assignment="${a.id}">⬇ CSV</button>${plannerWorkshopSelector(a)}</div>`).join('')||'<div class="card empty">Noch keine Einteilungen übernommen.</div>'}</div>`);}
+function plannerCompleteSavedAssignment(id){
+ const a=Store.assignments.find(x=>x.id===id);if(!a)return;
+ const pupils=(Store.pupils||[]).filter(p=>Number(p.year||String(p.className||'').charAt(0))===Number(a.year));
+ const existing=new Set(Object.values(a.groups||{}).flat());
+ const missing=pupils.filter(p=>!existing.has(p.id));
+ if(!missing.length){toast('Alle Kinder dieses Jahrgangs sind bereits zugeteilt.');return;}
+ const offers=Object.keys(a.groups||{});if(!offers.length){toast('Keine Zugänge vorhanden.');return;}
+ if(!confirm(missing.length+' Kinder ohne Zuordnung auf die '+offers.length+' bestehenden Zugänge möglichst gleichmäßig verteilen? Für diese Kinder liegt hier keine IServ-Wahl vor; sie werden als „ohne Wunsch“ gekennzeichnet.'))return;
+ a.details=a.details||{};
+ for(const p of missing){
+  const offer=offers.slice().sort((x,y)=>{
+   const hx=(Store.sprintHistory[p.id]||[]).filter(h=>h.name===x).length,hy=(Store.sprintHistory[p.id]||[]).filter(h=>h.name===y).length;
+   return hx-hy||(a.groups[x].length-a.groups[y].length)||x.localeCompare(y,'de');
+  })[0];
+  a.groups[offer].push(p.id);a.details[p.id]={priority:0,choices:[],offer,withoutChoice:true};
+  const target=a.type==='Sprint'?Store.sprintHistory:Store.clubHistory;
+  target[p.id]=target[p.id]||[];
+  target[p.id].push({assignmentId:a.id,name:offer,title:a.title,date:a.createdAt,year:a.year,priority:0});
+ }
+ Store.save('Fehlende Kinder der Einteilung zugeordnet');
+ toast(missing.length+' Kinder ergänzt – ohne dokumentierte IServ-Wünsche.');renderAssignmentHistory();
+}
+function plannerMissingCount(a){const used=new Set(Object.values(a.groups||{}).flat());return (Store.pupils||[]).filter(p=>Number(p.year||String(p.className||'').charAt(0))===Number(a.year)&&!used.has(p.id)).length;}
+function renderAssignmentHistory(){const rows=Store.assignments.slice().reverse();shell(header('Einteilungshistorie')+`<button class="chip" onclick="State.view='planner';plannerStep='start';render()">← zurück</button><div class="list">${rows.map(a=>`<div class="row"><div><b>${esc(a.title)}</b><div class="mini">${esc(a.type)} · Jahrgang ${a.year} · ${new Date(a.createdAt).toLocaleDateString('de-DE')}</div></div><span class="badge">${Object.values(a.groups).flat().length} Kinder</span><button class="chip" onclick="plannerExportCsv(Store.assignments.find(x=>x.id===this.dataset.assignment))" data-assignment="${a.id}">⬇ CSV</button>${a.type==='Sprint'&&plannerMissingCount(a)?`<button class="chip dark" onclick="plannerCompleteSavedAssignment(\'${a.id}\')">+ ${plannerMissingCount(a)} fehlende Kinder zuteilen</button>`:''}${plannerWorkshopSelector(a)}</div>`).join('')||'<div class="card empty">Noch keine Einteilungen übernommen.</div>'}</div>`);}
