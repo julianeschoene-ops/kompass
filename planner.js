@@ -4,7 +4,7 @@ function plannerStart(){return `<div class="grid2"><div class="card"><h2>${plann
 function parseCsv(text){const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(Boolean),sep=(lines[0].match(/;/g)||[]).length>=(lines[0].match(/,/g)||[]).length?';':',';function row(line){let a=[],v='',q=false;for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"'){if(q&&line[i+1]==='"'){v+='"';i++;}else q=!q;}else if(ch===sep&&!q){a.push(v);v='';}else v+=ch;}a.push(v);return a;}const h=row(lines[0]).map(x=>x.trim());return lines.slice(1).map(l=>Object.fromEntries(row(l).map((v,i)=>[h[i],v.trim().replace(/^"|"$/g,'')])));}
 function readChoiceCsv(file){if(!file)return;plannerTitle=document.getElementById('planner_title').value.trim();plannerCap=Number(document.getElementById('planner_cap').value||20);const r=new FileReader();r.onload=()=>{const raw=parseCsv(r.result);plannerRows=raw.map(x=>normalizeChoiceRow(x)).filter(x=>x.first&&x.last&&x.choices[0]&&findPupilForChoice(x));plannerOffers=[...new Set(plannerRows.flatMap(x=>x.choices).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'de')).map(name=>({name,capacity:plannerCap}));plannerStep='preview';render();};r.readAsText(file,'utf-8');}
 function normalizeChoiceRow(x){const vals=Object.entries(x),get=(patterns)=>vals.find(([k])=>patterns.some(p=>k.toLowerCase().includes(p)))?.[1]||'';const choiceCols=vals.filter(([k])=>/priorität|erstwunsch|zweitwunsch|drittwunsch|wähle hier deinen/i.test(k)).map(([,v])=>v).filter(Boolean);return{last:get(['nachname']),first:get(['vorname']),account:get(['account']),className:get(['klasse/information']),choices:choiceCols.slice(0,3),reason:get(['warum'])};}
-function plannerPreview(){return plannerPaperMappingUi()+`<div class="card"><h2>${esc(plannerTitle)}</h2><p>${plannerRows.length} Wahlzettel erkannt · ${plannerAllRows().filter(r=>r.withoutChoice).length} Kinder ohne IServ-Wahl werden zusätzlich berücksichtigt · ${plannerOffers.length} Angebote</p><div class="offerCapacityGrid">${plannerOffers.map((o,i)=>`<div><label>${esc(o.name)}</label><input type="number" min="1" value="${o.capacity}" onchange="plannerOffers[${i}].capacity=Number(this.value)"></div>`).join('')}</div><button class="chip" onclick="plannerHandwrittenEnabled=true;calculateAssignment()">✍ Handschriftliche Wünsche ergänzen (9)</button><button class="chip dark" onclick="calculateAssignment()">Automatisch einteilen</button><button class="chip" onclick="plannerStep='start';render()">zurück</button></div><div class="section">Erkannte Wünsche</div><div class="list">${plannerRows.map(r=>`<div class="row"><div><b>${esc(r.first)} ${esc(r.last)}</b><div class="mini">${esc(r.className)} · ${r.choices.map((x,i)=>`${i+1}. ${esc(x)}`).join(' · ')}</div></div>${findPupilForChoice(r)?'<span class="statusPill status-green">zugeordnet</span>':'<span class="statusPill status-yellow">nicht in Datenbank</span>'}</div>`).join('')}</div>`;}
+function plannerPreview(){return plannerManualWishUi()+`<div class="card"><h2>${esc(plannerTitle)}</h2><p>${plannerRows.length} Wahlzettel erkannt · ${plannerAllRows().filter(r=>r.withoutChoice).length} Kinder ohne IServ-Wahl werden zusätzlich berücksichtigt · ${plannerOffers.length} Angebote</p><div class="offerCapacityGrid">${plannerOffers.map((o,i)=>`<div><label>${esc(o.name)}</label><input type="number" min="1" value="${o.capacity}" onchange="plannerOffers[${i}].capacity=Number(this.value)"></div>`).join('')}</div><button class="chip dark" onclick="calculateAssignment()">Automatisch einteilen</button><button class="chip" onclick="plannerStep='start';render()">zurück</button></div><div class="section">Erkannte Wünsche</div><div class="list">${plannerRows.map(r=>`<div class="row"><div><b>${esc(r.first)} ${esc(r.last)}</b><div class="mini">${esc(r.className)} · ${r.choices.map((x,i)=>`${i+1}. ${esc(x)}`).join(' · ')}</div></div>${findPupilForChoice(r)?'<span class="statusPill status-green">zugeordnet</span>':'<span class="statusPill status-yellow">nicht in Datenbank</span>'}</div>`).join('')}</div>`;}
 function findPupilForChoice(r){return (Store.pupils||[]).find(p=>!p.archived&&Number(p.year||String(p.className||'').charAt(0))===Number(State.year)&&((r.account&&p.account===r.account)||(`${p.first} ${p.last}`.toLowerCase()===`${r.first} ${r.last}`.toLowerCase())));}
 function priorCount(p,offer){const hist=plannerType==='Sprint'?Store.sprintHistory[p.id]||[]:Store.clubHistory[p.id]||[];const key=offer.toLowerCase().replace(/\([^)]*\)/g,'').trim();return hist.filter(h=>String(h.name||h.offer||'').toLowerCase().includes(key)||key.includes(String(h.name||h.offer||'').toLowerCase())).length;}
 function plannerWishRank(r,offer){const i=r.choices.indexOf(offer);return i<0?0:i+1;}
@@ -46,45 +46,29 @@ function plannerApplyPaperWishes(){
  if(issues.length)toast('Handschriftliche Wünsche teilweise ungeklärt: '+issues.map(x=>x.first).join(', '));
  plannerStep='preview';render();
 }
-let plannerHandwrittenEnabled=false;
-const plannerPaperMappings={};
-function plannerPaperCandidates(){
- return (Store.pupils||[]).filter(p=>!p.archived&&Number(p.year||String(p.className||'').charAt(0))===Number(State.year)).sort((a,b)=>String(a.last+' '+a.first).localeCompare(String(b.last+' '+b.first),'de'));
+const plannerManualWishes={};
+function plannerMissingPupils(){
+ const matched=new Set(plannerRows.map(r=>findPupilForChoice(r)?.id).filter(Boolean));
+ return (Store.pupils||[]).filter(p=>!p.archived&&Number(p.year||String(p.className||'').charAt(0))===Number(State.year)&&!matched.has(p.id)).sort((a,b)=>String(a.last+' '+a.first).localeCompare(String(b.last+' '+b.first),'de'));
 }
-function plannerPaperMatch(first){
- const pupils=plannerPaperCandidates();
- if(Object.prototype.hasOwnProperty.call(plannerPaperMappings,first))return pupils.find(p=>String(p.id)===String(plannerPaperMappings[first]))||null;
- const exact=pupils.filter(p=>String(p.first||'').trim().toLocaleLowerCase('de')===first.toLocaleLowerCase('de'));
- return exact.length===1?exact[0]:null;
+function plannerSetManualWish(id,rank,value){
+ const arr=(plannerManualWishes[id]||['','','']).slice();
+ arr[rank]=value;
+ plannerManualWishes[id]=arr;
 }
-function plannerPaperMappingUi(){
- const pupils=plannerPaperCandidates();
- return '<div class="card"><h3>Handschriftliche Wünsche zuordnen</h3><p>Ordne die neun Einträge den richtigen Kindern aus Stufe '+State.year+' zu. Die Zuordnung gilt nur für diesen Entwurf.</p>'+
- PLANNER_PAPER_WISHES_20261013.map(([first,aliases])=>{
-  const current=plannerPaperMatch(first);
-  return '<div class="row" style="gap:12px;align-items:center;flex-wrap:wrap;margin:8px 0"><b style="min-width:110px">'+esc(first)+'</b><span class="mini">'+aliases.map((x,i)=>(i+1)+'. '+x).join(' · ')+'</span><select style="min-width:240px;max-width:100%" onchange="plannerPaperMappings['+JSON.stringify(first)+']=this.value;render()"><option value="">Kind auswählen</option>'+pupils.map(p=>'<option value="'+esc(String(p.id))+'" '+(String(current?.id)===String(p.id)?'selected':'')+'>'+esc(p.first+' '+p.last+' ('+(p.className||'')+')')+'</option>').join('')+'</select></div>';
- }).join('')+'<button class="chip dark" onclick="plannerHandwrittenEnabled=true;calculateAssignment()">Mit diesen Wünschen neu berechnen</button></div>';
+function plannerManualWishUi(){
+ const missing=plannerMissingPupils();
+ if(!missing.length)return '';
+ const opts=(selected)=>'<option value="">Kein Wunsch</option>'+plannerOffers.map(o=>'<option value="'+esc(o.name)+'" '+(selected===o.name?'selected':'')+'>'+esc(o.name)+'</option>').join('');
+ return '<div class="card"><h3>Fehlende Wahlen ergänzen ('+missing.length+')</h3><p>Für Kinder ohne IServ-Wahl kannst du bis zu drei Wünsche angeben oder „Kein Wunsch“ stehen lassen. Änderungen werden erst bei einer Neuberechnung berücksichtigt und nicht automatisch gespeichert.</p><div class="list">'+missing.map(p=>{
+  const values=plannerManualWishes[p.id]||['','',''];
+  return '<div class="row" style="align-items:center;gap:12px;flex-wrap:wrap;padding:9px 0"><div style="min-width:170px"><b>'+esc(p.first+' '+p.last)+'</b><div class="mini">'+esc(p.className||'')+'</div></div>'+[0,1,2].map(i=>'<label style="flex:1;min-width:145px"><span class="mini">'+(i+1)+'. Wunsch</span><select style="width:100%" onchange="plannerSetManualWish('+JSON.stringify(String(p.id))+','+i+',this.value)">'+opts(values[i])+'</select></label>').join('')+'</div>';
+ }).join('')+'</div><button class="chip dark" onclick="calculateAssignment()">Wünsche berücksichtigen und neu berechnen</button></div>';
 }
-function plannerApplyHandwritten(rows){
- if(!plannerHandwrittenEnabled||plannerType!=='Sprint')return rows;
- const result=rows.slice(),used=new Set();
- for(const [first,aliases] of PLANNER_PAPER_WISHES_20261013){
-  const p=plannerPaperMatch(first);
-  if(!p||used.has(p.id))continue;
-  const choices=aliases.map(alias=>plannerOffers.find(o=>plannerLabAlias(o.name)===alias)?.name);
-  if(choices.some(x=>!x))continue;
-  used.add(p.id);
-  const i=result.findIndex(r=>String(r.pupil?.id)===String(p.id));
-  const row={first:p.first,last:p.last,className:p.className,pupil:p,choices,withoutChoice:false,handwritten:true};
-  if(i>=0)result[i]={...result[i],...row};else result.push(row);
- }
- return result;
-}
-function plannerToggleHandwritten(){plannerHandwrittenEnabled=!plannerHandwrittenEnabled;if(plannerStep==='result')calculateAssignment();else render();}
 function plannerAllRows(){
  const matched=new Set(plannerRows.map(r=>findPupilForChoice(r)?.id).filter(Boolean));
  const extras=(Store.pupils||[]).filter(p=>!p.archived&&Number(p.year||String(p.className||'').charAt(0))===Number(State.year)&&!matched.has(p.id)).map(p=>({first:p.first,last:p.last,className:p.className,account:p.account||'',choices:[],pupil:p,withoutChoice:true}));
- return plannerApplyHandwritten(plannerRows.map(r=>({...r,pupil:findPupilForChoice(r)})).concat(extras));
+ return plannerRows.map(r=>({...r,pupil:findPupilForChoice(r)})).concat(extras.map(r=>{const choices=(plannerManualWishes[r.pupil.id]||['','','']).slice();return {...r,choices,withoutChoice:!choices.some(Boolean)};}));
 }
 function calculateAssignment(){
  plannerResult=Object.fromEntries(plannerOffers.map(o=>[o.name,[]]));
@@ -163,7 +147,7 @@ function plannerPrintLists(a){
  const html='<!doctype html><html lang="de"><head><meta charset="utf-8"><title>KOMPASS Zugangslisten</title><style>body{font:12px Arial,sans-serif;color:#24314a;margin:24px}h1{font-size:20px}h2{font-size:16px;margin:20px 0 8px}table{border-collapse:collapse;width:100%}th,td{border-bottom:1px solid #ccd2db;padding:7px;text-align:left}th{background:#eef1f7}section{break-after:page}section:last-child{break-after:auto}@page{size:A4;margin:15mm}.hint{color:#667085}</style></head><body><h1>KOMPASS · Zugangslisten · Jahrgang '+escPrint(State.year)+'</h1>'+groups.map(name=>{const group=rows.filter(r=>r.offer===name);return '<section><h2>'+escPrint(name)+' · '+group.length+' Kinder</h2><table><thead><tr><th>Nr.</th><th>Nachname</th><th>Vorname</th><th>Klasse</th><th>Team</th><th>Wunsch</th><th>Anwesenheit</th></tr></thead><tbody>'+group.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+escPrint(r.last)+'</td><td>'+escPrint(r.first)+'</td><td>'+escPrint(r.className)+'</td><td>'+escPrint(r.team)+'</td><td>'+(r.rank?'Wunsch '+r.rank:'Ohne Wunsch')+'</td><td>☐</td></tr>').join('')+'</tbody></table></section>'}).join('')+'</body></html>';
  const blob=new Blob([html],{type:'text/html;charset=utf-8'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='KOMPASS_Zugangslisten_'+State.year+'.html';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
 }
-function plannerResultView(){return plannerPaperMappingUi()+`<div class="toolbar"><button class="chip" onclick="plannerToggleHandwritten()">${plannerHandwrittenEnabled?"✓ Handschriftliche Wünsche aktiv":"Handschriftliche Wünsche (9) ergänzen"}</button><span class="badge">ENTWURF – noch nicht gespeichert</span><button class="chip" onclick="calculateAssignment()">↻ Erstwünsche neu berechnen</button><button class="chip dark" onclick="acceptAssignment()">Einteilung übernehmen</button><button class="chip" onclick="plannerStep='preview';render()">Kapazitäten ändern</button><button class="chip" onclick="plannerExportCsv()">⬇ Excel-Liste (CSV)</button><button class="chip" onclick="plannerPrintLists()">🖨 Drucklisten (HTML)</button><span class="badge">${Object.values(plannerResult).flat().length} Kinder</span></div><div class="assignmentBoard">${Object.entries(plannerResult).map(([offer,rows])=>`<div class="assignmentColumn"><h2>${esc(offer)}</h2><div class="mini">${rows.length} / ${plannerOffers.find(o=>o.name===offer)?.capacity||'–'}</div>${rows.map((r,i)=>`<div class="assignmentCard"><b>${esc(r.first)} ${esc(r.last)}</b><div class="mini">${plannerWishRank(r,offer)?`Wunsch ${plannerWishRank(r,offer)}`:"Kein Wunsch"}</div><select onchange="moveAssigned('${esc(offer)}',${i},this.value)">${Object.keys(plannerResult).map(x=>`<option ${x===offer?'selected':''}>${esc(x)}</option>`).join('')}</select></div>`).join('')}</div>`).join('')}</div>`;}
+function plannerResultView(){return plannerManualWishUi()+`<div class="toolbar"><span class="badge">ENTWURF – noch nicht gespeichert</span><button class="chip" onclick="calculateAssignment()">↻ Erstwünsche neu berechnen</button><button class="chip dark" onclick="acceptAssignment()">Einteilung übernehmen</button><button class="chip" onclick="plannerStep='preview';render()">Kapazitäten ändern</button><button class="chip" onclick="plannerExportCsv()">⬇ Excel-Liste (CSV)</button><button class="chip" onclick="plannerPrintLists()">🖨 Drucklisten (HTML)</button><span class="badge">${Object.values(plannerResult).flat().length} Kinder</span></div><div class="assignmentBoard">${Object.entries(plannerResult).map(([offer,rows])=>`<div class="assignmentColumn"><h2>${esc(offer)}</h2><div class="mini">${rows.length} / ${plannerOffers.find(o=>o.name===offer)?.capacity||'–'}</div>${rows.map((r,i)=>`<div class="assignmentCard"><b>${esc(r.first)} ${esc(r.last)}</b><div class="mini">${plannerWishRank(r,offer)?`Wunsch ${plannerWishRank(r,offer)}`:"Kein Wunsch"}</div><select onchange="moveAssigned('${esc(offer)}',${i},this.value)">${Object.keys(plannerResult).map(x=>`<option ${x===offer?'selected':''}>${esc(x)}</option>`).join('')}</select></div>`).join('')}</div>`).join('')}</div>`;}
 function moveAssigned(from,index,to){if(from===to)return;const [r]=plannerResult[from].splice(index,1);plannerResult[to].push(r);render();}
 function acceptAssignment(){if((plannerResult['Nicht zugeteilt']||[]).length||Object.values(plannerResult).flat().some(r=>!r.pupil)){toast('Bitte fehlende Zuordnungen oder unbekannte Schülerkonten zuerst klären.');return;}const id=uid('assignment'),createdAt=new Date().toISOString(),groups={},details={};for(const [offer,rows] of Object.entries(plannerResult)){groups[offer]=rows.map(r=>r.pupil?.id||null).filter(Boolean);for(const r of rows){const p=r.pupil;if(!p)continue;details[p.id]={priority:plannerWishRank(r,offer),choices:r.choices.slice(),offer};const item={assignmentId:id,name:offer,title:plannerTitle,date:createdAt,year:State.year,priority:plannerWishRank(r,offer)};const target=plannerType==='Sprint'?Store.sprintHistory:Store.clubHistory;target[p.id]=target[p.id]||[];target[p.id].push(item);if(plannerType==='Club'){let a=Store.activities.find(x=>x.type==='Club'&&x.name===offer&&x.year===State.year);if(!a){a={id:uid('activity'),type:'Club',year:State.year,name:offer,lebEnabled:true};Store.activities.push(a);}Store.activityRecords[a.id+'|'+p.id]={activityId:a.id,pupilId:p.id,active:true,count:0,note:'',licenses:[]};}}}Store.assignments.push({id,type:plannerType,title:plannerTitle,year:State.year,createdAt,groups,details});Store.save();toast('Einteilung gespeichert – über Historie bei Bedarf in die Werkstatt-Bewertung übernehmen');plannerStep='start';plannerRows=[];plannerResult={};render();}
 function plannerApplyToWorkshop(id,number){
