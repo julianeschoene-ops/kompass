@@ -12,11 +12,11 @@ function plannerThirdCount(p){return p?(Store.sprintHistory[p.id]||[]).filter(h=
 
 // Handwritten wishes supplied on 13 October 2026. Kept in the draft only.
 const PLANNER_PAPER_WISHES_20261013=[
- ['Nila',['Tech','History','IT']],['Lennard',['Tech','History','IT']],
+ ['Nick',['Tech','History','IT']],['Lennard',['Tech','History','IT']],
  ['Arik',['IT','Tech','Life']],['Ole',['Tech','Life','Geo']],
  ['Anne',['History','Tech','IT']],['Mark',['Tech','History','IT']],
  ['Teodora',['History','IT','Tech']],['Liam',['Tech','IT','Life']],
- ['Muhammad',['Tech','IT','History']]
+ ['Mohammad',['Tech','IT','History']]
 ];
 function plannerLabAlias(name){
  const x=String(name||'').toLowerCase();
