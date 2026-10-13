@@ -57,10 +57,30 @@ function plannerSetManualWish(id,rank,value){
  plannerManualWishes[id]=arr;
 }
 function plannerApplyManualWishes(){
- document.querySelectorAll('select[data-planner-pupil][data-planner-rank]').forEach(el=>{
-  plannerSetManualWish(el.dataset.plannerPupil,Number(el.dataset.plannerRank),el.value);
- });
+ const fields=Array.from(document.querySelectorAll('select[data-planner-pupil][data-planner-rank]'));
+ fields.forEach(el=>plannerSetManualWish(el.dataset.plannerPupil,Number(el.dataset.plannerRank),el.value));
+ const completed=new Map();
+ for(const p of plannerMissingPupils()){
+  const choices=(plannerManualWishes[String(p.id)]||[]).filter(Boolean);
+  if(choices.length)completed.set(String(p.id),choices);
+ }
+ if(!completed.size){toast('Es wurden noch keine Wünsche ergänzt.');return;}
+ // Recalculate first, then explicitly reconcile newly supplied wishes with the draft.
  calculateAssignment();
+ for(const [id,choices] of completed){
+  const current=Object.entries(plannerResult).find(([,rows])=>rows.some(r=>String(r.pupil?.id)===id));
+  if(!current)continue;
+  const [from,rows]=current,idx=rows.findIndex(r=>String(r.pupil?.id)===id);
+  const pupilRow=rows[idx];
+  pupilRow.choices=(plannerManualWishes[id]||['','','']).slice();
+  pupilRow.withoutChoice=false;
+  if(from!=='Nicht zugeteilt')continue;
+  const available=choices.find(name=>plannerResult[name]&&plannerResult[name].length<(plannerOffers.find(o=>o.name===name)?.capacity||0));
+  if(available){rows.splice(idx,1);plannerResult[available].push(pupilRow);}
+ }
+ render();
+ const still=plannerResult['Nicht zugeteilt'].filter(r=>completed.has(String(r.pupil?.id))).length;
+ toast(still?completed.size-still+' Kinder zugeteilt, '+still+' ohne freien Wunschplatz.':completed.size+' ergänzte Wahlen berücksichtigt.');
 }
 function plannerManualWishUi(){
  const missing=plannerMissingPupils().filter(p=>!(plannerManualWishes[p.id]||[]).some(Boolean));
