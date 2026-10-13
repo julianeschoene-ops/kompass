@@ -18,47 +18,80 @@ function calculateAssignment(){
  plannerResult=Object.fromEntries(plannerOffers.map(o=>[o.name,[]]));
  plannerResult['Nicht zugeteilt']=[];
  const rows=plannerAllRows(),voted=rows.filter(r=>r.choices?.length&&!r.withoutChoice);
- const caps=Object.fromEntries(plannerOffers.map(o=>[o.name,Math.max(0,Number(o.capacity)||0)]));
- const assigned=new Set();
- // Allocate first choices before considering second and third choices.
- // Break ties in favour of children who previously received third choices.
- voted.sort((a,b)=>plannerThirdCount(b.pupil)-plannerThirdCount(a.pupil)||
+ const names=plannerOffers.map(o=>o.name),n=names.length;
+ if(!n){toast('Bitte zuerst Angebote einlesen.');return;}
+ const cap=Object.fromEntries(plannerOffers.map(o=>[o.name,Math.max(0,Number(o.capacity)||0)]));
+ // Keep voting pupils balanced across the available labs; pupils without votes are placed manually later.
+ const balanced=Math.ceil(voted.length/n);
+ const limit=Object.fromEntries(names.map(name=>[name,Math.min(cap[name],balanced+1)]));
+ const used=new Set();
+ const order=voted.slice().sort((a,b)=>plannerThirdCount(b.pupil)-plannerThirdCount(a.pupil)||
   String(a.last+' '+a.first).localeCompare(String(b.last+' '+b.first),'de'));
+ // Preference priority dominates, but do not fill one lab while another has very few pupils.
  for(let rank=0;rank<3;rank++){
-  const remaining=voted.filter(r=>!assigned.has(r));
-  // Smaller groups are preferred only within the SAME preference rank.
-  remaining.sort((a,b)=>{
-   const ac=plannerResult[a.choices[rank]]?.length??9999;
-   const bc=plannerResult[b.choices[rank]]?.length??9999;
-   return ac-bc||plannerThirdCount(b.pupil)-plannerThirdCount(a.pupil);
-  });
-  for(const r of remaining){
-   const offer=r.choices[rank];
-   if(!offer||!(offer in caps)||plannerResult[offer].length>=caps[offer])continue;
-   plannerResult[offer].push(r);assigned.add(r);
+  for(const r of order){
+   if(used.has(r))continue;
+   const name=r.choices[rank];
+   if(!name||!(name in limit)||plannerResult[name].length>=limit[name])continue;
+   plannerResult[name].push(r);used.add(r);
   }
  }
- // Children who voted but cannot get a listed choice stay visible for manual placement.
- plannerResult['Nicht zugeteilt'].push(...voted.filter(r=>!assigned.has(r)));
- // Never assign children who did not submit an IServ choice automatically.
+ // Rebalance by changing as few preference ranks as possible.
+ const target=Math.floor(voted.length/n);
+ for(let round=0;round<voted.length*n;round++){
+  const small=names.filter(name=>plannerResult[name].length<Math.min(target,cap[name]));
+  if(!small.length)break;
+  let best=null;
+  for(const dest of small)for(const src of names){
+   if(src===dest||plannerResult[src].length<=Math.min(target+1,cap[src]))continue;
+   for(const r of plannerResult[src]){
+    const oldRank=plannerWishRank(r,src)||4,newRank=plannerWishRank(r,dest)||4;
+    const cost=(newRank-oldRank)*100+(newRank===4?500:0);
+    if(!best||cost<best.cost)best={src,dest,r,cost};
+   }
+  }
+  if(!best)break;
+  plannerResult[best.src].splice(plannerResult[best.src].indexOf(best.r),1);
+  plannerResult[best.dest].push(best.r);
+ }
+ // Remaining voters: choose an available place, prioritizing a requested lab.
+ for(const r of order.filter(r=>!used.has(r))){
+  const choices=names.filter(name=>plannerResult[name].length<cap[name]).sort((x,y)=>
+   (plannerWishRank(r,x)||4)-(plannerWishRank(r,y)||4)||
+   plannerResult[x].length-plannerResult[y].length);
+  if(choices.length)plannerResult[choices[0]].push(r);
+  else plannerResult['Nicht zugeteilt'].push(r);
+ }
  plannerResult['Nicht zugeteilt'].push(...rows.filter(r=>r.withoutChoice));
  plannerStep='result';render();
 }
-function plannerExportCsv(a){
+function plannerExportRows(a){
  const groups=a?a.groups:plannerResult,details=a?.details||{};
- const lines=[['Zugang','Nachname','Vorname','Klasse','Team','Wunsch','Bisherige Besuche']];
+ const output=[];
  for(const [offer,rows] of Object.entries(groups))for(const item of rows){
   const p=a?(Store.pupils||[]).find(x=>x.id===item):item.pupil;
   const d=a?details[item]||{}:item;
-  const historical=a&&p?(a.type==='Sprint'?Store.sprintHistory[p.id]||[]:Store.clubHistory[p.id]||[]).find(h=>h.assignmentId===a.id):null;
-  const rank=a?(d.priority??historical?.priority??0):plannerWishRank(d,offer);
-  lines.push([offer,p?.last||d.last||'',p?.first||d.first||'',p?.className||d.className||'',p?.team||'',rank?'Wunsch '+rank:'Kein Wunsch',p?priorCount(p,offer):0]);
+  const rank=a?(d.priority??0):plannerWishRank(d,offer);
+  output.push({offer,last:p?.last||d.last||'',first:p?.first||d.first||'',className:p?.className||d.className||'',team:p?.team||'',rank,previous:p?priorCount(p,offer):0});
  }
- const csv='\uFEFF'+lines.map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');
+ return output.sort((a,b)=>a.offer.localeCompare(b.offer,'de')||a.last.localeCompare(b.last,'de')||a.first.localeCompare(b.first,'de'));
+}
+function plannerExportCsv(a){
+ const rows=plannerExportRows(a);
+ const header=['Zugang','Nachname','Vorname','Klasse','Team','Wunsch','Bisherige Besuche'];
+ const data=[header,...rows.map(r=>[r.offer,r.last,r.first,r.className,r.team,r.rank?'Wunsch '+r.rank:'Ohne Wunsch',r.previous])];
+ // Comma-separated UTF-8 opens in separate columns in Excel for iPad.
+ const csv='\uFEFF'+data.map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),link=document.createElement('a');
  link.href=url;link.download='KOMPASS_Einteilung_'+State.year+'.csv';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
-function plannerResultView(){return `<div class="toolbar"><span class="badge">ENTWURF – noch nicht gespeichert</span><button class="chip" onclick="calculateAssignment()">↻ Erstwünsche neu berechnen</button><button class="chip dark" onclick="acceptAssignment()">Einteilung übernehmen</button><button class="chip" onclick="plannerStep='preview';render()">Kapazitäten ändern</button><button class="chip" onclick="plannerExportCsv()">⬇ Listen exportieren (CSV)</button><span class="badge">${Object.values(plannerResult).flat().length} Kinder</span></div><div class="assignmentBoard">${Object.entries(plannerResult).map(([offer,rows])=>`<div class="assignmentColumn"><h2>${esc(offer)}</h2><div class="mini">${rows.length} / ${plannerOffers.find(o=>o.name===offer)?.capacity||'–'}</div>${rows.map((r,i)=>`<div class="assignmentCard"><b>${esc(r.first)} ${esc(r.last)}</b><div class="mini">${plannerWishRank(r,offer)?`Wunsch ${plannerWishRank(r,offer)}`:"Kein Wunsch"}</div><select onchange="moveAssigned('${esc(offer)}',${i},this.value)">${Object.keys(plannerResult).map(x=>`<option ${x===offer?'selected':''}>${esc(x)}</option>`).join('')}</select></div>`).join('')}</div>`).join('')}</div>`;}
+function plannerPrintLists(a){
+ const rows=plannerExportRows(a),groups=[...new Set(rows.map(r=>r.offer))];
+ const escPrint=x=>String(x??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+ const html='<!doctype html><html lang="de"><head><meta charset="utf-8"><title>KOMPASS Zugangslisten</title><style>body{font:12px Arial,sans-serif;color:#24314a;margin:24px}h1{font-size:20px}h2{font-size:16px;margin:20px 0 8px}table{border-collapse:collapse;width:100%}th,td{border-bottom:1px solid #ccd2db;padding:7px;text-align:left}th{background:#eef1f7}section{break-after:page}section:last-child{break-after:auto}@page{size:A4;margin:15mm}.hint{color:#667085}</style></head><body><h1>KOMPASS · Zugangslisten · Jahrgang '+escPrint(State.year)+'</h1>'+groups.map(name=>{const group=rows.filter(r=>r.offer===name);return '<section><h2>'+escPrint(name)+' · '+group.length+' Kinder</h2><table><thead><tr><th>Nr.</th><th>Nachname</th><th>Vorname</th><th>Klasse</th><th>Team</th><th>Wunsch</th><th>Anwesenheit</th></tr></thead><tbody>'+group.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+escPrint(r.last)+'</td><td>'+escPrint(r.first)+'</td><td>'+escPrint(r.className)+'</td><td>'+escPrint(r.team)+'</td><td>'+(r.rank?'Wunsch '+r.rank:'Ohne Wunsch')+'</td><td>☐</td></tr>').join('')+'</tbody></table></section>'}).join('')+'</body></html>';
+ const blob=new Blob([html],{type:'text/html;charset=utf-8'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='KOMPASS_Zugangslisten_'+State.year+'.html';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
+}
+function plannerResultView(){return `<div class="toolbar"><span class="badge">ENTWURF – noch nicht gespeichert</span><button class="chip" onclick="calculateAssignment()">↻ Erstwünsche neu berechnen</button><button class="chip dark" onclick="acceptAssignment()">Einteilung übernehmen</button><button class="chip" onclick="plannerStep='preview';render()">Kapazitäten ändern</button><button class="chip" onclick="plannerExportCsv()">⬇ Excel-Liste (CSV)</button><button class="chip" onclick="plannerPrintLists()">🖨 Drucklisten (HTML)</button><span class="badge">${Object.values(plannerResult).flat().length} Kinder</span></div><div class="assignmentBoard">${Object.entries(plannerResult).map(([offer,rows])=>`<div class="assignmentColumn"><h2>${esc(offer)}</h2><div class="mini">${rows.length} / ${plannerOffers.find(o=>o.name===offer)?.capacity||'–'}</div>${rows.map((r,i)=>`<div class="assignmentCard"><b>${esc(r.first)} ${esc(r.last)}</b><div class="mini">${plannerWishRank(r,offer)?`Wunsch ${plannerWishRank(r,offer)}`:"Kein Wunsch"}</div><select onchange="moveAssigned('${esc(offer)}',${i},this.value)">${Object.keys(plannerResult).map(x=>`<option ${x===offer?'selected':''}>${esc(x)}</option>`).join('')}</select></div>`).join('')}</div>`).join('')}</div>`;}
 function moveAssigned(from,index,to){if(from===to)return;const [r]=plannerResult[from].splice(index,1);plannerResult[to].push(r);render();}
 function acceptAssignment(){if((plannerResult['Nicht zugeteilt']||[]).length||Object.values(plannerResult).flat().some(r=>!r.pupil)){toast('Bitte fehlende Zuordnungen oder unbekannte Schülerkonten zuerst klären.');return;}const id=uid('assignment'),createdAt=new Date().toISOString(),groups={},details={};for(const [offer,rows] of Object.entries(plannerResult)){groups[offer]=rows.map(r=>r.pupil?.id||null).filter(Boolean);for(const r of rows){const p=r.pupil;if(!p)continue;details[p.id]={priority:plannerWishRank(r,offer),choices:r.choices.slice(),offer};const item={assignmentId:id,name:offer,title:plannerTitle,date:createdAt,year:State.year,priority:plannerWishRank(r,offer)};const target=plannerType==='Sprint'?Store.sprintHistory:Store.clubHistory;target[p.id]=target[p.id]||[];target[p.id].push(item);if(plannerType==='Club'){let a=Store.activities.find(x=>x.type==='Club'&&x.name===offer&&x.year===State.year);if(!a){a={id:uid('activity'),type:'Club',year:State.year,name:offer,lebEnabled:true};Store.activities.push(a);}Store.activityRecords[a.id+'|'+p.id]={activityId:a.id,pupilId:p.id,active:true,count:0,note:'',licenses:[]};}}}Store.assignments.push({id,type:plannerType,title:plannerTitle,year:State.year,createdAt,groups,details});Store.save();toast('Einteilung gespeichert – über Historie bei Bedarf in die Werkstatt-Bewertung übernehmen');plannerStep='start';plannerRows=[];plannerResult={};render();}
 function plannerApplyToWorkshop(id,number){
