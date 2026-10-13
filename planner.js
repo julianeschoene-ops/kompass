@@ -56,14 +56,20 @@ function plannerSetManualWish(id,rank,value){
  arr[rank]=value;
  plannerManualWishes[id]=arr;
 }
+function plannerApplyManualWishes(){
+ document.querySelectorAll('select[data-planner-pupil][data-planner-rank]').forEach(el=>{
+  plannerSetManualWish(el.dataset.plannerPupil,Number(el.dataset.plannerRank),el.value);
+ });
+ calculateAssignment();
+}
 function plannerManualWishUi(){
- const missing=plannerMissingPupils();
+ const missing=plannerMissingPupils().filter(p=>!(plannerManualWishes[p.id]||[]).some(Boolean));
  if(!missing.length)return '';
- const opts=(selected)=>'<option value="">Kein Wunsch</option>'+plannerOffers.map(o=>'<option value="'+esc(o.name)+'" '+(selected===o.name?'selected':'')+'>'+esc(o.name)+'</option>').join('');
+ const opts=(selected)=>'<option value="" '+(!selected?'selected':'')+'>Kein Wunsch</option>'+plannerOffers.map(o=>'<option value="'+esc(o.name)+'" '+(selected===o.name?'selected':'')+'>'+esc(o.name)+'</option>').join('');
  return '<div class="card"><h3>Fehlende Wahlen ergänzen ('+missing.length+')</h3><p>Für Kinder ohne IServ-Wahl kannst du bis zu drei Wünsche angeben oder „Kein Wunsch“ stehen lassen. Änderungen werden erst bei einer Neuberechnung berücksichtigt und nicht automatisch gespeichert.</p><div class="list">'+missing.map(p=>{
   const values=plannerManualWishes[p.id]||['','',''];
   return '<div class="row" style="align-items:center;gap:12px;flex-wrap:wrap;padding:9px 0"><div style="min-width:170px"><b>'+esc(p.first+' '+p.last)+'</b><div class="mini">'+esc(p.className||'')+'</div></div>'+[0,1,2].map(i=>'<label style="flex:1;min-width:145px"><span class="mini">'+(i+1)+'. Wunsch</span><select style="width:100%" onchange="plannerSetManualWish('+JSON.stringify(String(p.id))+','+i+',this.value)">'+opts(values[i])+'</select></label>').join('')+'</div>';
- }).join('')+'</div><button class="chip dark" onclick="calculateAssignment()">Wünsche berücksichtigen und neu berechnen</button></div>';
+ }).join('')+'</div><button class="chip dark" onclick="plannerApplyManualWishes()">Wünsche berücksichtigen und neu berechnen</button></div>';
 }
 function plannerAllRows(){
  const matched=new Set(plannerRows.map(r=>findPupilForChoice(r)?.id).filter(Boolean));
