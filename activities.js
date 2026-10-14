@@ -2,6 +2,7 @@ const ACTIVITY_TYPES=['Kreativband','Club','Besonderes Angebot'];
 const COUNTABLE_ACTIVITY_TYPES=new Set(['Kreativband','Besonderes Angebot']);
 const ACTIVITY_MAX_COUNT=39;
 const DEFAULT_SPECIAL_OFFERS=['QUOP','Lesen','Kopfrechenübungen','Schwimmen','Sport'];
+const ADDITIONAL_CREATIVE_OFFERS=['Kreativband Sport','Kreativband – Sportangebot Heimbacher Hof'];
 let activityType='Kreativband',activitySelected=null,activitySearch='',activityTeam='alle',activityVisitDate=new Date().toLocaleDateString('en-CA'),activityWeeklyView=false,activityWeekDate=new Date().toLocaleDateString('en-CA');
 
 function activityTeamsForGrade(year=State.year){
@@ -14,6 +15,7 @@ function ensureActivityDefaultTeam(){
   if(activityTeam==='alle'&&own)activityTeam=own;
 }
 function ensureCreativeRooms(){
+  for(const name of ADDITIONAL_CREATIVE_OFFERS){if(!Store.activities.some(a=>a.type==='Kreativband'&&a.name===name))Store.activities.push({id:'creative_'+(name.includes('Heimbacher')?'heimbacher_hof':'sport'),type:'Kreativband',year:5,name,icon:'🏃',lebEnabled:true,maxCount:ACTIVITY_MAX_COUNT});}
   Store.creativeRooms.forEach(r=>{if(!Store.activities.some(a=>a.id===r.id))Store.activities.push({id:r.id,type:'Kreativband',year:State.year,name:r.name,icon:r.icon,licenses:r.licenses,lebEnabled:true,maxCount:ACTIVITY_MAX_COUNT});});
 }
 function ensureSpecialOffers(){
