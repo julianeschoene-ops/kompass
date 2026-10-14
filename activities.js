@@ -40,6 +40,7 @@ function activities(){
   const offers=Store.activities.filter(a=>a.type===activityType&&(a.type==='Kreativband'||Number(a.year)===Number(State.year))).sort((a,b)=>a.name.localeCompare(b.name,'de'));
   let content=header('Angebote','Kreativband und weitere Angebote zählen jeden Besuch. 39 Besuche entsprechen 100 %.');
   content+=`<div class="toolbar formgrid"><div><label>Jahrgang</label><select onchange="State.year=Number(this.value);activitySelected=null;activityTeam=currentCoachTeam(State.year)||'alle';render()">${(activityType==='Kreativband'?[5,6,7]:visibleYears()).map(y=>`<option value="${y}" ${State.year===y?'selected':''}>Jahrgang ${y}</option>`).join('')}</select></div><div><label>Bereich</label><select onchange="activityType=this.value;activitySelected=null;render()">${ACTIVITY_TYPES.map(t=>`<option value="${t}" ${activityType===t?'selected':''}>${t==='Besonderes Angebot'?'Weitere Angebote':t}</option>`).join('')}</select></div></div>`;
+  if(activityType==='Kreativband')content+=`<button class="chip dark" onclick="openCreativeWeeklyReport()">📊 Wochenstatistik</button>`;
   if(activityType==='Besonderes Angebot'&&canEdit())content+=`<button class="chip dark" onclick="openActivityEditor()">+ Weiteres Angebot</button>`;
   if(activityType==='Club'&&canEdit())content+=`<button class="chip dark" onclick="openActivityEditor()">+ Club anlegen</button>`;
   content+=activitySelected?renderActivityDetail(activitySelected):`<div class="offerGrid">${offers.map(a=>`<div class="tile activityTile" onclick="activitySelected='${a.id}';render()"><span class="activityIcon">${a.icon||activityIcon(a.type)}</span><b>${esc(a.name)}</b><span>${isCountableActivity(a)?'Besuche erfassen':activityMemberCount(a.id)+' Teilnehmende'}</span></div>`).join('')||'<div class="card empty">Noch keine Einträge.</div>'}</div>`;
@@ -97,3 +98,48 @@ function openActivityEditor(id=null){State.dialog={mode:'activity',id};renderDia
 function renderActivityDialog(target){const a=State.dialog.id?Store.activities.find(x=>x.id===State.dialog.id):{id:null,type:activityType,name:'',year:State.year,period:'',lebEnabled:true,maxCount:isCountableActivity({type:activityType})?ACTIVITY_MAX_COUNT:null};target.innerHTML=`<div class="dialogBackdrop"><div class="dialog"><div class="dialogHead"><h2>${a.id?'Bearbeiten':'Anlegen'}</h2><button class="iconBtn" onclick="State.dialog=null;renderDialog()">×</button></div><label>Name</label><input id="a_name" value="${esc(a.name||'')}"><label>Zeitraum optional</label><input id="a_period" value="${esc(a.period||'')}">${isCountableActivity(a)?`<p class="mini">${ACTIVITY_MAX_COUNT} Besuche entsprechen 100 %. Weitere Besuche werden weitergezählt.</p>`:''}<button class="chip dark" onclick="saveActivityDialog()">Speichern</button></div></div>`;}
 function saveActivityDialog(){const existing=State.dialog.id?Store.activities.find(x=>x.id===State.dialog.id):null,obj=existing||{id:uid('activity'),type:activityType,year:State.year,lebEnabled:true};obj.name=document.getElementById('a_name').value.trim();obj.period=document.getElementById('a_period').value.trim();if(isCountableActivity(obj))obj.maxCount=ACTIVITY_MAX_COUNT;if(!obj.name)return;if(!existing)Store.activities.push(obj);Store.save('Angebot gespeichert',{target:obj.name});activitySelected=obj.id;State.dialog=null;render();}
 function pupilActivities(pupilId){return Object.values(Store.activityRecords).filter(r=>r.pupilId===pupilId&&r.active).map(r=>({record:r,activity:Store.activities.find(a=>a.id===r.activityId)})).filter(x=>x.activity);}
+
+let creativeReportWeek='';
+let creativeReportGrade='alle';
+let creativeReportOffer='alle';
+function creativeWeekStart(date){
+ const d=new Date(date+'T12:00:00');if(isNaN(d))return '';
+ d.setDate(d.getDate()-(d.getDay()+6)%7);
+ return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+}
+function creativeWeekEnd(start){const d=new Date(start+'T12:00:00');d.setDate(d.getDate()+6);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
+function creativeReportRows(){
+ const start=creativeReportWeek,end=creativeWeekEnd(start);
+ const offers=new Map((Store.activities||[]).filter(a=>a.type==='Kreativband').map(a=>[String(a.id),a]));
+ const pupils=new Map((Store.pupils||[]).map(p=>[String(p.id),p]));
+ return Object.values(Store.dailyCreativeVisits||{}).filter(v=>v&&v.date>=start&&v.date<=end&&offers.has(String(v.activityId))&&pupils.has(String(v.pupilId))).map(v=>({date:v.date,offer:offers.get(String(v.activityId)),pupil:pupils.get(String(v.pupilId))})).filter(r=>(creativeReportGrade==='alle'||Number(r.pupil.year||String(r.pupil.className||'').charAt(0))===Number(creativeReportGrade))&&(creativeReportOffer==='alle'||String(r.offer.id)===creativeReportOffer)).sort((a,b)=>a.date.localeCompare(b.date)||a.pupil.last.localeCompare(b.pupil.last,'de'));
+}
+function openCreativeWeeklyReport(){
+ if(!creativeReportWeek)creativeReportWeek=creativeWeekStart(new Date().toLocaleDateString('sv-SE'));
+ activitySelected=null;renderCreativeWeeklyReport();
+}
+function renderCreativeWeeklyReport(){
+ const offers=(Store.activities||[]).filter(a=>a.type==='Kreativband').sort((a,b)=>a.name.localeCompare(b.name,'de'));
+ const rows=creativeReportRows(),students=new Set(rows.map(r=>r.pupil.id));
+ const totals=new Map();
+ rows.forEach(r=>{const k=String(r.pupil.id)+'|'+String(r.offer.id);if(!totals.has(k))totals.set(k,{pupil:r.pupil,offer:r.offer,dates:new Set()});totals.get(k).dates.add(r.date);});
+ const summary=[...totals.values()].sort((a,b)=>a.pupil.last.localeCompare(b.pupil.last,'de')||a.offer.name.localeCompare(b.offer.name,'de'));
+ let h=header('Kreativband · Wochenstatistik','Tatsächlich erfasste Besuche pro Kalenderwoche, Kind und Angebot.');
+ h+='<button class="chip" onclick="render()">← Angebote</button><div class="card"><div class="formgrid">';
+ h+='<div><label>Woche ab Montag</label><input type="date" value="'+esc(creativeReportWeek)+'" onchange="creativeReportWeek=creativeWeekStart(this.value);renderCreativeWeeklyReport()"></div>';
+ h+='<div><label>Jahrgang</label><select onchange="creativeReportGrade=this.value;renderCreativeWeeklyReport()">'+['alle','5','6','7'].map(y=>'<option value="'+y+'" '+(creativeReportGrade===y?'selected':'')+'>'+(y==='alle'?'Alle Jahrgänge':'Jahrgang '+y)+'</option>').join('')+'</select></div>';
+ h+='<div><label>Kreativband</label><select onchange="creativeReportOffer=this.value;renderCreativeWeeklyReport()"><option value="alle">Alle Kreativbänder</option>'+offers.map(a=>'<option value="'+esc(a.id)+'" '+(creativeReportOffer===String(a.id)?'selected':'')+'>'+esc(a.name)+'</option>').join('')+'</select></div></div>';
+ h+='<p class="mini">Zeitraum: '+esc(creativeReportWeek)+' bis '+esc(creativeWeekEnd(creativeReportWeek))+' · '+students.size+' Kinder · '+rows.length+' erfasste Besuche</p>';
+ h+='<button class="chip dark" onclick="exportCreativeWeeklyReport()">CSV für Excel exportieren</button></div>';
+ h+='<div class="card"><h3>Besuche je Kind und Kreativband</h3><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th>Name</th><th>Jahrgang</th><th>Farbteam</th><th>Kreativband</th><th>Tage</th><th>Anzahl</th></tr></thead><tbody>';
+ h+=summary.map(r=>'<tr><td>'+esc(r.pupil.first+' '+r.pupil.last)+'</td><td>'+esc(String(r.pupil.year||''))+'</td><td>'+esc(r.pupil.team||'')+'</td><td>'+esc(r.offer.name)+'</td><td>'+esc([...r.dates].sort().join(', '))+'</td><td><b>'+r.dates.size+'</b></td></tr>').join('')||'<tr><td colspan="6">Für diese Woche sind keine datierten Besuche erfasst.</td></tr>';
+ h+='</tbody></table></div></div>';
+ h+='<div class="card"><h3>Besuche je Angebot</h3>'+offers.filter(a=>creativeReportOffer==='alle'||String(a.id)===creativeReportOffer).map(a=>{const ar=rows.filter(r=>r.offer.id===a.id);return '<div class="quickRow"><b>'+esc(a.name)+'</b><span>'+ar.length+' Besuche · '+new Set(ar.map(r=>r.pupil.id)).size+' Kinder</span></div>';}).join('')+'</div>';
+ shell(h);
+}
+function exportCreativeWeeklyReport(){
+ const rows=creativeReportRows(),head=['Datum','Vorname','Nachname','Jahrgang','Farbteam','Kreativband'];
+ const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+ const csv=[head,...rows.map(r=>[r.date,r.pupil.first,r.pupil.last,r.pupil.year||'',r.pupil.team||'',r.offer.name])].map(r=>r.map(q).join(';')).join('\r\n');
+ const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Kreativband-Woche-'+creativeReportWeek+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
