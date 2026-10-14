@@ -136,13 +136,23 @@ function creativeWeeklyCsv(){
  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),link=document.createElement('a');
  link.href=url;link.download='KOMPASS_Kreativband_KW_'+d.start+'_Jg'+State.year+'.csv';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
+async function creativeRefreshFromCloud(){
+ if(typeof Sync==='undefined'||!Sync.enabled()){toast('Keine Cloud-Verbindung aktiv. Bitte mit einem Lehrkraftkonto anmelden.',7000);return;}
+ if(Sync.busy||Sync.dirty){toast('Es werden noch lokale Änderungen gespeichert. Bitte kurz warten und erneut versuchen.',7000);return;}
+ try{
+  await Sync.pull();
+  const count=Object.values(Store.dailyCreativeVisits||{}).filter(v=>v&&v.date&&v.pupilId&&Number((Store.pupils||[]).find(p=>String(p.id)===String(v.pupilId))?.year)===Number(State.year)).length;
+  render();
+  toast('Cloud neu geladen: '+count+' datierte Kreativband-Besuche im Jahrgang '+State.year,6500);
+ }catch(e){toast('Cloud-Abruf fehlgeschlagen: '+(e?.message||String(e)),8000);}
+}
 function renderCreativeWeeklyStatistics(){
  const d=creativeWeekData(),filtered=d.pupils.filter(p=>activityTeam==='alle'||p.team===activityTeam).filter(p=>!activitySearch||(p.first+' '+p.last+' '+p.short).toLowerCase().includes(activitySearch.toLowerCase())).sort((a,b)=>(a.last||'').localeCompare(b.last||'','de')||(a.first||'').localeCompare(b.first||'','de'));
  const fmt=s=>new Date(s+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});
  const totals=d.offers.map(a=>filtered.reduce((n,p)=>n+(d.counts[String(p.id)+'|'+a.id]||0),0));
  const total=totals.reduce((a,b)=>a+b,0);
  return `<div class="card"><h2>📊 Kreativband · Wochenstatistik</h2><p class="mini">Nur von Lehrkräften mit Datum erfasste Anwesenheiten werden gezählt. Jeder Schüler zählt je Angebot und Tag höchstens einmal.</p>
- <div class="toolbar"><button class="chip" onclick="creativeWeekMove(-1)">← Vorwoche</button><strong>${fmt(d.start)} – ${fmt(d.end)}</strong><button class="chip" onclick="creativeWeekMove(1)">Folgewoche →</button><input type="date" aria-label="Datum in gewünschter Woche" value="${esc(activityWeekDate)}" onchange="activityWeekDate=this.value;render()"><button class="chip dark" onclick="creativeWeeklyCsv()">↓ CSV exportieren</button></div>
+ <div class="toolbar"><button class="chip dark" onclick="creativeRefreshFromCloud()">↻ Cloud-Anwesenheiten laden</button><button class="chip" onclick="creativeWeekMove(-1)">← Vorwoche</button><strong>${fmt(d.start)} – ${fmt(d.end)}</strong><button class="chip" onclick="creativeWeekMove(1)">Folgewoche →</button><input type="date" aria-label="Datum in gewünschter Woche" value="${esc(activityWeekDate)}" onchange="activityWeekDate=this.value;render()"><button class="chip dark" onclick="creativeWeeklyCsv()">↓ CSV exportieren</button></div>
  <div class="toolbar formgrid"><div><label>Farbteam</label><select onchange="activityTeam=this.value;render()"><option value="alle">Alle Teams</option>${activityTeamsForGrade(State.year).map(t=>`<option value="${esc(t)}" ${activityTeam===t?'selected':''}>${esc(t)}</option>`).join('')}</select></div><div><label>Schüler:in suchen</label><input value="${esc(activitySearch)}" id="activityNameSearch" oninput="activitySearch=this.value;renderKeepingFocus('activityNameSearch')" placeholder="Name suchen …"></div></div>
  <p><b>${total}</b> erfasste Besuche · <b>${filtered.filter(p=>d.offers.some(a=>d.counts[String(p.id)+'|'+a.id])).length}</b> Kinder mit mindestens einem Besuch</p>
  <div class="creativeStatsScroll"><table class="creativeStatsTable"><thead><tr><th class="creativeStatsName">Schüler:in</th><th class="creativeStatsTeam">Team</th>${d.offers.map(a=>`<th class="creativeStatsOffer" title="${esc(a.name)}">${esc(a.name)}</th>`).join('')}<th>Gesamt</th></tr></thead><tbody>
