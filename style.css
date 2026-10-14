@@ -576,3 +576,19 @@
 .laStudentFullscreen:has(>.laRoomTools)>.laPublicBoard{order:3!important}
 .laStudentFullscreen:has(>.laRoomTools)>.laActionPanel{order:4!important}
 .laStudentFullscreen:has(>.laRoomTools)>.laBoardFoot{order:5!important}
+
+/* Kreativband: gut lesbare Wochenmatrix auf Tablets */
+.creativeStatsScroll{width:100%;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:16px}
+.creativeStatsTable{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;font-size:13px}
+.creativeStatsTable th,.creativeStatsTable td{padding:12px 14px;border-bottom:1px solid var(--line);border-right:1px solid #edf0f5;vertical-align:middle;text-align:center;white-space:normal}
+.creativeStatsTable thead th{background:#eef3fa;color:#24324a;font-size:13px;line-height:1.35;font-weight:850;position:sticky;top:0;z-index:2}
+.creativeStatsTable .creativeStatsOffer{min-width:148px;max-width:190px;overflow-wrap:break-word;hyphens:auto}
+.creativeStatsTable .creativeStatsName{min-width:175px;max-width:190px;text-align:left;position:sticky;left:0;background:#fff;z-index:3}
+.creativeStatsTable thead .creativeStatsName{background:#eef3fa;z-index:5}
+.creativeStatsTable .creativeStatsTeam{min-width:86px;position:sticky;left:175px;background:#fff;z-index:3}
+.creativeStatsTable thead .creativeStatsTeam{background:#eef3fa;z-index:5}
+.creativeStatsTable tbody tr:hover td{background:#f8fafc}
+.creativeStatsTable tbody tr:last-child th{background:#eaf0f8}
+.app{background:linear-gradient(to right,#fff 0 292px,var(--bg) 292px)}
+aside{background:#fff;min-height:100vh}
+@media(max-width:950px){.app{background:var(--bg)}aside{min-height:0}.creativeStatsTable .creativeStatsName{min-width:155px}.creativeStatsTable .creativeStatsTeam{left:155px}}
