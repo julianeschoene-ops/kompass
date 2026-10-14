@@ -1,6 +1,6 @@
 let plannerType='Sprint',plannerStep='start',plannerRows=[],plannerOffers=[],plannerResult={},plannerTitle='',plannerCap=20;
 function planner(){let c=header('Einteilungsassistent','IServ-Wahlen importieren, automatisch verteilen und anschließend von Hand anpassen.');c+=`<div class="toolbar"><button class="chip ${plannerType==='Sprint'?'dark':''}" onclick="plannerType='Sprint';plannerStep='start';render()">Sprint</button><button class="chip ${plannerType==='Club'?'dark':''}" onclick="plannerType='Club';plannerStep='start';render()">Club</button><button class="chip" onclick="renderAssignmentHistory()">Historie</button></div>`;if(plannerStep==='start')c+=plannerStart();if(plannerStep==='preview')c+=plannerPreview();if(plannerStep==='result')c+=plannerResultView();shell(c);}
-function plannerStart(){return `<div class="grid2"><div class="card"><h2>${plannerType}wahl importieren</h2><p>CSV-Datei aus einem IServ-Formular auswählen. KOMPASS erkennt Namen, Accounts und die drei Prioritäten automatisch.</p><label>Bezeichnung</label><input id="planner_title" value="${esc(plannerTitle||`${plannerType} ${State.year}`)}"><label>Standard-Kapazität je Angebot</label><input id="planner_cap" type="number" min="1" value="${plannerCap}"><input type="file" accept=".csv,text/csv" onchange="readChoiceCsv(this.files[0])"></div><div class="card"><h2>So funktioniert die Verteilung</h2><p>1. Wünsche und möglichst ähnliche Gruppengrößen werden gemeinsam berücksichtigt.<br>2. Kinder mit früheren Drittwünschen erhalten mehr Vorrang.<br>3. Bereits besuchte Zugänge werden möglichst vermieden.<br>4. Jede Einteilung bleibt vor der Übernahme veränderbar.</p></div></div>`;}
+function plannerStart(){return `${plannerType==='Sprint'?plannerWpfImportPanel():''}<div class="grid2"><div class="card"><h2>${plannerType}wahl importieren</h2><p>CSV-Datei aus einem IServ-Formular auswählen. KOMPASS erkennt Namen, Accounts und die drei Prioritäten automatisch.</p><label>Bezeichnung</label><input id="planner_title" value="${esc(plannerTitle||`${plannerType} ${State.year}`)}"><label>Standard-Kapazität je Angebot</label><input id="planner_cap" type="number" min="1" value="${plannerCap}"><input type="file" accept=".csv,text/csv" onchange="readChoiceCsv(this.files[0])"></div><div class="card"><h2>So funktioniert die Verteilung</h2><p>1. Wünsche und möglichst ähnliche Gruppengrößen werden gemeinsam berücksichtigt.<br>2. Kinder mit früheren Drittwünschen erhalten mehr Vorrang.<br>3. Bereits besuchte Zugänge werden möglichst vermieden.<br>4. Jede Einteilung bleibt vor der Übernahme veränderbar.</p></div></div>`;}
 function parseCsv(text){const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(Boolean),sep=(lines[0].match(/;/g)||[]).length>=(lines[0].match(/,/g)||[]).length?';':',';function row(line){let a=[],v='',q=false;for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"'){if(q&&line[i+1]==='"'){v+='"';i++;}else q=!q;}else if(ch===sep&&!q){a.push(v);v='';}else v+=ch;}a.push(v);return a;}const h=row(lines[0]).map(x=>x.trim());return lines.slice(1).map(l=>Object.fromEntries(row(l).map((v,i)=>[h[i],v.trim().replace(/^"|"$/g,'')])));}
 function readChoiceCsv(file){if(!file)return;plannerTitle=document.getElementById('planner_title').value.trim();plannerCap=Number(document.getElementById('planner_cap').value||20);const r=new FileReader();r.onload=()=>{const raw=parseCsv(r.result);plannerRows=raw.map(x=>normalizeChoiceRow(x)).filter(x=>x.first&&x.last&&x.choices[0]&&findPupilForChoice(x));plannerOffers=[...new Set(plannerRows.flatMap(x=>x.choices).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'de')).map(name=>({name,capacity:plannerCap}));plannerStep='preview';render();};r.readAsText(file,'utf-8');}
 function normalizeChoiceRow(x){const vals=Object.entries(x),get=(patterns)=>vals.find(([k])=>patterns.some(p=>k.toLowerCase().includes(p)))?.[1]||'';const choiceCols=vals.filter(([k])=>/priorität|erstwunsch|zweitwunsch|drittwunsch|wähle hier deinen/i.test(k)).map(([,v])=>v).filter(Boolean);return{last:get(['nachname']),first:get(['vorname']),account:get(['account']),className:get(['klasse/information']),choices:choiceCols.slice(0,3),reason:get(['warum'])};}
@@ -300,3 +300,28 @@ function plannerAddSavedMissing(){
  render();
 }
 function renderAssignmentHistory(){const rows=Store.assignments.slice().reverse();shell(header('Einteilungshistorie')+`<button class="chip" onclick="State.view='planner';plannerStep='start';render()">← zurück</button><div class="list">${rows.map(a=>`<div class="row"><div><b>${esc(a.title)}</b><div class="mini">${esc(a.type)} · Jahrgang ${a.year} · ${new Date(a.createdAt).toLocaleDateString('de-DE')}</div></div><span class="badge">${Object.values(a.groups).flat().length} Kinder</span><button class="chip dark" onclick="plannerOpenSaved(\'${a.id}\')">Öffnen / bearbeiten</button><button class="chip" onclick="plannerExportCsv(Store.assignments.find(x=>x.id===this.dataset.assignment))" data-assignment="${a.id}">⬇ CSV</button>${a.type==='Sprint'&&plannerMissingCount(a)?`<button class="chip dark" onclick="plannerOpenSaved(\'${a.id}\')">+ ${plannerMissingCount(a)} fehlende Kinder zuteilen</button>`:''}${plannerWorkshopSelector(a)}</div>`).join('')||'<div class="card empty">Noch keine Einteilungen übernommen.</div>'}</div>`);}
+
+function plannerWpfImportPanel(){
+ return '<div class="card"><h2>Wahlpflichtfach · Jahrgang 6</h2><p>WPF-Liste als CSV importieren. Der Abgleich erfolgt ausschließlich mit bereits vorhandenen Schülerkonten; unbekannte oder mehrdeutige Namen werden nicht verändert. Die Daten werden über die bestehende KOMPASS-Speicherung gesichert.</p><input type="file" accept=".csv,text/csv" onchange="plannerImportWpf(this.files[0])"><div id="plannerWpfStatus" class="mini">Format: Klasse;Nachname;Vorname;WPF</div></div>';
+}
+function plannerImportWpf(file){
+ if(!file||!canManageRoster())return;
+ const reader=new FileReader();
+ reader.onload=()=>{
+  const rows=parseCsv(String(reader.result||'')),normalize=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('de').replace(/[^a-z0-9]/g,'');
+  const candidates=[],issues=[];
+  for(const row of rows){
+   const cls=row.Klasse||row.klasse||'',first=row.Vorname||row.vorname||'',last=row.Nachname||row.nachname||'',wpf=row.WPF||row.wpf||'';
+   if(!['AES','Technik','Französisch'].includes(wpf)){issues.push(first+' '+last+': ungültiges WPF');continue;}
+   const matches=(Store.pupils||[]).filter(p=>!p.archived&&Number(p.year||String(p.className||'').charAt(0))===6&&normalize(p.first)===normalize(first)&&normalize(p.last)===normalize(last));
+   if(matches.length!==1){issues.push(first+' '+last+' ('+cls+'): '+(matches.length?'mehrdeutig':'nicht gefunden'));continue;}
+   candidates.push({p:matches[0],wpf});
+  }
+  const message=candidates.length+' eindeutige Zuordnungen, '+issues.length+' ungeklärte Einträge.\n'+issues.slice(0,25).join('\n')+'\n\nNur die eindeutigen Zuordnungen speichern?';
+  if(!confirm(message))return;
+  for(const {p,wpf} of candidates)p.wpf=wpf;
+  Store.save('Wahlpflichtfächer Jahrgang 6 importiert',{count:candidates.length});
+  const status=document.getElementById('plannerWpfStatus');if(status)status.textContent=candidates.length+' Wahlpflichtfächer gespeichert. '+issues.length+' Einträge müssen geprüft werden.';
+ };
+ reader.readAsText(file,'utf-8');
+}
