@@ -81,7 +81,7 @@ function activityQuickRow(a,p){
   return`<div class="quickRow"><div><b>${esc(p.short)}</b><div class="mini">${esc(p.team)} · ${esc(p.className)}</div>${att?`<div class="mini">${activityAttendancePill(a.id,p.id)}</div>`:''}${creativeAssessmentControls(a,p,r)}</div><div class="quickActions">${isCountableActivity(a)?`<strong>${att.visits}/${ACTIVITY_MAX_COUNT}</strong><button class="visitBtn" onclick="addVisit('${a.id}','${p.id}',1)">+1</button><button class="miniBtn" onclick="addVisit('${a.id}','${p.id}',-1)">−</button>${a.type==='Kreativband'?`<button class="miniBtn" onclick="openQualification('${a.id}','${p.id}')">🏅</button>`:''}`:`<button class="memberBtn ${r.active?'selected':''}" onclick="toggleMember('${a.id}','${p.id}')">${r.active?'✓ dabei':'+ hinzufügen'}</button>`}<button class="miniBtn" onclick="editActivityNote('${a.id}','${p.id}')">📝</button></div>${r.licenses?.length?`<div class="licenseLine">${r.licenses.map(x=>`<span class="badge">${esc(x)}</span>`).join('')}</div>`:''}${r.note?`<div class="mini noteLine">${esc(r.note)}</div>`:''}</div>`;
 }
 function addVisit(a,p,delta){
-  if(!canEdit()){toast('Nur Lehrkräfte können Anwesenheiten erfassen');return;}
+  if(Auth.isLernatelier()||!Auth.canAccessGrade(State.year)){toast('Keine Berechtigung für diesen Jahrgang');return;}
   const act=Store.activities.find(x=>x.id===a);if(!isCountableActivity(act))return;
   const k=a+'|'+p,r=activityRecord(a,p);r.active=true;
   if(delta>0){
