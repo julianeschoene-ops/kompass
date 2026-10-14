@@ -106,6 +106,56 @@ function plannerTeamBalance(offer,team){
  const counts=Object.keys(plannerResult).filter(x=>x!=='Nicht zugeteilt').map(x=>plannerTeamCount(x,team));
  return plannerTeamCount(offer,team)-(Math.min(...counts)||0);
 }
+function plannerWpfRequirement(p){
+ if(plannerType!=='Sprint'||Number(State.year)!==6||!p)return null;
+ const w=String(p.wpf||'').toLowerCase();
+ return w==='aes'?'Life':w==='technik'?'Tech':null;
+}
+function plannerWpfProgress(p){
+ const required=plannerWpfRequirement(p);if(!required)return null;
+ const history=(Store.sprintHistory[p.id]||[]).filter(h=>plannerLabAlias(h.name||h.offer)===required);
+ const unique=new Set(history.map(h=>h.assignmentId||h.date||h.title).filter(Boolean));
+ const completed=Math.min(2,unique.size);
+ const allRounds=(Store.assignments||[]).filter(a=>a.type==='Sprint'&&Number(a.year)===6).length;
+ const remaining=Math.max(0,4-allRounds);
+ return {required,completed,needed:Math.max(0,2-completed),remaining};
+}
+function plannerWpfWarnings(){
+ if(plannerType!=='Sprint'||Number(State.year)!==6)return [];
+ const warnings=[];
+ for(const [name,rows] of Object.entries(plannerResult)){
+  if(name==='Nicht zugeteilt')continue;
+  for(const r of rows){
+   const progress=plannerWpfProgress(r.pupil);
+   if(progress&&progress.needed>=progress.remaining&&plannerLabAlias(name)!==progress.required)warnings.push(r.first+' '+r.last+': Pflicht-Lab '+progress.required+' benötigt');
+  }
+ }
+ return warnings;
+}
+function plannerApplyWpfPriorities(){
+ if(plannerType!=='Sprint'||Number(State.year)!==6)return;
+ const names=plannerOffers.map(o=>o.name);
+ const cap=Object.fromEntries(plannerOffers.map(o=>[o.name,Number(o.capacity)||0]));
+ const assigned=new Map();
+ for(const [name,rows] of Object.entries(plannerResult))for(const r of rows)if(r.pupil)assigned.set(String(r.pupil.id),{name,row:r});
+ const urgent=[...assigned.values()].map(x=>({...x,progress:plannerWpfProgress(x.row.pupil)})).filter(x=>x.progress&&x.progress.needed>0&&x.progress.needed>=x.progress.remaining&&plannerLabAlias(x.name)!==x.progress.required).sort((a,b)=>b.progress.needed-a.progress.needed);
+ for(const item of urgent){
+  const dest=names.find(name=>plannerLabAlias(name)===item.progress.required);
+  if(!dest)continue;
+  const target=plannerResult[dest],from=plannerResult[item.name];
+  if(target.length<cap[dest]){
+   from.splice(from.indexOf(item.row),1);target.push(item.row);continue;
+  }
+  // Swap only when the other pupil can take the vacated place without losing a mandatory slot.
+  const alternative=target.find(other=>{
+   const op=plannerWpfProgress(other.pupil);
+   return !(op&&op.needed>=op.remaining&&plannerLabAlias(item.name)!==op.required);
+  });
+  if(!alternative)continue;
+  target.splice(target.indexOf(alternative),1,item.row);
+  from.splice(from.indexOf(item.row),1,alternative);
+ }
+}
 function calculateAssignment(){
  plannerResult=Object.fromEntries(plannerOffers.map(o=>[o.name,[]]));
  plannerResult['Nicht zugeteilt']=[];
@@ -156,6 +206,7 @@ function calculateAssignment(){
   else plannerResult['Nicht zugeteilt'].push(r);
  }
  plannerResult['Nicht zugeteilt'].push(...rows.filter(r=>r.withoutChoice));
+ plannerApplyWpfPriorities();
  plannerStep='result';render();
 }
 function plannerExportRows(a){
@@ -184,7 +235,7 @@ function plannerPrintLists(a){
  const html='<!doctype html><html lang="de"><head><meta charset="utf-8"><title>KOMPASS Zugangslisten</title><style>body{font:12px Arial,sans-serif;color:#24314a;margin:24px}h1{font-size:20px}h2{font-size:16px;margin:20px 0 8px}table{border-collapse:collapse;width:100%}th,td{border-bottom:1px solid #ccd2db;padding:7px;text-align:left}th{background:#eef1f7}section{break-after:page}section:last-child{break-after:auto}@page{size:A4;margin:15mm}.hint{color:#667085}</style></head><body><h1>KOMPASS · Zugangslisten · Jahrgang '+escPrint(State.year)+'</h1>'+groups.map(name=>{const group=rows.filter(r=>r.offer===name);return '<section><h2>'+escPrint(name)+' · '+group.length+' Kinder</h2><table><thead><tr><th>Nr.</th><th>Nachname</th><th>Vorname</th><th>Klasse</th><th>Team</th><th>Wunsch</th><th>Anwesenheit</th></tr></thead><tbody>'+group.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+escPrint(r.last)+'</td><td>'+escPrint(r.first)+'</td><td>'+escPrint(r.className)+'</td><td>'+escPrint(r.team)+'</td><td>'+(r.rank?'Wunsch '+r.rank:'Ohne Wunsch')+'</td><td>☐</td></tr>').join('')+'</tbody></table></section>'}).join('')+'</body></html>';
  const blob=new Blob([html],{type:'text/html;charset=utf-8'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='KOMPASS_Zugangslisten_'+State.year+'.html';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
 }
-function plannerResultView(){return (plannerEditingSavedId?plannerSavedMissingUi():plannerManualWishUi())+`<div class="toolbar"><span class="badge">${plannerEditingSavedId?"GESPEICHERTE EINTEILUNG – BEARBEITUNG":"ENTWURF – noch nicht gespeichert"}</span>${plannerEditingSavedId?`<button class="chip dark" onclick="plannerSaveOpened()">Änderungen speichern</button><button class="chip" onclick="plannerEditingSavedId=null;plannerStep=\'start\';renderAssignmentHistory()">Abbrechen</button>`:`<button class="chip" onclick="calculateAssignment()">↻ Erstwünsche neu berechnen</button>`}${plannerEditingSavedId?"":`<button class="chip dark" onclick="acceptAssignment()">Einteilung übernehmen</button>`}<button class="chip" onclick="plannerStep='preview';render()">Kapazitäten ändern</button><button class="chip" onclick="plannerExportCsv()">⬇ Excel-Liste (CSV)</button><button class="chip" onclick="plannerPrintLists()">🖨 Drucklisten (HTML)</button><span class="badge">${Object.values(plannerResult).flat().length} Kinder</span></div><div class="assignmentBoard">${Object.entries(plannerResult).map(([offer,rows])=>`<div class="assignmentColumn"><h2>${esc(offer)}</h2><div class="mini">${rows.length} / ${plannerOffers.find(o=>o.name===offer)?.capacity||'–'}</div>${rows.map((r,i)=>`<div class="assignmentCard"><b>${esc(r.first)} ${esc(r.last)}${plannerTeamLabel(r.pupil)?` (${esc(plannerTeamLabel(r.pupil))})`:""}</b><div class="mini">${plannerWishRank(r,offer)?`Wunsch ${plannerWishRank(r,offer)}`:"Kein Wunsch"}</div><select onchange="moveAssigned('${esc(offer)}',${i},this.value)">${Object.keys(plannerResult).map(x=>`<option ${x===offer?'selected':''}>${esc(x)}</option>`).join('')}</select></div>`).join('')}</div>`).join('')}</div>`;}
+function plannerResultView(){return (plannerType==='Sprint'&&Number(State.year)===6?'<div class="card"><b>WPF-Pflichtprüfung</b><p class="mini">AES: mindestens 2× Life-Lab · Technik: mindestens 2× Technical-Lab innerhalb von vier Sprints. Französisch: freie Wahl. Pflichtzuordnungen werden bei der Neuberechnung bevorzugt, wenn sonst zu wenige Sprints verbleiben.</p>'+ (plannerWpfWarnings().length?'<p class="statusPill status-yellow">'+plannerWpfWarnings().length+' Pflichtzuordnungen prüfen: '+esc(plannerWpfWarnings().slice(0,8).join('; '))+'</p>':'<p class="statusPill status-green">Keine aktuell dringenden Pflichtkonflikte erkannt</p>')+'</div>':'')+(plannerEditingSavedId?plannerSavedMissingUi():plannerManualWishUi())+`<div class="toolbar"><span class="badge">${plannerEditingSavedId?"GESPEICHERTE EINTEILUNG – BEARBEITUNG":"ENTWURF – noch nicht gespeichert"}</span>${plannerEditingSavedId?`<button class="chip dark" onclick="plannerSaveOpened()">Änderungen speichern</button><button class="chip" onclick="plannerEditingSavedId=null;plannerStep=\'start\';renderAssignmentHistory()">Abbrechen</button>`:`<button class="chip" onclick="calculateAssignment()">↻ Erstwünsche neu berechnen</button>`}${plannerEditingSavedId?"":`<button class="chip dark" onclick="acceptAssignment()">Einteilung übernehmen</button>`}<button class="chip" onclick="plannerStep='preview';render()">Kapazitäten ändern</button><button class="chip" onclick="plannerExportCsv()">⬇ Excel-Liste (CSV)</button><button class="chip" onclick="plannerPrintLists()">🖨 Drucklisten (HTML)</button><span class="badge">${Object.values(plannerResult).flat().length} Kinder</span></div><div class="assignmentBoard">${Object.entries(plannerResult).map(([offer,rows])=>`<div class="assignmentColumn"><h2>${esc(offer)}</h2><div class="mini">${rows.length} / ${plannerOffers.find(o=>o.name===offer)?.capacity||'–'}</div>${rows.map((r,i)=>`<div class="assignmentCard"><b>${esc(r.first)} ${esc(r.last)}${plannerTeamLabel(r.pupil)?` (${esc(plannerTeamLabel(r.pupil))})`:""}</b><div class="mini">${plannerWishRank(r,offer)?`Wunsch ${plannerWishRank(r,offer)}`:"Kein Wunsch"}</div><select onchange="moveAssigned('${esc(offer)}',${i},this.value)">${Object.keys(plannerResult).map(x=>`<option ${x===offer?'selected':''}>${esc(x)}</option>`).join('')}</select></div>`).join('')}</div>`).join('')}</div>`;}
 function moveAssigned(from,index,to){if(from===to)return;const [r]=plannerResult[from].splice(index,1);plannerResult[to].push(r);render();}
 function acceptAssignment(){if((plannerResult['Nicht zugeteilt']||[]).length||Object.values(plannerResult).flat().some(r=>!r.pupil)){toast('Bitte fehlende Zuordnungen oder unbekannte Schülerkonten zuerst klären.');return;}const id=uid('assignment'),createdAt=new Date().toISOString(),groups={},details={};for(const [offer,rows] of Object.entries(plannerResult)){groups[offer]=rows.map(r=>r.pupil?.id||null).filter(Boolean);for(const r of rows){const p=r.pupil;if(!p)continue;details[p.id]={priority:plannerWishRank(r,offer),choices:r.choices.slice(),offer};const item={assignmentId:id,name:offer,title:plannerTitle,date:createdAt,year:State.year,priority:plannerWishRank(r,offer)};const target=plannerType==='Sprint'?Store.sprintHistory:Store.clubHistory;target[p.id]=target[p.id]||[];target[p.id].push(item);if(plannerType==='Club'){let a=Store.activities.find(x=>x.type==='Club'&&x.name===offer&&x.year===State.year);if(!a){a={id:uid('activity'),type:'Club',year:State.year,name:offer,lebEnabled:true};Store.activities.push(a);}Store.activityRecords[a.id+'|'+p.id]={activityId:a.id,pupilId:p.id,active:true,count:0,note:'',licenses:[]};}}}Store.assignments.push({id,type:plannerType,title:plannerTitle,year:State.year,createdAt,groups,details});Store.save();toast('Einteilung gespeichert – über Historie bei Bedarf in die Werkstatt-Bewertung übernehmen');plannerStep='start';plannerRows=[];plannerResult={};render();}
 function plannerApplyToWorkshop(id,number){
