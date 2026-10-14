@@ -129,7 +129,10 @@ const Sync={
           const current=await Auth.cloudClient.from('kompass_grade_state').select('payload,updated_at').eq('grade',grade).maybeSingle();
           if(current.error){error=current.error;break;}
           if(!current.data){const inserted=await Auth.cloudClient.from('kompass_grade_state').insert({grade,payload:localPayload,updated_at:new Date().toISOString()}).select('grade');error=inserted.error;done=!error;if(done)persistedPayload=localPayload;break;}
-          const merged=this.mergeConcurrent(base,localPayload,current.data.payload||{}),stamp=new Date().toISOString();
+          const remotePayload=current.data.payload||{};
+          const merged=this.mergeConcurrent(base,localPayload,remotePayload),stamp=new Date().toISOString();
+          // Teachers may record visits, but must not modify the protected pupil roster.
+          if(!Auth.canLead(grade))merged.pupils=clone(remotePayload.pupils||[]);
           const updated=await Auth.cloudClient.from('kompass_grade_state').update({payload:merged,updated_at:stamp}).eq('grade',grade).eq('updated_at',current.data.updated_at).select('grade');
           error=updated.error;if(!error&&updated.data?.length){done=true;persistedPayload=merged;}
         }
