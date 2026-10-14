@@ -3,7 +3,7 @@ const COUNTABLE_ACTIVITY_TYPES=new Set(['Kreativband','Besonderes Angebot']);
 const ACTIVITY_MAX_COUNT=39;
 const DEFAULT_SPECIAL_OFFERS=['QUOP','Lesen','Kopfrechenübungen','Schwimmen','Sport'];
 const ADDITIONAL_CREATIVE_OFFERS=['Kreativband Sport','Kreativband – Sportangebot Heimbacher Hof'];
-let activityType='Kreativband',activitySelected=null,activitySearch='',activityTeam='alle',activityVisitDate=new Date().toLocaleDateString('en-CA'),activityWeeklyView=false,activityWeekDate=new Date().toLocaleDateString('en-CA');
+let activityType='Kreativband',activitySelected=null,activitySearch='',activityTeam='alle',activityStatsAllGrades=false,activityVisitDate=new Date().toLocaleDateString('en-CA'),activityWeeklyView=false,activityWeekDate=new Date().toLocaleDateString('en-CA');
 
 function activityTeamsForGrade(year=State.year){
   const teams=[...new Set((Store.pupils||[]).filter(p=>Number(p.year||String(p.className||'').charAt(0))===Number(year)).map(p=>p.team).filter(Boolean))];
@@ -116,7 +116,7 @@ function creativeWeekMove(delta){
 function creativeWeekData(){
  const start=creativeWeekStart(activityWeekDate),end=new Date(start+'T12:00:00');end.setDate(end.getDate()+6);
  const endStr=end.toLocaleDateString('en-CA');
- const pupils=(Store.pupils||[]).filter(p=>Number(p.year||String(p.className||'').charAt(0))===Number(State.year));
+ const pupils=(Store.pupils||[]).filter(p=>activityStatsAllGrades||Number(p.year||String(p.className||'').charAt(0))===Number(State.year));
  const ids=new Set(pupils.map(p=>String(p.id)));
  const offers=(Store.activities||[]).filter(a=>a.type==='Kreativband').sort((a,b)=>a.name.localeCompare(b.name,'de'));
  const counts={};const days={};
@@ -156,10 +156,11 @@ function renderCreativeWeeklyStatistics(){
  const fmt=s=>new Date(s+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});
  const totals=d.offers.map(a=>filtered.reduce((n,p)=>n+(d.counts[String(p.id)+'|'+a.id]||0),0));
  const total=totals.reduce((a,b)=>a+b,0);
+ const gradeSummary=[5,6,7].map(y=>({year:y,visits:filtered.filter(p=>Number(p.year||String(p.className||'').charAt(0))===y).reduce((sum,p)=>sum+d.offers.reduce((n,a)=>n+(d.counts[String(p.id)+'|'+a.id]||0),0),0)}));
  return `<div class="card"><h2>📊 Kreativband · Wochenstatistik</h2><p class="mini">Nur von Lehrkräften mit Datum erfasste Anwesenheiten werden gezählt. Jeder Schüler zählt je Angebot und Tag höchstens einmal.</p>
- <div class="toolbar"><button class="chip dark" onclick="creativeRefreshFromCloud()">↻ Cloud-Anwesenheiten laden</button><button class="chip" onclick="creativeWeekMove(-1)">← Vorwoche</button><strong>${fmt(d.start)} – ${fmt(d.end)}</strong><button class="chip" onclick="creativeWeekMove(1)">Folgewoche →</button><input type="date" aria-label="Datum in gewünschter Woche" value="${esc(activityWeekDate)}" onchange="activityWeekDate=this.value;render()"><button class="chip dark" onclick="creativeWeeklyCsv()">↓ CSV exportieren</button></div>
+ <div class="toolbar"><button class="chip ${activityStatsAllGrades?'dark':''}" onclick="activityStatsAllGrades=!activityStatsAllGrades;activityTeam='alle';render()">${activityStatsAllGrades?'✓ Jahrgänge 5–7':'Jahrgänge 5–7 gesamt'}</button><button class="chip dark" onclick="creativeRefreshFromCloud()">↻ Cloud-Anwesenheiten laden</button><button class="chip" onclick="creativeWeekMove(-1)">← Vorwoche</button><strong>${fmt(d.start)} – ${fmt(d.end)}</strong><button class="chip" onclick="creativeWeekMove(1)">Folgewoche →</button><input type="date" aria-label="Datum in gewünschter Woche" value="${esc(activityWeekDate)}" onchange="activityWeekDate=this.value;render()"><button class="chip dark" onclick="creativeWeeklyCsv()">↓ CSV exportieren</button></div>
  <div class="toolbar formgrid"><div><label>Farbteam</label><select onchange="activityTeam=this.value;render()"><option value="alle">Alle Teams</option>${activityTeamsForGrade(State.year).map(t=>`<option value="${esc(t)}" ${activityTeam===t?'selected':''}>${esc(t)}</option>`).join('')}</select></div><div><label>Schüler:in suchen</label><input value="${esc(activitySearch)}" id="activityNameSearch" oninput="activitySearch=this.value;renderKeepingFocus('activityNameSearch')" placeholder="Name suchen …"></div></div>
- <p><b>${total}</b> erfasste Besuche · <b>${filtered.filter(p=>d.offers.some(a=>d.counts[String(p.id)+'|'+a.id])).length}</b> Kinder mit mindestens einem Besuch</p>
+ <div class="toolbar">${gradeSummary.map(g=>`<span class="chip">Jg. ${g.year}: <b>${g.visits}</b> Besuche</span>`).join('')}</div><p><b>${total}</b> erfasste Besuche · <b>${filtered.filter(p=>d.offers.some(a=>d.counts[String(p.id)+'|'+a.id])).length}</b> Kinder mit mindestens einem Besuch</p>
  <div class="creativeStatsScroll"><table class="creativeStatsTable"><thead><tr><th class="creativeStatsName">Schüler:in</th><th class="creativeStatsTeam">Team</th>${d.offers.map(a=>`<th class="creativeStatsOffer" title="${esc(a.name)}">${esc(a.name)}</th>`).join('')}<th>Gesamt</th></tr></thead><tbody>
  ${filtered.map(p=>{const nums=d.offers.map(a=>d.counts[String(p.id)+'|'+a.id]||0);return`<tr><td>${esc((p.first||'')+' '+(p.last||''))}</td><td>${esc(p.team||'')}</td>${nums.map(n=>`<td style="text-align:center">${n||'–'}</td>`).join('')}<td style="text-align:center"><b>${nums.reduce((a,b)=>a+b,0)}</b></td></tr>`}).join('')}
  <tr><th style="text-align:left">Summe</th><th></th>${totals.map(n=>`<th>${n}</th>`).join('')}<th>${total}</th></tr></tbody></table></div></div>`;
