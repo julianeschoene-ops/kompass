@@ -40,7 +40,7 @@ function activities(){
   const offers=Store.activities.filter(a=>a.type===activityType&&(a.type==='Kreativband'||Number(a.year)===Number(State.year))).sort((a,b)=>a.name.localeCompare(b.name,'de'));
   let content=header('Angebote','Kreativband und weitere Angebote zählen jeden Besuch. 39 Besuche entsprechen 100 %.');
   content+=`<div class="toolbar formgrid"><div><label>Jahrgang</label><select onchange="State.year=Number(this.value);activitySelected=null;activityTeam=currentCoachTeam(State.year)||'alle';render()">${(activityType==='Kreativband'?[5,6,7]:visibleYears()).map(y=>`<option value="${y}" ${State.year===y?'selected':''}>Jahrgang ${y}</option>`).join('')}</select></div><div><label>Bereich</label><select onchange="activityType=this.value;activitySelected=null;render()">${ACTIVITY_TYPES.map(t=>`<option value="${t}" ${activityType===t?'selected':''}>${t==='Besonderes Angebot'?'Weitere Angebote':t}</option>`).join('')}</select></div></div>`;
-  if(activityType==='Kreativband')content+=`<button class="chip dark" onclick="openCreativeWeeklyReport()">📊 Wochenstatistik</button>`;
+  if(activityType==='Kreativband')content+=`<button class="chip ${activityWeeklyView?'':'dark'}" onclick="activityWeeklyView=!activityWeeklyView;activitySelected=null;render()">${activityWeeklyView?'← Zur Anwesenheitserfassung':'📊 Wochenstatistik'}</button>`;
   if(activityType==='Kreativband')content+=`<div class="toolbar"><button class="chip ${activityWeeklyView?'dark':''}" onclick="activityWeeklyView=!activityWeeklyView;activitySelected=null;render()">${activityWeeklyView?'← Anwesenheit erfassen':'📊 Wochenstatistik'}</button></div>`;
   if(activityType==='Besonderes Angebot'&&canEdit())content+=`<button class="chip dark" onclick="openActivityEditor()">+ Weiteres Angebot</button>`;
   if(activityType==='Club'&&canEdit())content+=`<button class="chip dark" onclick="openActivityEditor()">+ Club anlegen</button>`;
@@ -101,9 +101,6 @@ function renderActivityDialog(target){const a=State.dialog.id?Store.activities.f
 function saveActivityDialog(){const existing=State.dialog.id?Store.activities.find(x=>x.id===State.dialog.id):null,obj=existing||{id:uid('activity'),type:activityType,year:State.year,lebEnabled:true};obj.name=document.getElementById('a_name').value.trim();obj.period=document.getElementById('a_period').value.trim();if(isCountableActivity(obj))obj.maxCount=ACTIVITY_MAX_COUNT;if(!obj.name)return;if(!existing)Store.activities.push(obj);Store.save('Angebot gespeichert',{target:obj.name});activitySelected=obj.id;State.dialog=null;render();}
 function pupilActivities(pupilId){return Object.values(Store.activityRecords).filter(r=>r.pupilId===pupilId&&r.active).map(r=>({record:r,activity:Store.activities.find(a=>a.id===r.activityId)})).filter(x=>x.activity);}
 
-let creativeReportWeek='';
-let creativeReportGrade='alle';
-let creativeReportOffer='alle';
 function creativeWeekStart(date){
  const d=new Date(date+'T12:00:00');if(isNaN(d))return '';
  d.setDate(d.getDate()-(d.getDay()+6)%7);
@@ -191,7 +188,7 @@ function renderCreativeWeeklyStatistics(){
  <div class="toolbar"><button class="chip" onclick="creativeWeekMove(-1)">← Vorwoche</button><strong>${fmt(d.start)} – ${fmt(d.end)}</strong><button class="chip" onclick="creativeWeekMove(1)">Folgewoche →</button><input type="date" aria-label="Datum in gewünschter Woche" value="${esc(activityWeekDate)}" onchange="activityWeekDate=this.value;render()"><button class="chip dark" onclick="creativeWeeklyCsv()">↓ CSV exportieren</button></div>
  <div class="toolbar formgrid"><div><label>Farbteam</label><select onchange="activityTeam=this.value;render()"><option value="alle">Alle Teams</option>${activityTeamsForGrade(State.year).map(t=>`<option value="${esc(t)}" ${activityTeam===t?'selected':''}>${esc(t)}</option>`).join('')}</select></div><div><label>Schüler:in suchen</label><input value="${esc(activitySearch)}" id="activityNameSearch" oninput="activitySearch=this.value;renderKeepingFocus('activityNameSearch')" placeholder="Name suchen …"></div></div>
  <p><b>${total}</b> erfasste Besuche · <b>${filtered.filter(p=>d.offers.some(a=>d.counts[String(p.id)+'|'+a.id])).length}</b> Kinder mit mindestens einem Besuch</p>
- <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left">Schüler:in</th><th style="text-align:left">Team</th>${d.offers.map(a=>`<th title="${esc(a.name)}">${esc(a.name)}</th>`).join('')}<th>Gesamt</th></tr></thead><tbody>
+ <div class="creativeStatsScroll"><table class="creativeStatsTable"><thead><tr><th class="creativeStatsName">Schüler:in</th><th class="creativeStatsTeam">Team</th>${d.offers.map(a=>`<th class="creativeStatsOffer" title="${esc(a.name)}">${esc(a.name)}</th>`).join('')}<th>Gesamt</th></tr></thead><tbody>
  ${filtered.map(p=>{const nums=d.offers.map(a=>d.counts[String(p.id)+'|'+a.id]||0);return`<tr><td>${esc((p.first||'')+' '+(p.last||''))}</td><td>${esc(p.team||'')}</td>${nums.map(n=>`<td style="text-align:center">${n||'–'}</td>`).join('')}<td style="text-align:center"><b>${nums.reduce((a,b)=>a+b,0)}</b></td></tr>`}).join('')}
  <tr><th style="text-align:left">Summe</th><th></th>${totals.map(n=>`<th>${n}</th>`).join('')}<th>${total}</th></tr></tbody></table></div></div>`;
 }
