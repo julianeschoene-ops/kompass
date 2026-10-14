@@ -141,9 +141,12 @@ async function creativeRefreshFromCloud(){
  if(Sync.busy||Sync.dirty){toast('Es werden noch lokale Änderungen gespeichert. Bitte kurz warten und erneut versuchen.',7000);return;}
  try{
   await Sync.pull();
-  const count=Object.values(Store.dailyCreativeVisits||{}).filter(v=>v&&v.date&&v.pupilId&&Number((Store.pupils||[]).find(p=>String(p.id)===String(v.pupilId))?.year)===Number(State.year)).length;
+  const visits=Object.values(Store.dailyCreativeVisits||{}),roster=new Map((Store.pupils||[]).map(p=>[String(p.id),p]));
+  const count=visits.filter(v=>v&&v.date&&v.pupilId&&Number(roster.get(String(v.pupilId))?.year)===Number(State.year)).length;
+  const orphaned=visits.filter(v=>v&&!roster.has(String(v.pupilId))).length;
+  const recognized=visits.filter(v=>v&&roster.has(String(v.pupilId))).length;
   render();
-  toast('Cloud neu geladen: '+count+' datierte Kreativband-Besuche im Jahrgang '+State.year,6500);
+  alert('Cloud-Diagnose (nur Lesen):\\nAlle Besuchseinträge: '+visits.length+'\\nDavon mit bekanntem Schülerkonto: '+recognized+'\\nDavon ohne passende Schüler-ID: '+orphaned+'\\nBesuche Jahrgang '+State.year+': '+count+'\\n\\nBitte diese vier Zahlen mitteilen.');
  }catch(e){toast('Cloud-Abruf fehlgeschlagen: '+(e?.message||String(e)),8000);}
 }
 function renderCreativeWeeklyStatistics(){
