@@ -394,7 +394,7 @@ function laTodayBoard(){
  const list=(items,isFlex=false)=>items.length?'<div class="laTodayItems">'+items.map(x=>'<div class="laTodayItem"><b>'+esc(x[0])+' Std. · '+esc(x[1])+'</b><span>'+esc(laTeacherShort(x[2]))+(x[3]?(isFlex?' · Raum: ':' · Treff: ')+esc(x[3]):'')+(isFlex&&x[4]?'<br>Teams: '+esc(x[4]):'')+'</span></div>').join('')+'</div>':'<p class="mini">Keine Angebote eingetragen.</p>';
  const flex=laGrade===6?laFlexForDate(d):[];
  const mondayNotes=(laGrade===6&&d.date==='2026-10-12')?'🏀 Sportangebote für heute können noch gebucht werden.':'';
- const scheduledNotes=(laGrade===6&&d.date==='2026-10-13')?'🥾 Wandertag der Stufe 6.\n🤒 Frau May ist weiterhin krank; Französisch entfällt.':(laGrade===6&&d.date==='2026-10-14')?'📸 Gruppenfoto der Bläserklasse: Alle Bläserklassenkinder treffen sich in der 4. Stunde um 10:15 Uhr in der Aula.':'';
+ const scheduledNotes=(laGrade===6&&d.date==='2026-10-13')?'🥾 Wandertag der Stufe 6.\n🤒 Frau May ist weiterhin krank; Französisch entfällt.':(laGrade===6&&d.date==='2026-10-14')?'📸 Gruppenfoto der Bläserklasse: Alle Bläserklassenkinder treffen sich in der 4. Stunde um 10:15 Uhr in der Aula.\n🚦 Bitte schaut gleich in der Ankommensstunde auf die AG-Ampel! Auch heute fallen Angebote wegen Krankheit aus. Prüft, ob eure AG stattfindet, damit ihr bei einem Ausfall rechtzeitig euren Bus nach Hause nehmt.':'';
  const flexChangeNotes=(laGrade===6&&d.date==='2026-10-12')?'📘 Jetzt Flexstunden buchen – so bist du gut auf deine Lernnachweise vorbereitet!':'';
  const notes=[flexChangeNotes,mondayNotes,scheduledNotes,published?String(current.notes||'').trim():''].filter(Boolean).join('\n');
  const news=published?String(current.news||'').trim():'';
