@@ -2,7 +2,7 @@ const ACTIVITY_TYPES=['Kreativband','Club','Besonderes Angebot'];
 const COUNTABLE_ACTIVITY_TYPES=new Set(['Kreativband','Besonderes Angebot']);
 const ACTIVITY_MAX_COUNT=39;
 const DEFAULT_SPECIAL_OFFERS=['QUOP','Lesen','Kopfrechenübungen','Schwimmen','Sport'];
-let activityType='Kreativband',activitySelected=null,activitySearch='',activityTeam='alle',activityVisitDate=new Date().toISOString().slice(0,10);
+let activityType='Kreativband',activitySelected=null,activitySearch='',activityTeam='alle',activityVisitDate=new Date().toLocaleDateString('en-CA'),activityWeeklyView=false,activityWeekDate=new Date().toLocaleDateString('en-CA');
 
 function activityTeamsForGrade(year=State.year){
   const teams=[...new Set((Store.pupils||[]).filter(p=>Number(p.year||String(p.className||'').charAt(0))===Number(year)).map(p=>p.team).filter(Boolean))];
@@ -41,9 +41,10 @@ function activities(){
   let content=header('Angebote','Kreativband und weitere Angebote zählen jeden Besuch. 39 Besuche entsprechen 100 %.');
   content+=`<div class="toolbar formgrid"><div><label>Jahrgang</label><select onchange="State.year=Number(this.value);activitySelected=null;activityTeam=currentCoachTeam(State.year)||'alle';render()">${(activityType==='Kreativband'?[5,6,7]:visibleYears()).map(y=>`<option value="${y}" ${State.year===y?'selected':''}>Jahrgang ${y}</option>`).join('')}</select></div><div><label>Bereich</label><select onchange="activityType=this.value;activitySelected=null;render()">${ACTIVITY_TYPES.map(t=>`<option value="${t}" ${activityType===t?'selected':''}>${t==='Besonderes Angebot'?'Weitere Angebote':t}</option>`).join('')}</select></div></div>`;
   if(activityType==='Kreativband')content+=`<button class="chip dark" onclick="openCreativeWeeklyReport()">📊 Wochenstatistik</button>`;
+  if(activityType==='Kreativband')content+=`<div class="toolbar"><button class="chip ${activityWeeklyView?'dark':''}" onclick="activityWeeklyView=!activityWeeklyView;activitySelected=null;render()">${activityWeeklyView?'← Anwesenheit erfassen':'📊 Wochenstatistik'}</button></div>`;
   if(activityType==='Besonderes Angebot'&&canEdit())content+=`<button class="chip dark" onclick="openActivityEditor()">+ Weiteres Angebot</button>`;
   if(activityType==='Club'&&canEdit())content+=`<button class="chip dark" onclick="openActivityEditor()">+ Club anlegen</button>`;
-  content+=activitySelected?renderActivityDetail(activitySelected):`<div class="offerGrid">${offers.map(a=>`<div class="tile activityTile" onclick="activitySelected='${a.id}';render()"><span class="activityIcon">${a.icon||activityIcon(a.type)}</span><b>${esc(a.name)}</b><span>${isCountableActivity(a)?'Besuche erfassen':activityMemberCount(a.id)+' Teilnehmende'}</span></div>`).join('')||'<div class="card empty">Noch keine Einträge.</div>'}</div>`;
+  content+=activityType==='Kreativband'&&activityWeeklyView?renderCreativeWeeklyStatistics():activitySelected?renderActivityDetail(activitySelected):`<div class="offerGrid">${offers.map(a=>`<div class="tile activityTile" onclick="activitySelected='${a.id}';render()"><span class="activityIcon">${a.icon||activityIcon(a.type)}</span><b>${esc(a.name)}</b><span>${isCountableActivity(a)?'Besuche erfassen':activityMemberCount(a.id)+' Teilnehmende'}</span></div>`).join('')||'<div class="card empty">Noch keine Einträge.</div>'}</div>`;
   shell(content);
 }
 function activityIcon(type){return type==='Kreativband'?'🎨':type==='Club'?'🏆':'✨';}
@@ -78,6 +79,7 @@ function activityQuickRow(a,p){
   return`<div class="quickRow"><div><b>${esc(p.short)}</b><div class="mini">${esc(p.team)} · ${esc(p.className)}</div>${att?`<div class="mini">${activityAttendancePill(a.id,p.id)}</div>`:''}${creativeAssessmentControls(a,p,r)}</div><div class="quickActions">${isCountableActivity(a)?`<strong>${att.visits}/${ACTIVITY_MAX_COUNT}</strong><button class="visitBtn" onclick="addVisit('${a.id}','${p.id}',1)">+1</button><button class="miniBtn" onclick="addVisit('${a.id}','${p.id}',-1)">−</button>${a.type==='Kreativband'?`<button class="miniBtn" onclick="openQualification('${a.id}','${p.id}')">🏅</button>`:''}`:`<button class="memberBtn ${r.active?'selected':''}" onclick="toggleMember('${a.id}','${p.id}')">${r.active?'✓ dabei':'+ hinzufügen'}</button>`}<button class="miniBtn" onclick="editActivityNote('${a.id}','${p.id}')">📝</button></div>${r.licenses?.length?`<div class="licenseLine">${r.licenses.map(x=>`<span class="badge">${esc(x)}</span>`).join('')}</div>`:''}${r.note?`<div class="mini noteLine">${esc(r.note)}</div>`:''}</div>`;
 }
 function addVisit(a,p,delta){
+  if(!canEdit()){toast('Nur Lehrkräfte können Anwesenheiten erfassen');return;}
   const act=Store.activities.find(x=>x.id===a);if(!isCountableActivity(act))return;
   const k=a+'|'+p,r=activityRecord(a,p);r.active=true;
   if(delta>0){
@@ -142,4 +144,54 @@ function exportCreativeWeeklyReport(){
  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
  const csv=[head,...rows.map(r=>[r.date,r.pupil.first,r.pupil.last,r.pupil.year||'',r.pupil.team||'',r.offer.name])].map(r=>r.map(q).join(';')).join('\r\n');
  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Kreativband-Woche-'+creativeReportWeek+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+
+function creativeWeekStart(dateStr){
+ const d=new Date((dateStr||new Date().toLocaleDateString('en-CA'))+'T12:00:00');
+ if(Number.isNaN(d.getTime()))return creativeWeekStart(new Date().toLocaleDateString('en-CA'));
+ d.setDate(d.getDate()-(d.getDay()+6)%7);
+ return d.toLocaleDateString('en-CA');
+}
+function creativeWeekMove(delta){
+ const d=new Date(creativeWeekStart(activityWeekDate)+'T12:00:00');
+ d.setDate(d.getDate()+delta*7);activityWeekDate=d.toLocaleDateString('en-CA');render();
+}
+function creativeWeekData(){
+ const start=creativeWeekStart(activityWeekDate),end=new Date(start+'T12:00:00');end.setDate(end.getDate()+6);
+ const endStr=end.toLocaleDateString('en-CA');
+ const pupils=(Store.pupils||[]).filter(p=>Number(p.year||String(p.className||'').charAt(0))===Number(State.year));
+ const ids=new Set(pupils.map(p=>String(p.id)));
+ const offers=(Store.activities||[]).filter(a=>a.type==='Kreativband').sort((a,b)=>a.name.localeCompare(b.name,'de'));
+ const counts={};const days={};
+ Object.values(Store.dailyCreativeVisits||{}).forEach(v=>{
+   if(!v||!v.date||v.date<start||v.date>endStr||!ids.has(String(v.pupilId))||!offers.some(a=>a.id===v.activityId))return;
+   const key=String(v.pupilId)+'|'+v.activityId;
+   (days[key]??=new Set()).add(v.date);
+ });
+ Object.entries(days).forEach(([k,set])=>counts[k]=set.size);
+ return{start,end:endStr,pupils,offers,counts,days};
+}
+function creativeWeeklyCsv(){
+ const d=creativeWeekData(),rows=[['Woche ab','Jahrgang','Vorname','Nachname','Farbteam','Kreativband','Besuche','Besuchstage']];
+ for(const p of d.pupils)for(const a of d.offers){
+  const key=String(p.id)+'|'+a.id,n=d.counts[key]||0;
+  if(n)rows.push([d.start,State.year,p.first||'',p.last||'',p.team||'',a.name,n,[...(d.days[key]||[])].sort().join('; ')]);
+ }
+ const csv='\uFEFF'+rows.map(row=>row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');
+ const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),link=document.createElement('a');
+ link.href=url;link.download='KOMPASS_Kreativband_KW_'+d.start+'_Jg'+State.year+'.csv';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function renderCreativeWeeklyStatistics(){
+ const d=creativeWeekData(),filtered=d.pupils.filter(p=>activityTeam==='alle'||p.team===activityTeam).filter(p=>!activitySearch||(p.first+' '+p.last+' '+p.short).toLowerCase().includes(activitySearch.toLowerCase())).sort((a,b)=>(a.last||'').localeCompare(b.last||'','de')||(a.first||'').localeCompare(b.first||'','de'));
+ const fmt=s=>new Date(s+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});
+ const totals=d.offers.map(a=>filtered.reduce((n,p)=>n+(d.counts[String(p.id)+'|'+a.id]||0),0));
+ const total=totals.reduce((a,b)=>a+b,0);
+ return `<div class="card"><h2>📊 Kreativband · Wochenstatistik</h2><p class="mini">Nur von Lehrkräften mit Datum erfasste Anwesenheiten werden gezählt. Jeder Schüler zählt je Angebot und Tag höchstens einmal.</p>
+ <div class="toolbar"><button class="chip" onclick="creativeWeekMove(-1)">← Vorwoche</button><strong>${fmt(d.start)} – ${fmt(d.end)}</strong><button class="chip" onclick="creativeWeekMove(1)">Folgewoche →</button><input type="date" aria-label="Datum in gewünschter Woche" value="${esc(activityWeekDate)}" onchange="activityWeekDate=this.value;render()"><button class="chip dark" onclick="creativeWeeklyCsv()">↓ CSV exportieren</button></div>
+ <div class="toolbar formgrid"><div><label>Farbteam</label><select onchange="activityTeam=this.value;render()"><option value="alle">Alle Teams</option>${activityTeamsForGrade(State.year).map(t=>`<option value="${esc(t)}" ${activityTeam===t?'selected':''}>${esc(t)}</option>`).join('')}</select></div><div><label>Schüler:in suchen</label><input value="${esc(activitySearch)}" id="activityNameSearch" oninput="activitySearch=this.value;renderKeepingFocus('activityNameSearch')" placeholder="Name suchen …"></div></div>
+ <p><b>${total}</b> erfasste Besuche · <b>${filtered.filter(p=>d.offers.some(a=>d.counts[String(p.id)+'|'+a.id])).length}</b> Kinder mit mindestens einem Besuch</p>
+ <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left">Schüler:in</th><th style="text-align:left">Team</th>${d.offers.map(a=>`<th title="${esc(a.name)}">${esc(a.name)}</th>`).join('')}<th>Gesamt</th></tr></thead><tbody>
+ ${filtered.map(p=>{const nums=d.offers.map(a=>d.counts[String(p.id)+'|'+a.id]||0);return`<tr><td>${esc((p.first||'')+' '+(p.last||''))}</td><td>${esc(p.team||'')}</td>${nums.map(n=>`<td style="text-align:center">${n||'–'}</td>`).join('')}<td style="text-align:center"><b>${nums.reduce((a,b)=>a+b,0)}</b></td></tr>`}).join('')}
+ <tr><th style="text-align:left">Summe</th><th></th>${totals.map(n=>`<th>${n}</th>`).join('')}<th>${total}</th></tr></tbody></table></div></div>`;
 }
