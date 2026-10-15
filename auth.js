@@ -20,8 +20,8 @@ const Auth={
   // Passwortwechsel bleiben freiwillig. Ein Konto darf niemals allein wegen
   // eines fehlenden Metadaten-Merkers gesperrt werden.
   needsPasswordChange(){return false},
-  allowedGrades(){if(this.isAdmin())return [5,6,7];if(this.session?.mode==='cloud')return Object.keys(this.currentUser()?.gradeAccess||{}).map(Number).filter(x=>[5,6,7].includes(x)).sort();return [5,6,7]},
-  canAccessGrade(grade){return this.isAdmin()||this.session?.mode!=='cloud'||!!this.currentUser()?.gradeAccess?.[grade]},
+  allowedGrades(){if(this.isAdmin()||this.currentUser()?.role==='teacher')return [5,6,7];if(this.session?.mode==='cloud')return Object.keys(this.currentUser()?.gradeAccess||{}).map(Number).filter(x=>[5,6,7].includes(x)).sort();return [5,6,7]},
+  canAccessGrade(grade){return this.currentUser()?.role==='teacher'||this.isAdmin()||this.session?.mode!=='cloud'||!!this.currentUser()?.gradeAccess?.[grade]},
   canLead(grade=State?.year){if(this.isLernatelier())return false;if(this.isAdmin())return true;if(this.session?.mode==='cloud')return this.currentUser()?.gradeAccess?.[grade]==='leitung';return this.currentUser()?.role==='leitung'},
   async hash(v){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(String(v)));return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('')},
   async createFirstAdmin(name,username,password){const db=this.localDb();if(db.users.length)throw new Error('Es existiert bereits ein Konto.');const u={id:uid('user'),name:name.trim(),username:username.trim().toLowerCase(),passwordHash:await this.hash(password),role:'admin',active:true,createdAt:new Date().toISOString()};db.users.push(u);this.saveLocalDb(db);await this.localLogin(username,password);return u;},
