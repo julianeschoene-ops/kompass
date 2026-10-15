@@ -12,7 +12,7 @@ function activityTeamsForGrade(year=State.year){
 function currentCoachTeam(year=State.year){return Auth.currentUser()?.coachTeams?.[year]||Auth.currentUser()?.coachTeams?.[String(year)]||'';}
 function ensureActivityDefaultTeam(){
   // Kreativband is shared across all teams; never narrow to the coach team automatically.
-  if(activityType==='Kreativband')activityTeam='alle';
+  // Preserve an explicitly selected team filter; initial default is 'alle'.
 }
 function ensureCreativeRooms(){
   for(const name of ADDITIONAL_CREATIVE_OFFERS){if(!Store.activities.some(a=>a.type==='Kreativband'&&a.name===name))Store.activities.push({id:'creative_'+(name.includes('Heimbacher')?'heimbacher_hof':'sport'),type:'Kreativband',year:5,name,icon:'🏃',lebEnabled:true,maxCount:ACTIVITY_MAX_COUNT});}
@@ -41,7 +41,7 @@ function activities(){
   ensureActivityDefaults();ensureActivityDefaultTeam();
   const offers=Store.activities.filter(a=>a.type===activityType&&(a.type==='Kreativband'||Number(a.year)===Number(State.year))).sort((a,b)=>a.name.localeCompare(b.name,'de'));
   let content=header('Angebote','Kreativband und weitere Angebote zählen jeden Besuch. 39 Besuche entsprechen 100 %.');
-  content+=`<div class="toolbar formgrid"><div><label>Jahrgang</label><select onchange="State.year=Number(this.value);activitySelected=null;activityTeam='alle';render()">${(activityType==='Kreativband'?[5,6,7]:visibleYears()).map(y=>`<option value="${y}" ${State.year===y?'selected':''}>Jahrgang ${y}</option>`).join('')}</select></div><div><label>Bereich</label><select onchange="activityType=this.value;activitySelected=null;render()">${ACTIVITY_TYPES.map(t=>`<option value="${t}" ${activityType===t?'selected':''}>${t==='Besonderes Angebot'?'Weitere Angebote':t}</option>`).join('')}</select></div></div>`;
+  content+=`<div class="toolbar formgrid"><div><label>Jahrgang</label><select onchange="State.year=Number(this.value);activitySelected=null;activityTeam='alle';render()">${(activityType==='Kreativband'?[5,6,7]:visibleYears()).map(y=>`<option value="${y}" ${State.year===y?'selected':''}>Jahrgang ${y}</option>`).join('')}</select></div><div><label>Bereich</label><select onchange="activityType=this.value;activitySelected=null;activityTeam='alle';render()">${ACTIVITY_TYPES.map(t=>`<option value="${t}" ${activityType===t?'selected':''}>${t==='Besonderes Angebot'?'Weitere Angebote':t}</option>`).join('')}</select></div></div>`;
   if(activityType==='Kreativband')content+=`<button class="chip ${activityWeeklyView?'':'dark'}" onclick="activityWeeklyView=!activityWeeklyView;activitySelected=null;render()">${activityWeeklyView?'← Zur Anwesenheitserfassung':'📊 Wochenstatistik'}</button>`;
   if(activityType==='Kreativband')content+=`<div class="toolbar"><button class="chip ${activityWeeklyView?'dark':''}" onclick="activityWeeklyView=!activityWeeklyView;activitySelected=null;render()">${activityWeeklyView?'← Anwesenheit erfassen':'📊 Wochenstatistik'}</button></div>`;
   if(activityType==='Besonderes Angebot'&&canEdit())content+=`<button class="chip dark" onclick="openActivityEditor()">+ Weiteres Angebot</button>`;
