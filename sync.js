@@ -87,7 +87,7 @@ const Sync={
       }
       if(hasCloud){
         const emptyGrades=years.filter(grade=>{const row=(grades||[]).find(x=>Number(x.grade)===Number(grade));return !row||!Array.isArray(row?.payload?.pupils)||row.payload.pupils.length===0;});
-        if(emptyGrades.length)throw new Error('Der Cloudbestand für Jahrgang '+emptyGrades.join(', ')+' enthält 0 Schüler*innen. Ein möglicherweise vorhandener lokaler Stand bleibt geschützt und wird nicht überschrieben.');
+        if(emptyGrades.length)console.warn('Cloud-Jahrgänge ohne Schülerbestand werden nur lesend übersprungen:',emptyGrades);
         const merged=this.blankFromShared(shared?.payload||{});this.baseGrades={};for(const row of (grades||[])){this.baseGrades[row.grade]=clone(row.payload||{});this.mergeGrade(merged,row.payload||{});}await this.overlayLernatelier(years,merged);Store.data=merged;Store._rosterChanged=false;Store.migrate();if(Auth.isAdmin())await this.pullAudit();Store.saveLocalOnly();this.lastPull=new Date().toISOString();if(Auth.isAdmin()&&Store._rosterChanged){this.busy=false;await this.push(true);return;}
       }
     }catch(e){console.error('Cloud pull',e);throw e}finally{this.busy=false}
@@ -122,7 +122,7 @@ const Sync={
         // complete grade in the cloud. Deliberate roster changes remain possible
         // as long as at least one pupil is present.
         if(!Array.isArray(localPayload.pupils)||localPayload.pupils.length===0){
-          failures.push({part:'grade',grade,error:new Error('Schutz aktiv: Ein leerer Jahrgang wird nicht in der Cloud gespeichert.')});
+          // No pupils in this grade: do not write or create an empty grade state.
           continue;
         }
         for(let attempt=0;attempt<3&&!done;attempt++){
