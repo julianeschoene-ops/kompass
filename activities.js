@@ -35,7 +35,7 @@ function activityAttendance(activityId,pupilId){
   const percent=Math.round(visits/ACTIVITY_MAX_COUNT*100),cfg=Store.settings?.scoreConfig||{redMax:24,yellowMax:74};
   return{visits,possible:ACTIVITY_MAX_COUNT,percent,status:scoreToStatus(percent,cfg.redMax,cfg.yellowMax)};
 }
-function activityAttendancePill(activityId,pupilId){const a=activityAttendance(activityId,pupilId);if(a.visits===0)return '<span class="mini">Noch keine Besuche erfasst</span>';const label=a.status==='green'?'Ziel erreicht':a.status==='yellow'?'im Aufbau':'im Aufbau';return`<span class="statusPill status-${a.status}">${a.visits}/${a.possible} · ${a.percent}% · ${label}</span>`;}
+function activityAttendancePill(activityId,pupilId){const a=activityAttendance(activityId,pupilId);if(a.visits===0)return '<span class="mini">Noch keine Besuche erfasst</span>';const label=a.status==='green'?'Ziel erreicht':a.status==='yellow'?'im Aufbau':'im Aufbau';return`<span class="statusPill status-${a.status}" style="display:inline-block;max-width:100%;white-space:normal;line-height:1.4;overflow-wrap:anywhere">${a.visits}/${a.possible} Besuche · ${a.percent}%</span>`;}
 
 function activities(){
   ensureActivityDefaults();ensureActivityDefaultTeam();
@@ -67,7 +67,8 @@ function saveCreativeAssessment(activityId,pupilId,field,value){
  r.creativeAssessment={...(r.creativeAssessment||{}),[field]:value,assessedBy:Auth.currentUser()?.name||'Lehrkraft',assessedAt:new Date().toISOString()};r.active=true;
  Store.activityRecords[key]=r;
  Store.save('Kreativband-Bewertung geändert',{target:pupilId,activity:activityId,field});
- toast('Niveau/Bewertung gespeichert – Cloud-Synchronisierung läuft',2500);
+ const status=document.getElementById('assessmentStatus_'+activityId+'_'+pupilId);if(status)status.textContent='Automatisch gespeichert · '+(Auth.currentUser()?.name||'Lehrkraft')+' · '+new Date().toLocaleDateString('de-DE')+' · Cloud-Synchronisierung läuft';
+ toast('Änderung lokal gespeichert – Cloud-Synchronisierung läuft',2500);
  // Keep the other dropdown and current scroll position untouched.
 }
 function creativeAssessmentControls(a,p,r){
@@ -75,7 +76,7 @@ function creativeAssessmentControls(a,p,r){
  const assessment=r.creativeAssessment||{};
  const opts=(values,selected)=>values.map(([v,label])=>'<option value="'+v+'" '+(v===selected?'selected':'')+'>'+label+'</option>').join('');
  const attrs=(field)=>'onchange="saveCreativeAssessment('+JSON.stringify(a.id)+','+JSON.stringify(p.id)+','+JSON.stringify(field)+',this.value)"';
- return '<div class="creativeInlineAssessment"><label class="mini">Niveau <select aria-label="Niveau für '+esc(p.short||p.first)+'" '+attrs('level')+'>'+opts([['','–'],['G','G'],['M','M'],['E','E']],assessment.level||'')+'</select></label> <label class="mini">Bewertung <select aria-label="Bewertung für '+esc(p.short||p.first)+'" '+attrs('color')+'>'+opts([['','–'],['red','🔴 Rot'],['yellow','🟡 Gelb'],['green','🟢 Grün']],assessment.color||'')+'</select></label></div>'+(assessment.assessedBy?'<p class="mini">Bewertet von: '+esc(assessment.assessedBy)+(assessment.assessedAt?' · '+esc(new Date(assessment.assessedAt).toLocaleDateString('de-DE')):'')+'</p>':'');
+ return '<div class="creativeInlineAssessment"><label class="mini">Niveau <select aria-label="Niveau für '+esc(p.short||p.first)+'" '+attrs('level')+'>'+opts([['','–'],['G','G'],['M','M'],['E','E']],assessment.level||'')+'</select></label> <label class="mini">Bewertung <select aria-label="Bewertung für '+esc(p.short||p.first)+'" '+attrs('color')+'>'+opts([['','–'],['red','🔴 Rot'],['yellow','🟡 Gelb'],['green','🟢 Grün']],assessment.color||'')+'</select></label></div><p class="mini" id="assessmentStatus_'+esc(a.id)+'_'+esc(p.id)+'">'+(assessment.assessedBy?'Zuletzt bewertet von: '+esc(assessment.assessedBy)+(assessment.assessedAt?' · '+esc(new Date(assessment.assessedAt).toLocaleDateString('de-DE')):''):'Änderungen werden automatisch gespeichert')+'</p>';
 }
 function activityQuickRow(a,p){
   const r=activityRecord(a.id,p.id),att=isCountableActivity(a)?activityAttendance(a.id,p.id):null;
