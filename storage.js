@@ -102,34 +102,8 @@ const Store = {
     d.subjects=WORKSHOP_SUBJECTS.slice();
     d.coreSubjects=CORE_SUBJECTS.slice();
     SEED.sprints.forEach(s=>{ if(!d.sprints.some(x=>x.year===s.year&&x.number===s.number)) d.sprints.push(clone(s)); });
-    // Sauberer Produktivstart 2026/27: Alle bisherigen Einträge waren Testdaten.
-    // Beim ersten Start von 8.3.2 wird deshalb der Datenbestand der Stufen 5–7
-    // EINMAL vollständig durch die geprüfte Startliste ersetzt. So können bereits
-    // vorhandene 6er nicht doppelt vorkommen. Danach wird nie wieder automatisch
-    // zurückgesetzt; alle neuen Einträge werden regulär gespeichert und synchronisiert.
-    if(!d.metadata.cleanStart2026_27_v1&&SEED.pupils.length){
-      d.pupils=clone(SEED.pupils);
-      d.records={};
-      d.lebDrafts={};
-      d.activities=[];
-      d.activityRecords={};
-      d.behaviour={};
-      d.coaching={};
-      d.workshopPaths={};
-      d.clubMemberships={};
-      d.assignments=[];
-      d.choiceImports=[];
-      d.sprintHistory={};
-      d.clubHistory={};
-      d.dailyCreativeVisits={};
-      d.calendarEvents=[];
-      d.auditLog=[];
-      d.teamConfig={};
-      d.metadata.cleanStart2026_27_v1=true;
-      d.metadata.cleanStart2026_27At=new Date().toISOString();
-      d.metadata.roster2026_27=true;
-      this._rosterChanged=true;
-    }
+    // Existing cloud rosters and attendance records must never be reset by a migration.
+
   },
   _lastSnapshot:null,
   saveLocalOnly(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data)); this._lastSnapshot=JSON.stringify(this.data); },
