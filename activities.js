@@ -3,7 +3,7 @@ const COUNTABLE_ACTIVITY_TYPES=new Set(['Kreativband','Besonderes Angebot']);
 const ACTIVITY_MAX_COUNT=39;
 const DEFAULT_SPECIAL_OFFERS=['QUOP','Lesen','Kopfrechenübungen','Schwimmen','Sport'];
 const ADDITIONAL_CREATIVE_OFFERS=['Kreativband Sport','Kreativband – Sportangebot Heimbacher Hof'];
-let activityType='Kreativband',activitySelected=null,activitySearch='',activityTeam='alle',activityStatsAllGrades=false,activityPupilYear='alle',activityVisitDate=new Date().toLocaleDateString('en-CA'),activityWeeklyView=false,activityWeekDate=new Date().toLocaleDateString('en-CA');
+let activityType='Kreativband',activitySelected=null,activitySearch='',activityTeam='alle',activityStatsAllGrades=true,activityPupilYear='alle',activityVisitDate=new Date().toLocaleDateString('en-CA'),activityWeeklyView=false,activityWeekDate=new Date().toLocaleDateString('en-CA');
 
 function activityTeamsForGrade(year=State.year){
   const teams=[...new Set((Store.pupils||[]).filter(p=>Number(p.year||String(p.className||'').charAt(0))===Number(year)).map(p=>p.team).filter(Boolean))];
@@ -42,7 +42,6 @@ function activities(){
   const offers=Store.activities.filter(a=>a.type===activityType&&(a.type==='Kreativband'||Number(a.year)===Number(State.year))).sort((a,b)=>a.name.localeCompare(b.name,'de'));
   let content=header('Angebote','Kreativband und weitere Angebote zählen jeden Besuch. 39 Besuche entsprechen 100 %.');
   content+=`<div class="toolbar formgrid">${activityType==='Kreativband'?'':`<div><label>Jahrgang</label><select onchange="State.year=Number(this.value);activitySelected=null;activityTeam='alle';render()">${visibleYears().map(y=>`<option value="${y}" ${State.year===y?'selected':''}>Jahrgang ${y}</option>`).join('')}</select></div>`}<div><label>Bereich</label><select onchange="activityType=this.value;activitySelected=null;activityTeam='alle';render()">${ACTIVITY_TYPES.map(t=>`<option value="${t}" ${activityType===t?'selected':''}>${t==='Besonderes Angebot'?'Weitere Angebote':t}</option>`).join('')}</select></div></div>`;
-  if(activityType==='Kreativband')content+=`<button class="chip ${activityWeeklyView?'':'dark'}" onclick="activityWeeklyView=!activityWeeklyView;activitySelected=null;render()">${activityWeeklyView?'← Zur Anwesenheitserfassung':'📊 Wochenstatistik'}</button>`;
   if(activityType==='Kreativband')content+=`<div class="toolbar"><button class="chip ${activityWeeklyView?'dark':''}" onclick="activityWeeklyView=!activityWeeklyView;activitySelected=null;render()">${activityWeeklyView?'← Anwesenheit erfassen':'📊 Wochenstatistik'}</button></div>`;
   if(activityType==='Besonderes Angebot'&&canEdit())content+=`<button class="chip dark" onclick="openActivityEditor()">+ Weiteres Angebot</button>`;
   if(activityType==='Club'&&canEdit())content+=`<button class="chip dark" onclick="openActivityEditor()">+ Club anlegen</button>`;
@@ -116,6 +115,13 @@ function creativeWeekMove(delta){
  const d=new Date(creativeWeekStart(activityWeekDate)+'T12:00:00');
  d.setDate(d.getDate()+delta*7);activityWeekDate=d.toLocaleDateString('en-CA');render();
 }
+function creativeDateKey(v){
+ const date=String(v||'').trim();
+ if(/^\\d{4}-\\d{2}-\\d{2}$/.test(date))return date;
+ const de=date.match(/^(\\d{1,2})\\.(\\d{1,2})\\.(\\d{4})$/);
+ if(de)return de[3]+'-'+de[2].padStart(2,'0')+'-'+de[1].padStart(2,'0');
+ return '';
+}
 function creativeWeekData(){
  const start=creativeWeekStart(activityWeekDate),end=new Date(start+'T12:00:00');end.setDate(end.getDate()+6);
  const endStr=end.toLocaleDateString('en-CA');
@@ -124,9 +130,9 @@ function creativeWeekData(){
  const offers=(Store.activities||[]).filter(a=>a.type==='Kreativband').sort((a,b)=>a.name.localeCompare(b.name,'de'));
  const counts={};const days={};
  Object.values(Store.dailyCreativeVisits||{}).forEach(v=>{
-   if(!v||!v.date||v.date<start||v.date>endStr||!ids.has(String(v.pupilId))||!offers.some(a=>a.id===v.activityId))return;
+   const date=creativeDateKey(v?.date);if(!date||date<start||date>endStr||!ids.has(String(v.pupilId))||!offers.some(a=>a.id===v.activityId))return;
    const key=String(v.pupilId)+'|'+v.activityId;
-   (days[key]??=new Set()).add(v.date);
+   (days[key]??=new Set()).add(date);
  });
  Object.entries(days).forEach(([k,set])=>counts[k]=set.size);
  return{start,end:endStr,pupils,offers,counts,days};
