@@ -131,8 +131,35 @@ const Sync={
           if(!current.data){const inserted=await Auth.cloudClient.from('kompass_grade_state').insert({grade,payload:localPayload,updated_at:new Date().toISOString()}).select('grade');error=inserted.error;done=!error;if(done)persistedPayload=localPayload;break;}
           const remotePayload=current.data.payload||{};
           const merged=this.mergeConcurrent(base,localPayload,remotePayload),stamp=new Date().toISOString();
-          // Teachers may record visits, but must not modify the protected pupil roster.
-          if(!Auth.canLead(grade))merged.pupils=clone(remotePayload.pupils||[]);
+          // Never let stale devices erase cloud rosters or previously recorded visits.
+          if(!Array.isArray(merged.pupils)||merged.pupils.length<(remotePayload.pupils||[]).length||!Auth.canLead(grade))merged.pupils=clone(remotePayload.pupils||[]);
+          const remoteVisits=remotePayload.dailyCreativeVisits||{},localVisits=localPayload.dailyCreativeVisits||{},baseVisits=base.dailyCreativeVisits||{};
+          merged.dailyCreativeVisits={...remoteVisits};
+          for(const [key,value] of Object.entries(localVisits)){
+            if(!Object.prototype.hasOwnProperty.call(remoteVisits,key))merged.dailyCreativeVisits[key]=clone(value);
+          }
+          // Only an explicit deletion of a visit present in this device's baseline may remove it.
+          for(const key of Object.keys(baseVisits)){
+            if(!Object.prototype.hasOwnProperty.call(localVisits,key)&&Object.prototype.hasOwnProperty.call(remoteVisits,key))delete merged.dailyCreativeVisits[key];
+          }
+          const remoteRecords=remotePayload.activityRecords||{},localRecords=localPayload.activityRecords||{},baseRecords=base.activityRecords||{};
+          merged.activityRecords={...remoteRecords};
+          for(const [key,record] of Object.entries(localRecords)){
+            const old=baseRecords[key],remote=remoteRecords[key];
+            if(!remote||!old||!this.same(record,old)){
+              const updated=clone(record);
+              if(remote&&old&&Number(record?.count)!==Number(old?.count)){
+                updated.count=Math.max(0,Number(remote.count||0)+Number(record.count||0)-Number(old.count||0));
+              }else if(remote)updated.count=Math.max(Number(remote.count||0),Number(record.count||0));
+              merged.activityRecords[key]={...(remote||{}),...updated};
+            }
+          }
+          // Non-leaders may change only creative visits and counters, not protected grade data.
+          if(!Auth.canLead(grade)){
+            for(const key of Object.keys(remotePayload)){
+              if(key!=='dailyCreativeVisits'&&key!=='activityRecords')merged[key]=clone(remotePayload[key]);
+            }
+          }
           const updated=await Auth.cloudClient.from('kompass_grade_state').update({payload:merged,updated_at:stamp}).eq('grade',grade).eq('updated_at',current.data.updated_at).select('grade');
           error=updated.error;if(!error&&updated.data?.length){done=true;persistedPayload=merged;}
         }
