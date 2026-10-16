@@ -88,7 +88,7 @@ const Sync={
       if(hasCloud){
         const emptyGrades=years.filter(grade=>{const row=(grades||[]).find(x=>Number(x.grade)===Number(grade));return !row||!Array.isArray(row?.payload?.pupils)||row.payload.pupils.length===0;});
         if(emptyGrades.length)throw new Error('Cloud-Daten für Jahrgänge '+emptyGrades.join(', ')+' fehlen. Kein Datenstand wird überschrieben.');
-        const merged=this.blankFromShared(shared?.payload||{});this.baseGrades={};for(const row of (grades||[])){this.baseGrades[row.grade]=clone(row.payload||{});this.mergeGrade(merged,row.payload||{});}await this.overlayLernatelier(years,merged);Store.data=merged;Store._rosterChanged=false;Store.migrate();if(Auth.isAdmin())await this.pullAudit();Store.saveLocalOnly();this.lastPull=new Date().toISOString();if(Auth.isAdmin()&&Store._rosterChanged){this.busy=false;await this.push(true);return;}
+        const merged=this.blankFromShared(shared?.payload||{});this.baseGrades={};for(const row of (grades||[])){this.baseGrades[row.grade]=clone(row.payload||{});this.mergeGrade(merged,row.payload||{});}await this.overlayLernatelier(years,merged).catch(e=>console.warn('Optional LA overlay failed',e));Store.data=merged;Store._rosterChanged=false;Store.migrate();if(Auth.isAdmin())await this.pullAudit();Store.saveLocalOnly();this.lastPull=new Date().toISOString();if(Auth.isAdmin()&&Store._rosterChanged){this.busy=false;await this.push(true);return;}
       }
     }catch(e){console.error('Cloud pull',e);throw e}finally{this.busy=false}
   },
