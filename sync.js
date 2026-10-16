@@ -86,9 +86,17 @@ const Sync={
         this.busy=false;await this.push(true);return;
       }
       if(hasCloud){
-        const emptyGrades=years.filter(grade=>{const row=(grades||[]).find(x=>Number(x.grade)===Number(grade));return !row||!Array.isArray(row?.payload?.pupils)||row.payload.pupils.length===0;});
+        const completeGrades=[...(grades||[])];
+        // Recheck each missing grade independently: never replace the full roster with a partial response.
+        for(const grade of years){
+          if(completeGrades.some(row=>Number(row.grade)===Number(grade)&&Array.isArray(row?.payload?.pupils)&&row.payload.pupils.length))continue;
+          const retry=await Auth.cloudClient.from('kompass_grade_state').select('grade,payload,updated_at').eq('grade',grade).maybeSingle();
+          if(retry.error)throw retry.error;
+          if(retry.data){const i=completeGrades.findIndex(row=>Number(row.grade)===Number(grade));if(i>=0)completeGrades[i]=retry.data;else completeGrades.push(retry.data);}
+        }
+        const emptyGrades=years.filter(grade=>{const row=completeGrades.find(x=>Number(x.grade)===Number(grade));return !row||!Array.isArray(row?.payload?.pupils)||row.payload.pupils.length===0;});
         if(emptyGrades.length)throw new Error('Cloud-Daten für Jahrgänge '+emptyGrades.join(', ')+' fehlen. Kein Datenstand wird überschrieben.');
-        const merged=this.blankFromShared(shared?.payload||{});this.baseGrades={};for(const row of (grades||[])){this.baseGrades[row.grade]=clone(row.payload||{});this.mergeGrade(merged,row.payload||{});}await this.overlayLernatelier(years,merged).catch(e=>console.warn('Optional LA overlay failed',e));Store.data=merged;Store._rosterChanged=false;Store.migrate();if(Auth.isAdmin())await this.pullAudit();Store.saveLocalOnly();this.lastPull=new Date().toISOString();if(Auth.isAdmin()&&Store._rosterChanged){this.busy=false;await this.push(true);return;}
+        const merged=this.blankFromShared(shared?.payload||{});this.baseGrades={};for(const row of completeGrades){this.baseGrades[row.grade]=clone(row.payload||{});this.mergeGrade(merged,row.payload||{});}await this.overlayLernatelier(years,merged).catch(e=>console.warn('Optional LA overlay failed',e));Store.data=merged;Store._rosterChanged=false;Store.migrate();if(Auth.isAdmin())await this.pullAudit();Store.saveLocalOnly();this.lastPull=new Date().toISOString();if(Auth.isAdmin()&&Store._rosterChanged){this.busy=false;await this.push(true);return;}
       }
     }catch(e){console.error('Cloud pull',e);throw e}finally{this.busy=false}
   },
