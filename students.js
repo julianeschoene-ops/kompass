@@ -25,6 +25,19 @@ async function ensureStudentRosterLoaded(grade){
  studentAutoReloadBusy=true;
  try{
   await Sync.pull();
+  // Independently read the selected grade if the combined cloud load left it empty.
+  if(!(Store.pupils||[]).some(p=>Number(p.year)===Number(grade))){
+   const response=await Auth.cloudClient.from('kompass_grade_state').select('grade,payload').eq('grade',Number(grade)).maybeSingle();
+   if(response.error)throw response.error;
+   const payload=response.data?.payload;
+   if(!Array.isArray(payload?.pupils)||!payload.pupils.length)throw new Error('Cloud hat für Jahrgang '+grade+' keine Schülerliste geliefert.');
+   const d=Store.data;
+   d.pupils=[...(d.pupils||[]).filter(p=>Number(p.year)!==Number(grade)),...payload.pupils.map(p=>({...p,year:Number(grade)}))];
+   d.dailyCreativeVisits={...(d.dailyCreativeVisits||{}),...(payload.dailyCreativeVisits||{})};
+   d.activityRecords={...(d.activityRecords||{}),...(payload.activityRecords||{})};
+   Sync.baseGrades[grade]=clone(payload);
+   Store.saveLocalOnly();
+  }
   State.cloudLoadError=null;
  }catch(e){
   State.cloudLoadError=e?.message||String(e);
