@@ -64,7 +64,7 @@ function saveCreativeAssessment(activityId,pupilId,field,value){
  if(field==='level'&&!['','G','M','E'].includes(value))return;
  if(field==='color'&&!['','red','yellow','green'].includes(value))return;
  const key=activityId+'|'+pupilId,r=activityRecord(activityId,pupilId);
- r.creativeAssessment={...(r.creativeAssessment||{}),[field]:value};r.active=true;
+ r.creativeAssessment={...(r.creativeAssessment||{}),[field]:value,assessedBy:Auth.currentUser()?.name||'Lehrkraft',assessedAt:new Date().toISOString()};r.active=true;
  Store.activityRecords[key]=r;
  Store.save('Kreativband-Bewertung geändert',{target:pupilId,activity:activityId,field});
  toast('Niveau/Bewertung gespeichert – Cloud-Synchronisierung läuft',2500);
