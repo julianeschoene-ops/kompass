@@ -35,7 +35,7 @@ function activityAttendance(activityId,pupilId){
   const percent=Math.round(visits/ACTIVITY_MAX_COUNT*100),cfg=Store.settings?.scoreConfig||{redMax:24,yellowMax:74};
   return{visits,possible:ACTIVITY_MAX_COUNT,percent,status:scoreToStatus(percent,cfg.redMax,cfg.yellowMax)};
 }
-function activityAttendancePill(activityId,pupilId){const a=activityAttendance(activityId,pupilId);const label=a.status==='green'?'ausreichend':a.status==='yellow'?'noch nicht ausreichend':'zu wenig';return`<span class="statusPill status-${a.status}">${a.visits}/${a.possible} · ${a.percent}% · ${label}</span>`;}
+function activityAttendancePill(activityId,pupilId){const a=activityAttendance(activityId,pupilId);if(a.visits===0)return '<span class="mini">Noch keine Besuche erfasst</span>';const label=a.status==='green'?'Ziel erreicht':a.status==='yellow'?'im Aufbau':'im Aufbau';return`<span class="statusPill status-${a.status}">${a.visits}/${a.possible} · ${a.percent}% · ${label}</span>`;}
 
 function activities(){
   ensureActivityDefaults();ensureActivityDefaultTeam();
