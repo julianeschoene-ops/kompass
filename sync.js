@@ -138,10 +138,9 @@ const Sync={
           for(const [key,value] of Object.entries(localVisits)){
             if(!Object.prototype.hasOwnProperty.call(remoteVisits,key))merged.dailyCreativeVisits[key]=clone(value);
           }
-          // Only an explicit deletion of a visit present in this device's baseline may remove it.
-          for(const key of Object.keys(baseVisits)){
-            if(!Object.prototype.hasOwnProperty.call(localVisits,key)&&Object.prototype.hasOwnProperty.call(remoteVisits,key))delete merged.dailyCreativeVisits[key];
-          }
+          // Creative visits are append-only during normal synchronization.
+          // Never interpret a stale or incomplete device as a deletion request.
+          // Deletions require a separate, explicit cloud operation with a backup.
           const remoteRecords=remotePayload.activityRecords||{},localRecords=localPayload.activityRecords||{},baseRecords=base.activityRecords||{};
           merged.activityRecords={...remoteRecords};
           for(const [key,record] of Object.entries(localRecords)){
