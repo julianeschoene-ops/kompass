@@ -30,7 +30,7 @@ function isCountableActivity(a){return !!a&&COUNTABLE_ACTIVITY_TYPES.has(a.type)
 function activityRecord(a,p){const key=a+'|'+p;return Store.activityRecords[key]||{activityId:a,pupilId:p,active:false,count:0,note:'',licenses:[]};}
 function datedVisitsForActivity(activityId,pupilId){return Object.values(Store.dailyCreativeVisits||{}).filter(v=>v&&v.activityId===activityId&&v.pupilId===pupilId&&v.date);}
 function activityAttendance(activityId,pupilId){
-  const r=activityRecord(activityId,pupilId),dated=[...new Set(datedVisitsForActivity(activityId,pupilId).map(v=>v.date))].length;
+  const r=activityRecord(activityId,pupilId),dated=datedVisitsForActivity(activityId,pupilId).length;
   const visits=Math.max(0,Math.max(Number(r.count||0),dated));
   const percent=Math.round(visits/ACTIVITY_MAX_COUNT*100),cfg=Store.settings?.scoreConfig||{redMax:24,yellowMax:74};
   return{visits,possible:ACTIVITY_MAX_COUNT,percent,status:scoreToStatus(percent,cfg.redMax,cfg.yellowMax)};
@@ -89,11 +89,15 @@ function addVisit(a,p,delta){
   const k=a+'|'+p,r=activityRecord(a,p);r.active=true;
   if(delta>0){
     if(!activityVisitDate){alert('Bitte zuerst ein Besuchsdatum auswählen.');return;}
-    const dk=`${activityVisitDate}|${a}|${p}`;if(Store.dailyCreativeVisits[dk]){toast('Für dieses Datum bereits erfasst');return;}
-    Store.dailyCreativeVisits[dk]={date:activityVisitDate,activityId:a,pupilId:p,createdAt:new Date().toISOString()};r.count=Math.max(0,Number(r.count||0)+1);
+    const dk=`${activityVisitDate}|${a}|${p}`;const dk2=dk+'|2';
+    if(Store.dailyCreativeVisits[dk]&&Store.dailyCreativeVisits[dk2]){toast('Für diesen Tag sind bereits zwei Schulstunden erfasst');return;}
+    const visitKey=Store.dailyCreativeVisits[dk]?dk2:dk;
+    Store.dailyCreativeVisits[visitKey]={date:activityVisitDate,activityId:a,pupilId:p,createdAt:new Date().toISOString()};
+    r.count=Math.max(0,Number(r.count||0)+1);
   }else{
     const dk=`${activityVisitDate}|${a}|${p}`;
-    if(Store.dailyCreativeVisits[dk])delete Store.dailyCreativeVisits[dk];
+    if(Store.dailyCreativeVisits[dk+'|2']){toast('Korrektur der zweiten Stunde derzeit gesperrt, um Cloud-Daten zu schützen');return;}
+    if(Store.dailyCreativeVisits[dk]){toast('Korrektur datierter Besuche derzeit gesperrt, um Cloud-Daten zu schützen');return;}
     r.count=Math.max(0,Number(r.count||0)-1);
   }
   Store.activityRecords[k]=r;Store.save('Angebotsbesuch geändert',{target:p,activity:a,date:activityVisitDate});render();
@@ -133,9 +137,9 @@ function creativeWeekData(){
  Object.values(Store.dailyCreativeVisits||{}).forEach(v=>{
    const date=creativeDateKey(v?.date);if(!date||date<start||date>endStr||!ids.has(String(v.pupilId))||!offers.some(a=>a.id===v.activityId))return;
    const key=String(v.pupilId)+'|'+v.activityId;
-   (days[key]??=new Set()).add(date);
+   (days[key]??=[]).push(date);
  });
- Object.entries(days).forEach(([k,set])=>counts[k]=set.size);
+ Object.entries(days).forEach(([k,dates])=>counts[k]=dates.length);
  return{start,end:endStr,pupils,offers,counts,days};
 }
 function creativeWeeklyCsv(){
@@ -171,7 +175,7 @@ function renderCreativeWeeklyStatistics(){
   const ps=filtered.filter(p=>Number(p.year||String(p.className||'').charAt(0))===year);
   const undated=ps.reduce((sum,p)=>sum+d.offers.reduce((n,a)=>{
    const recorded=Number(activityRecord(a.id,p.id).count||0);
-   const datedAll=[...new Set(datedVisitsForActivity(a.id,p.id).map(v=>creativeDateKey(v.date)).filter(Boolean))].length;
+   const datedAll=datedVisitsForActivity(a.id,p.id).filter(v=>creativeDateKey(v.date)).length;
    return n+Math.max(0,recorded-datedAll);
   },0),0);
   return {year,undated};
