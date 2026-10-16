@@ -117,7 +117,7 @@ const Sync={
     try{
       const now=new Date().toISOString(),years=Auth.allowedGrades(),failures=[];let saved=0;
       for(const grade of years){
-        const localPayload=this.gradePayload(grade),base=clone(this.baseGrades[grade]||localPayload);let done=false,error=null,persistedPayload=null;
+        const localPayload=this.gradePayload(grade),baseline=this.baseGrades[grade];if(!baseline){console.warn('No verified cloud baseline for grade',grade,'; write blocked');continue;}const base=clone(baseline);let done=false,error=null,persistedPayload=null;
         // Never allow a damaged or freshly emptied browser state to erase a
         // complete grade in the cloud. Deliberate roster changes remain possible
         // as long as at least one pupil is present.
