@@ -67,6 +67,7 @@ function saveCreativeAssessment(activityId,pupilId,field,value){
  r.creativeAssessment={...(r.creativeAssessment||{}),[field]:value};r.active=true;
  Store.activityRecords[key]=r;
  Store.save('Kreativband-Bewertung geändert',{target:pupilId,activity:activityId,field});
+ toast('Niveau/Bewertung gespeichert – Cloud-Synchronisierung läuft',2500);
  // Keep the other dropdown and current scroll position untouched.
 }
 function creativeAssessmentControls(a,p,r){
