@@ -24,7 +24,7 @@ async function ensureStudentRosterLoaded(grade){
  studentAutoReloadAttempted.add(grade);
  studentAutoReloadBusy=true;
  try{
-  await Sync.pull();
+  try{await Sync.pull();}catch(e){console.warn('Combined roster load failed; trying direct grade read',e);}
   // Independently read the selected grade if the combined cloud load left it empty.
   if(!(Store.pupils||[]).some(p=>Number(p.year)===Number(grade))){
    const response=await Auth.cloudClient.from('kompass_grade_state').select('grade,payload').eq('grade',Number(grade)).maybeSingle();
