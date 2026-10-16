@@ -117,8 +117,8 @@ function creativeWeekMove(delta){
 }
 function creativeDateKey(v){
  const date=String(v||'').trim();
- if(/^\\d{4}-\\d{2}-\\d{2}$/.test(date))return date;
- const de=date.match(/^(\\d{1,2})\\.(\\d{1,2})\\.(\\d{4})$/);
+ if(/^\d{4}-\d{2}-\d{2}$/.test(date))return date;
+ const de=date.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
  if(de)return de[3]+'-'+de[2].padStart(2,'0')+'-'+de[1].padStart(2,'0');
  return '';
 }
