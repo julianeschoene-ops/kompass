@@ -52,6 +52,7 @@ function activities(){
 function activityIcon(type){return type==='Kreativband'?'🎨':type==='Club'?'🏆':'✨';}
 function activityMemberCount(id){return Object.values(Store.activityRecords).filter(r=>r.activityId===id&&r.active).length;}
 function renderActivityDetail(id){
+  for(const grade of [5,6,7])if(!(Store.pupils||[]).some(p=>Number(p.year)===grade)&&typeof ensureStudentRosterLoaded==='function')setTimeout(()=>ensureStudentRosterLoaded(grade),0);
   const a=Store.activities.find(x=>x.id===id);if(!a)return'';ensureActivityDefaultTeam();
   const teams=activityTeamsForGrade(State.year),own=currentCoachTeam(State.year);
   let pupils=(Store.pupils||[]).filter(p=>a.type==='Kreativband'?(activityPupilYear==='alle'||Number(p.year||String(p.className||'').charAt(0))===Number(activityPupilYear)):Number(p.year||String(p.className||'').charAt(0))===Number(State.year)).filter(p=>activityTeam==='alle'||p.team===activityTeam).filter(p=>!activitySearch||(p.first+' '+p.last+' '+p.short).toLowerCase().includes(activitySearch.toLowerCase())).sort((x,y)=>x.last.localeCompare(y.last,'de')||x.first.localeCompare(y.first,'de'));
