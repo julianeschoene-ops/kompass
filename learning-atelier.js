@@ -303,11 +303,214 @@ function laSelectBoardPupil(id,node){
 
 // Schulweite Tagesübersicht (zunächst ohne unbestätigte Echtzeitdaten).
 const LA_DAY_OFFERS={
-  1:[['5.','IT-Studio','Juliane Schöne','vor den Computerräumen'],['5.','Koch- und Nähstudio','Nina Kreuzberger','neben Aquarium links'],['5.','Kunstatelier','Anja Peschel','Fundbüro'],['5.','Naturwissenschaftliches Labor','Dagmar Zwilling','neben Aquarium rechts'],['5.','Schulgarten','Antonios Anastasatos','Treppe zur großen Schulstraße'],['5.','Sportangebot Heimbacher Hof','Anja Hoffmann','Glastür Stichgang Stufe 6/7'],['5.','Technikwerkstatt','Jan-Lukas Richter','Treppe zum 5er-Nest'],['5.','Musik – eigenständiges Üben','Friedrich Mück',''],['6.','Koch- und Nähstudio','Nina Kreuzberger','neben Aquarium links'],['6.','Kunstatelier','Anja Peschel','Fundbüro'],['6.','Musikatelier','Miriam Bay','Busausgang / Elterntaxi'],['6.','Naturwissenschaftliches Labor','Dagmar Zwilling','neben Aquarium rechts'],['6.','Schulgarten','Antonios Anastasatos','Treppe zur großen Schulstraße'],['6.','Technikwerkstatt','Jan-Lukas Richter','Treppe zum 5er-Nest']],
-  2:[['5.','IT-Studio','Michael Feil','vor den Computerräumen'],['5.','Koch- und Nähstudio','Nina Kreuzberger','neben Aquarium links'],['5.','Kunstatelier','Julia Bachmair Neu','Fundbüro'],['5.','Musikatelier','Tobias Karpf','Busausgang / Elterntaxi'],['5.','Musik – eigenständiges Üben','Friedrich Mück',''],['5.','Naturwissenschaftliches Labor','Dagmar Zwilling','neben Aquarium rechts'],['5.','Schulgarten','Nicole Oursin','Treppe zur großen Schulstraße'],['5.','Sportangebot','Robin Steinle','vor Glastür Stichgang 6/7'],['5.','Technikwerkstatt','Marie Lang','Treppe zum 5er-Nest'],['6.','Koch- und Nähstudio','Nina Kreuzberger','neben Aquarium links'],['6.','Kunstatelier','Julia Bachmair Neu','Fundbüro'],['6.','Musikatelier','Tobias Karpf','Busausgang / Elterntaxi'],['6.','Musik – eigenständiges Üben','Friedrich Mück',''],['6.','Naturwissenschaftliches Labor','Dagmar Zwilling','neben Aquarium rechts'],['6.','Schulgarten','Nicole Oursin','Treppe zur großen Schulstraße'],['6.','Sportangebot','Robin Steinle','vor Glastür Stichgang 6/7'],['6.','Technikwerkstatt','Marie Lang','Treppe zum 5er-Nest']],
-  3:[['5.','IT-Studio','Jörg Vogt','vor den Computerräumen'],['5.','Kunstatelier','Maria Kasatkin','Fundbüro'],['5.','Musikatelier','Friedrich Mück','Busausgang / Elterntaxi'],['5.','Musik – eigenständiges Üben','Friedrich Mück',''],['5.','Naturwissenschaftliches Labor','Dagmar Zwilling','neben Aquarium rechts'],['5.','Schulgarten','Nicole Oursin','Treppe zur großen Schulstraße'],['5.','Sportangebot','Robin Steinle','vor Glastür Stichgang 6/7'],['5.','Technikwerkstatt','Marie Lang','Treppe zum 5er-Nest'],['6.','IT-Studio','Jörg Vogt','vor den Computerräumen'],['6.','Kunstatelier','Maria Kasatkin','Fundbüro'],['6.','Musikatelier','Friedrich Mück','Busausgang / Elterntaxi'],['6.','Naturwissenschaftliches Labor','Dagmar Zwilling','neben Aquarium rechts'],['6.','Schulgarten','Nicole Oursin','Treppe zur großen Schulstraße'],['6.','Sportangebot','Robin Steinle','vor Glastür Stichgang 6/7'],['6.','Technikwerkstatt','Marie Lang','Treppe zum 5er-Nest']],
-  4:[['5.','Kunstatelier','Maria Kasatkin','vor dem Sekretariat'],['5.','Musik – eigenständiges Üben','Friedrich Mück',''],['5.','Sportangebot','Robin Steinle','Stichgang 6/7']],
-  5:[['5.','Kunstatelier','Maria Kasatkin','vor dem Sekretariat'],['5.','Musik – eigenständiges Üben','Friedrich Mück',''],['5.','Schulgarten','Melanie Schnepf','Treppe 6-/7-Stichgang'],['5.','Sportangebot','Robin Steinle','Stichgang 6/7']]
+  "1": [
+    [
+      "5.–6.",
+      "Naturwissenschaftliches Labor",
+      "",
+      "neben Aquarium rechts"
+    ],
+    [
+      "5.–6.",
+      "Schulgarten",
+      "",
+      "Treppe zur großen Schulstraße"
+    ],
+    [
+      "5.–6.",
+      "Sportangebot Heimbacher Hof",
+      "",
+      "vor der Glastür Stichgang 6/7"
+    ],
+    [
+      "5.",
+      "IT-Studio",
+      "",
+      "vor den Computerräumen"
+    ],
+    [
+      "5.",
+      "Koch- und Nähstudio (Nähen)",
+      "",
+      "neben Aquarium links"
+    ],
+    [
+      "5.",
+      "Kunstatelier",
+      "",
+      "Fundbüro"
+    ],
+    [
+      "5.–6.",
+      "Technikwerkstatt",
+      "",
+      "Treppe zum 5er-Nest"
+    ],
+    [
+      "5.",
+      "Musik – eigenständiges Üben",
+      "",
+      ""
+    ],
+    [
+      "6.",
+      "Musikatelier",
+      "",
+      "Busausgang / Elterntaxi"
+    ]
+  ],
+  "2": [
+    [
+      "5.–6.",
+      "Naturwissenschaftliches Labor",
+      "",
+      "neben Aquarium rechts"
+    ],
+    [
+      "5.–6.",
+      "Schulgarten",
+      "",
+      "Treppe zur großen Schulstraße"
+    ],
+    [
+      "5.–6.",
+      "IT-Studio",
+      "",
+      "vor den Computerräumen"
+    ],
+    [
+      "5.–6.",
+      "Koch- und Nähstudio (Nähen)",
+      "",
+      "neben Aquarium links"
+    ],
+    [
+      "5.–6.",
+      "Kunstatelier",
+      "",
+      "Fundbüro"
+    ],
+    [
+      "5.–6.",
+      "Musikatelier",
+      "",
+      "Busausgang / Elterntaxi"
+    ],
+    [
+      "5.–6.",
+      "Sportangebot",
+      "",
+      "vor der Glastür Stichgang 6/7"
+    ],
+    [
+      "5.–6.",
+      "Technikwerkstatt",
+      "",
+      "Treppe zum 5er-Nest"
+    ],
+    [
+      "5.–6.",
+      "Musik – eigenständiges Üben",
+      "",
+      ""
+    ]
+  ],
+  "3": [
+    [
+      "5.–6.",
+      "Naturwissenschaftliches Labor",
+      "",
+      "neben Aquarium rechts"
+    ],
+    [
+      "5.–6.",
+      "Schulgarten",
+      "",
+      "Treppe zur großen Schulstraße"
+    ],
+    [
+      "5.–6.",
+      "IT-Studio",
+      "",
+      "vor den Computerräumen"
+    ],
+    [
+      "5.–6.",
+      "Kunstatelier",
+      "",
+      "Fundbüro"
+    ],
+    [
+      "5.–6.",
+      "Musikatelier",
+      "",
+      "Busausgang / Elterntaxi"
+    ],
+    [
+      "5.–6.",
+      "Sportangebot",
+      "",
+      "vor der Glastür Stichgang 6/7"
+    ],
+    [
+      "5.–6.",
+      "Technikwerkstatt",
+      "",
+      "Treppe zum 5er-Nest"
+    ],
+    [
+      "5.–6.",
+      "Musik – eigenständiges Üben",
+      "",
+      ""
+    ]
+  ],
+  "4": [
+    [
+      "5.",
+      "Kunstatelier",
+      "",
+      "Fundbüro"
+    ],
+    [
+      "5.",
+      "Musik – eigenständiges Üben",
+      "",
+      ""
+    ],
+    [
+      "5.",
+      "Sportangebot",
+      "",
+      "vor der Glastür Stichgang 6/7"
+    ]
+  ],
+  "5": [
+    [
+      "5.",
+      "Kunstatelier",
+      "",
+      "Fundbüro"
+    ],
+    [
+      "5.",
+      "Musik – eigenständiges Üben",
+      "",
+      ""
+    ],
+    [
+      "5.",
+      "Schulgarten",
+      "",
+      "Treppe 6-/7-Stichgang"
+    ],
+    [
+      "5.",
+      "Sportangebot",
+      "",
+      "vor der Glastür Stichgang 6/7"
+    ]
+  ]
 };
 const LA_CANCELLED_CREATIVE_2026_10_13=['Schulgarten','Naturwissenschaftliches Labor','Kunstatelier'];
 const LA_SPORT_OFFERS={1:[['2.','Tischtennis und Ballspiele','Pavlos Moraintinis','Foyer vor Sporthalle 1'],['3.','Tischtennis und Ballspiele','Pavlos Moraintinis','Foyer vor Sporthalle 1']],3:[['3.–4.','Turnen','Robin Steinle','Foyer Sporthalle']],5:[['3.','Tischtennis und Ballspiele','Pavlos Moraintinis','Halle 1'],['4.','Turnen','Robin Steinle','Foyer Sporthalle']]};
@@ -394,7 +597,7 @@ function laTodayBoard(){
  const list=(items,isFlex=false)=>items.length?'<div class="laTodayItems">'+items.map(x=>'<div class="laTodayItem"><b>'+esc(x[0])+' Std. · '+esc(x[1])+'</b><span>'+esc(laTeacherShort(x[2]))+(x[3]?(isFlex?' · Raum: ':' · Treff: ')+esc(x[3]):'')+(isFlex&&x[4]?'<br>Teams: '+esc(x[4]):'')+'</span></div>').join('')+'</div>':'<p class="mini">Keine Angebote eingetragen.</p>';
  const flex=laGrade===6?laFlexForDate(d):[];
  const mondayNotes=(laGrade===6&&d.date==='2026-10-12')?'🏀 Sportangebote für heute können noch gebucht werden.':'';
- const scheduledNotes=(laGrade===6&&d.date==='2026-10-13')?'🥾 Wandertag der Stufe 6.\n🤒 Frau May ist weiterhin krank; Französisch entfällt.':(laGrade===6&&d.date==='2026-10-14')?'📸 Gruppenfoto der Bläserklasse: Alle Bläserklassenkinder treffen sich in der 4. Stunde um 10:15 Uhr in der Aula.\n🚦 Bitte schaut gleich in der Ankommensstunde auf die AG-Ampel! Auch heute fallen Angebote wegen Krankheit aus. Prüft, ob eure AG stattfindet, damit ihr bei einem Ausfall rechtzeitig euren Bus nach Hause nehmt.':'';
+ const scheduledNotes=(laGrade===6&&d.date==='2026-10-19')?'⚠️ Das Koch- und Nähstudio (Nähen) fällt heute aus. Bitte wähle ein anderes Angebot.':(laGrade===6&&d.date==='2026-10-13')?'🥾 Wandertag der Stufe 6.\n🤒 Frau May ist weiterhin krank; Französisch entfällt.':(laGrade===6&&d.date==='2026-10-14')?'📸 Gruppenfoto der Bläserklasse: Alle Bläserklassenkinder treffen sich in der 4. Stunde um 10:15 Uhr in der Aula.\n🚦 Bitte schaut gleich in der Ankommensstunde auf die AG-Ampel! Auch heute fallen Angebote wegen Krankheit aus. Prüft, ob eure AG stattfindet, damit ihr bei einem Ausfall rechtzeitig euren Bus nach Hause nehmt.':'';
  const flexChangeNotes=(laGrade===6&&d.date==='2026-10-12')?'📘 Jetzt Flexstunden buchen – so bist du gut auf deine Lernnachweise vorbereitet!':'';
  const notes=[flexChangeNotes,mondayNotes,scheduledNotes,published?String(current.notes||'').trim():''].filter(Boolean).join('\n');
  const news=published?String(current.news||'').trim():'';
@@ -407,7 +610,7 @@ function laTodayBoard(){
  '<div class="laTodaySection laWorldNews"><h3>🌍 Neues aus der Welt</h3>'+worldNewsHtml+'</div>'+
  '<div class="laTodaySection"><h3>🏀 Weitere Sportangebote</h3>'+list(laGrade===6?(LA_SPORT_OFFERS[d.day]||[]):[])+'</div></div>'+
  '<div class="laTodayColumn laNoticeColumn"><div class="laTodaySection laNoticeSection"><h3>📣 Infos & Vertretungen</h3><div class="laNoticeList">'+(notes?notes.split('\n').filter(Boolean).map(x=>'<div class="laNotice">'+esc(x)+'</div>').join(''):'<p class="mini">Heute sind noch keine Änderungen veröffentlicht.</p>')+'</div></div></div>'+
- '<div class="laTodayColumn"><div class="laTodaySection"><h3>🎨 Kreativband</h3>'+list(laMergeConsecutiveOffers((LA_DAY_OFFERS[d.day]||[]).filter(x=>!(d.date==='2026-10-13'&&LA_CANCELLED_CREATIVE_2026_10_13.includes(x[1])))))+(d.date==='2026-10-13'?'<p class="mini"><b>⚠️ Entfällt wegen des Wandertags der Stufe 6:</b> Schulgarten, Naturwissenschaftliches Labor und Kunstatelier.</p>':'')+'</div></div>'+
+ '<div class="laTodayColumn"><div class="laTodaySection"><h3>🎨 Kreativband</h3>'+list(laMergeConsecutiveOffers((LA_DAY_OFFERS[d.day]||[]).filter(x=>!(d.date==='2026-10-13'&&LA_CANCELLED_CREATIVE_2026_10_13.includes(x[1]))&&!(d.date==='2026-10-19'&&x[1].startsWith('Koch- und Nähstudio')))))+(d.date==='2026-10-19'?'<p class="mini"><b>⚠️ Heute entfällt:</b> Koch- und Nähstudio (Nähen).</p>':'')+(d.date==='2026-10-13'?'<p class="mini"><b>⚠️ Entfällt wegen des Wandertags der Stufe 6:</b> Schulgarten, Naturwissenschaftliches Labor und Kunstatelier.</p>':'')+'</div></div>'+
  '<div class="laTodayColumn"><div class="laTodaySection"><h3>📘 Flexstunden</h3>'+list(flex,true)+'</div></div></div>'+
  (published&&current.updatedAt?'<p class="mini">Zuletzt aktualisiert: '+esc(new Date(current.updatedAt).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}))+'</p>':'')+'</section>';
 }
