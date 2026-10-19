@@ -27,7 +27,7 @@ const Auth={
   async createFirstAdmin(name,username,password){const db=this.localDb();if(db.users.length)throw new Error('Es existiert bereits ein Konto.');const u={id:uid('user'),name:name.trim(),username:username.trim().toLowerCase(),passwordHash:await this.hash(password),role:'admin',active:true,createdAt:new Date().toISOString()};db.users.push(u);this.saveLocalDb(db);await this.localLogin(username,password);return u;},
   async createLocalUser({name,username,password,role}){const db=this.localDb();username=username.trim().toLowerCase();if(db.users.some(u=>u.username===username))throw new Error('Benutzername existiert bereits.');const u={id:uid('user'),name:name.trim(),username,passwordHash:await this.hash(password),role:role||'teacher',active:true,createdAt:new Date().toISOString()};db.users.push(u);this.saveLocalDb(db);Store.log('Benutzerkonto angelegt',{target:u.name,role:u.role});return u;},
   async localLogin(username,password){const db=this.localDb(),hash=await this.hash(password);const u=db.users.find(x=>x.active!==false&&x.username===username.trim().toLowerCase()&&x.passwordHash===hash);if(!u)throw new Error('Benutzername oder Passwort ist nicht korrekt.');this.session={mode:'local',user:{id:u.id,name:u.name,username:u.username,role:u.role,gradeAccess:{5:u.role==='leitung'?'leitung':'teacher',6:u.role==='leitung'?'leitung':'teacher',7:u.role==='leitung'?'leitung':'teacher'},coachTeams:u.coachTeams||{}}};sessionStorage.setItem(SESSION_KEY,JSON.stringify(this.session));return this.session.user;},
-  async logout(){const client=this.cloudClient;this.session=null;sessionStorage.removeItem(SESSION_KEY);render();if(client){try{await client.auth.signOut({scope:'local'})}catch(e){console.warn('Lokale Abmeldung',e)}}},
+  async logout(){if(window.Sync){clearInterval(Sync.refreshTimer);clearTimeout(Sync.timer);}const client=this.cloudClient;this.session=null;sessionStorage.removeItem(SESSION_KEY);render();if(client){try{await client.auth.signOut({scope:'local'})}catch(e){console.warn('Lokale Abmeldung',e)}}},
   async handleCloudAuthChange(s){
     if(s?.user?.id){
       // signInWithPassword applies the profile itself. The auth event must not
@@ -67,7 +67,7 @@ const Auth={
       Store.data={pupils:[],settings:{},auditLog:[]};
       Store._lastSnapshot=JSON.stringify(Store.data);
     }
-    if(window.Sync){try{await Sync.pull()}catch(e){State.cloudLoadError=e?.message||String(e);render();return;}}render();
+    if(window.Sync){try{await Sync.pull();Sync.startAutoRefresh();}catch(e){State.cloudLoadError=e?.message||String(e);render();return;}}render();
   },
   async cloudLogin(email,password){const {data,error}=await this.cloudClient.auth.signInWithPassword({email:String(email||'').trim().toLowerCase(),password});if(error){if(String(error.message||'').toLowerCase().includes('invalid login credentials'))throw new Error('E-Mail oder Passwort ist nicht korrekt.');throw error;}await this.applyCloudSession(data.session)},
   async verifyCloudPassword(email,password){
