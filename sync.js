@@ -80,7 +80,10 @@ const Sync={
     }
   },
   async pull(){
-    if(!this.enabled())return;this.busy=true;
+    if(!this.enabled())return;
+    // Never replace unsent local edits with a cloud snapshot.
+    if(this.dirty)throw new Error('Lokale Änderungen warten noch auf Cloud-Speicherung.');
+    this.busy=true;
     try{
       const years=Auth.allowedGrades();
       const [{data:shared,error:se},{data:grades,error:ge}]=await Promise.all([
@@ -103,8 +106,20 @@ const Sync={
           if(retry.data){const i=completeGrades.findIndex(row=>Number(row.grade)===Number(grade));if(i>=0)completeGrades[i]=retry.data;else completeGrades.push(retry.data);}
         }
         const emptyGrades=years.filter(grade=>{const row=completeGrades.find(x=>Number(x.grade)===Number(grade));return !row||!Array.isArray(row?.payload?.pupils)||row.payload.pupils.length===0;});
-        if(emptyGrades.length)throw new Error('Cloud-Daten für Jahrgänge '+emptyGrades.join(', ')+' fehlen. Kein Datenstand wird überschrieben.');
-        const merged=this.blankFromShared(shared?.payload||{});this.baseGrades={};for(const row of completeGrades){this.baseGrades[row.grade]=clone(row.payload||{});this.mergeGrade(merged,row.payload||{});}await this.overlayLernatelier(years,merged).catch(e=>console.warn('Optional LA overlay failed',e));Store.data=merged;Store._rosterChanged=false;Store.migrate();if(Auth.isAdmin())await this.pullAudit();Store.saveLocalOnly();this.lastPull=new Date().toISOString();if(Auth.isAdmin()&&Store._rosterChanged){this.busy=false;await this.push(true);return;}
+        // Missing cloud grade rows must not abort the whole school sync.
+        // Keep the existing local data for those grades, without ever writing
+        // an empty or partial roster back to Supabase.
+        const localMissing=Object.fromEntries(emptyGrades.map(grade=>[grade,this.gradePayload(grade)]));
+        const merged=this.blankFromShared(shared?.payload||{});this.baseGrades={};
+        for(const row of completeGrades){
+          if(!Array.isArray(row?.payload?.pupils)||!row.payload.pupils.length)continue;
+          this.baseGrades[row.grade]=clone(row.payload);this.mergeGrade(merged,row.payload);
+        }
+        for(const grade of emptyGrades){
+          if(localMissing[grade]?.pupils?.length)this.mergeGrade(merged,localMissing[grade]);
+        }
+        if(emptyGrades.length)console.warn('Cloud-Jahrgänge ohne vollständige Schülerliste; lokale Daten geschützt:',emptyGrades);
+        await this.overlayLernatelier(years.filter(g=>!emptyGrades.includes(g)),merged).catch(e=>console.warn('Optional LA overlay failed',e));Store.data=merged;Store._rosterChanged=false;Store.migrate();if(Auth.isAdmin())await this.pullAudit();Store.saveLocalOnly();this.lastPull=new Date().toISOString();if(Auth.isAdmin()&&Store._rosterChanged){this.busy=false;await this.push(true);return;}
       }
     }catch(e){console.error('Cloud pull',e);throw e}finally{this.busy=false}
   },
