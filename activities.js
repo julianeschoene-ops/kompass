@@ -68,7 +68,7 @@ function saveCreativeAssessment(activityId,pupilId,field,value){
  Store.activityRecords[key]=r;
  Store.save('Kreativband-Bewertung geändert',{target:pupilId,activity:activityId,field});
  const status=document.getElementById('assessmentStatus_'+activityId+'_'+pupilId);if(status)status.textContent='Automatisch gespeichert · '+(Auth.currentUser()?.name||'Lehrkraft')+' · '+new Date().toLocaleDateString('de-DE')+' · Cloud-Synchronisierung läuft';
- toast('Änderung lokal gespeichert – Cloud-Synchronisierung läuft',2500);
+ toast('Nur lokal gespeichert – warte auf Cloud-Bestätigung',4000);
  // Keep the other dropdown and current scroll position untouched.
 }
 function creativeAssessmentControls(a,p,r){
