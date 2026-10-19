@@ -1,5 +1,5 @@
 const Sync={
-  timer:null,busy:false,dirty:false,lastPull:null,baseGrades:{},
+  timer:null,busy:false,dirty:false,lastPull:null,baseGrades:{},refreshTimer:null,
   enabled(){return Auth.session?.mode==='cloud'&&!Auth.isLernatelier()&&!!Auth.cloudClient},
   gradeOf(p){return Number(p?.year||String(p?.className||'').charAt(0))||0},
   filterObject(obj,pred){return Object.fromEntries(Object.entries(obj||{}).filter(([k,v])=>pred(k,v)))},
@@ -55,6 +55,14 @@ const Sync={
     return {grade:Number(grade),pupils:data.payload.pupils,updatedAt:data.updated_at};
   },
   schedule(delay=0){if(!this.enabled())return;this.dirty=true;clearTimeout(this.timer);this.timer=setTimeout(()=>this.push(),delay)},
+  startAutoRefresh(){
+    clearInterval(this.refreshTimer);
+    this.refreshTimer=setInterval(async()=>{
+      if(!this.enabled()||this.busy||this.dirty||document.visibilityState==='hidden')return;
+      try{await this.pull();if(typeof render==='function')render();}
+      catch(e){console.warn('KOMPASS Hintergrundabgleich',e);}
+    },15000);
+  },
   async overlayLernatelier(years,merged){
     if(!years.length)return;
     const {data,error}=await Auth.cloudClient.from('kompass_lernatelier_state')
@@ -175,6 +183,7 @@ const Sync={
       if(Auth.isAdmin()){const {error}=await Auth.cloudClient.from('kompass_shared_state').upsert({id:'school',payload:this.sharedPayload(),updated_at:now});if(error){failures.push({part:'shared',error});console.warn('Cloud shared sync',error);}else saved++;}
       await this.pushAudit();
       if(failures.length){
+        this.dirty=true;
         console.warn('Cloud partially synced; successful writes retained',failures);
         const f=failures[0], raw=f?.error?.message||f?.error?.details||f?.error?.hint||String(f?.error||'Unbekannter Fehler');
         const where=f.part==='grade'?'Jahrgang '+f.grade:(f.part==='shared'?'Schuldaten':'Cloud');
@@ -182,7 +191,7 @@ const Sync={
         return;
       }
       this.lastPull=now;toast('In der Cloud gespeichert',1800);
-    }catch(e){console.error('Cloud push',e);toast('Cloud-Fehler: '+(e?.message||String(e)),7000)}finally{this.busy=false;if(this.dirty)this.schedule(0)}
+    }catch(e){this.dirty=true;console.error('Cloud push',e);toast('Cloud-Fehler: '+(e?.message||String(e)),7000)}finally{this.busy=false;if(this.dirty)this.schedule(10000)}
   },
   async pushAudit(){const u=Auth.currentUser();const rows=(Store.auditLog||[]).slice(-40).map(l=>({id:l.id,at:l.at,user_id:u?.id||null,user_name:l.user||u?.name||'',action:l.action||'Änderung gespeichert',details:l.details||{},sections:l.sections||[]}));if(!rows.length)return;const {error}=await Auth.cloudClient.from('kompass_audit_log').upsert(rows,{onConflict:'id',ignoreDuplicates:true});if(error&&error.code!=='42501')console.warn('Audit sync',error)},
   async pullAudit(){const {data,error}=await Auth.cloudClient.from('kompass_audit_log').select('id,at,user_id,user_name,action,details,sections').order('at',{ascending:false}).limit(500);if(error)throw error;Store.data.auditLog=(data||[]).reverse().map(x=>({id:x.id,at:x.at,userId:x.user_id,user:x.user_name,action:x.action,details:x.details||{},sections:x.sections||[]}));},
