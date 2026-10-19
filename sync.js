@@ -133,13 +133,13 @@ const Sync={
     try{
       const now=new Date().toISOString(),years=Auth.allowedGrades(),failures=[];let saved=0;
       for(const grade of years){
-        const localPayload=this.gradePayload(grade),baseline=this.baseGrades[grade];if(!baseline){console.warn('No verified cloud baseline for grade',grade,'; write blocked');continue;}const base=clone(baseline);let done=false,error=null,persistedPayload=null;
+        const localPayload=this.gradePayload(grade),baseline=this.baseGrades[grade];if(!baseline){failures.push({part:'grade',grade,error:new Error('Cloud-Ausgangsstand fehlt; Änderungen sind nur auf diesem Gerät gespeichert')});continue;}const base=clone(baseline);let done=false,error=null,persistedPayload=null;
         // Never allow a damaged or freshly emptied browser state to erase a
         // complete grade in the cloud. Deliberate roster changes remain possible
         // as long as at least one pupil is present.
         if(!Array.isArray(localPayload.pupils)||localPayload.pupils.length===0){
           // No pupils in this grade: do not write or create an empty grade state.
-          continue;
+          failures.push({part:'grade',grade,error:new Error('Schülerliste fehlt; Cloud-Speicherung abgebrochen')});continue;
         }
         for(let attempt=0;attempt<3&&!done;attempt++){
           const current=await Auth.cloudClient.from('kompass_grade_state').select('payload,updated_at').eq('grade',grade).maybeSingle();
@@ -190,7 +190,7 @@ const Sync={
         toast('Cloud-Fehler ('+where+'): '+raw,7000);
         return;
       }
-      this.lastPull=now;toast('In der Cloud gespeichert',1800);
+      this.lastPull=now;toast('Cloud-Speicherung bestätigt',2500);
     }catch(e){this.dirty=true;console.error('Cloud push',e);toast('Cloud-Fehler: '+(e?.message||String(e)),7000)}finally{this.busy=false;if(this.dirty)this.schedule(10000)}
   },
   async pushAudit(){const u=Auth.currentUser();const rows=(Store.auditLog||[]).slice(-40).map(l=>({id:l.id,at:l.at,user_id:u?.id||null,user_name:l.user||u?.name||'',action:l.action||'Änderung gespeichert',details:l.details||{},sections:l.sections||[]}));if(!rows.length)return;const {error}=await Auth.cloudClient.from('kompass_audit_log').upsert(rows,{onConflict:'id',ignoreDuplicates:true});if(error&&error.code!=='42501')console.warn('Audit sync',error)},
