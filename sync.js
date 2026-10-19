@@ -228,6 +228,20 @@ const Sync={
             done=true;persistedPayload=written;
           }
         }
+        // A successful UPDATE response is not enough: verify a separate read
+        // sees the same creative records that were just written.
+        if(done){
+          const check=await Auth.cloudClient.from('kompass_grade_state').select('payload').eq('grade',grade).maybeSingle();
+          if(check.error||!check.data?.payload){
+            done=false;error=check.error||new Error('Cloud-Kontrolllesung fehlgeschlagen');
+          }else{
+            const confirmed=check.data.payload;
+            const visitsOk=Object.keys(localPayload.dailyCreativeVisits||{}).every(k=>Object.prototype.hasOwnProperty.call(confirmed.dailyCreativeVisits||{},k));
+            const assessmentsOk=Object.entries(localPayload.activityRecords||{}).every(([k,v])=>!v?.creativeAssessment||this.same(confirmed.activityRecords?.[k]?.creativeAssessment,v.creativeAssessment));
+            if(!visitsOk||!assessmentsOk){done=false;error=new Error('Kreativband-Daten sind nach dem Speichern nicht vollständig aus der Cloud lesbar');}
+            else persistedPayload=confirmed;
+          }
+        }
         if(!done){error=error||new Error('Gleichzeitige Änderung konnte nach drei Versuchen nicht zusammengeführt werden.');failures.push({part:'grade',grade,error});console.warn('Cloud grade sync',grade,error);}else{this.baseGrades[grade]=clone(persistedPayload||localPayload);saved++;}
       }
       if(Auth.isAdmin()){const {error}=await Auth.cloudClient.from('kompass_shared_state').upsert({id:'school',payload:this.sharedPayload(),updated_at:now});if(error){failures.push({part:'shared',error});console.warn('Cloud shared sync',error);}else saved++;}
