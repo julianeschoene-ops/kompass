@@ -215,8 +215,18 @@ const Sync={
               if(key!=='dailyCreativeVisits'&&key!=='activityRecords')merged[key]=clone(remotePayload[key]);
             }
           }
-          const updated=await Auth.cloudClient.from('kompass_grade_state').update({payload:merged,updated_at:stamp}).eq('grade',grade).eq('updated_at',current.data.updated_at).select('grade');
-          error=updated.error;if(!error&&updated.data?.length){done=true;persistedPayload=merged;}
+          const updated=await Auth.cloudClient.from('kompass_grade_state').update({payload:merged,updated_at:stamp}).eq('grade',grade).eq('updated_at',current.data.updated_at).select('grade,payload');
+          error=updated.error;
+          if(!error&&updated.data?.length){
+            const written=updated.data[0]?.payload||{};
+            const visitsOk=Object.entries(localPayload.dailyCreativeVisits||{}).every(([key,value])=>Object.prototype.hasOwnProperty.call(written.dailyCreativeVisits||{},key));
+            const recordsOk=Object.entries(localPayload.activityRecords||{}).every(([key,value])=>{
+              const got=(written.activityRecords||{})[key];
+              return !!got&&(!value?.creativeAssessment||this.same(got.creativeAssessment,value.creativeAssessment));
+            });
+            if(!visitsOk||!recordsOk){error=new Error('Cloud hat Kreativband-Einträge oder Bewertungen nicht vollständig bestätigt');break;}
+            done=true;persistedPayload=written;
+          }
         }
         if(!done){error=error||new Error('Gleichzeitige Änderung konnte nach drei Versuchen nicht zusammengeführt werden.');failures.push({part:'grade',grade,error});console.warn('Cloud grade sync',grade,error);}else{this.baseGrades[grade]=clone(persistedPayload||localPayload);saved++;}
       }
@@ -230,7 +240,7 @@ const Sync={
         toast('Cloud-Fehler ('+where+'): '+raw,7000);
         return;
       }
-      this.lastPull=now;toast('Cloud-Speicherung bestätigt',2500);
+      this.lastPull=now;if(saved>0)toast('Cloud-Speicherung bestätigt',2500);
     }catch(e){this.dirty=true;console.error('Cloud push',e);toast('Cloud-Fehler: '+(e?.message||String(e)),7000)}finally{this.busy=false;if(this.dirty)this.schedule(10000)}
   },
   async pushAudit(){const u=Auth.currentUser();const rows=(Store.auditLog||[]).slice(-40).map(l=>({id:l.id,at:l.at,user_id:u?.id||null,user_name:l.user||u?.name||'',action:l.action||'Änderung gespeichert',details:l.details||{},sections:l.sections||[]}));if(!rows.length)return;const {error}=await Auth.cloudClient.from('kompass_audit_log').upsert(rows,{onConflict:'id',ignoreDuplicates:true});if(error&&error.code!=='42501')console.warn('Audit sync',error)},
