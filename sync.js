@@ -149,8 +149,11 @@ const Sync={
         // complete grade in the cloud. Deliberate roster changes remain possible
         // as long as at least one pupil is present.
         if(!Array.isArray(localPayload.pupils)||localPayload.pupils.length===0){
-          // No pupils in this grade: do not write or create an empty grade state.
-          failures.push({part:'grade',grade,error:new Error('Schülerliste fehlt; Cloud-Speicherung abgebrochen')});continue;
+          // Never upload an empty roster. A missing unrelated grade must not
+          // block writes for grades that are fully loaded.
+          const pending=Object.values(Store.dailyCreativeVisits||{}).some(v=>Number(v?.grade)===Number(grade));
+          if(pending)failures.push({part:'grade',grade,error:new Error('Schülerliste fehlt; lokale Besuche für diesen Jahrgang können noch nicht zugeordnet werden')});
+          continue;
         }
         for(let attempt=0;attempt<3&&!done;attempt++){
           const current=await Auth.cloudClient.from('kompass_grade_state').select('payload,updated_at').eq('grade',grade).maybeSingle();
