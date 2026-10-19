@@ -134,6 +134,9 @@ const Sync={
       const now=new Date().toISOString(),years=Auth.allowedGrades(),failures=[];let saved=0;
       for(const grade of years){
         const localPayload=this.gradePayload(grade);
+        // A missing local roster must never block saving another grade.
+        // Do not attempt a cloud write for an empty grade.
+        if(!Array.isArray(localPayload.pupils)||localPayload.pupils.length===0)continue;
         // A restored browser session may contain local changes but no verified
         // baseline. Read the grade directly before attempting any write.
         if(!this.baseGrades[grade]){
@@ -145,6 +148,7 @@ const Sync={
           this.baseGrades[grade]=clone(recovery.data.payload);
         }
         const baseline=this.baseGrades[grade],base=clone(baseline);let done=false,error=null,persistedPayload=null;
+        if(this.same(localPayload,baseline))continue;
         // Never allow a damaged or freshly emptied browser state to erase a
         // complete grade in the cloud. Deliberate roster changes remain possible
         // as long as at least one pupil is present.
