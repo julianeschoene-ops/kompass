@@ -119,9 +119,13 @@ const Sync={
           if(localMissing[grade]?.pupils?.length)this.mergeGrade(merged,localMissing[grade]);
         }
         if(emptyGrades.length)console.warn('Cloud-Jahrgänge ohne vollständige Schülerliste; lokale Daten geschützt:',emptyGrades);
-        await this.overlayLernatelier(years.filter(g=>!emptyGrades.includes(g)),merged).catch(e=>console.warn('Optional LA overlay failed',e));Store.data=merged;Store._rosterChanged=false;Store.migrate();if(Auth.isAdmin())await this.pullAudit();Store.saveLocalOnly();this.lastPull=new Date().toISOString();if(Auth.isAdmin()&&Store._rosterChanged){this.busy=false;await this.push(true);return;}
+        await this.overlayLernatelier(years.filter(g=>!emptyGrades.includes(g)),merged).catch(e=>console.warn('Optional LA overlay failed',e));
+        // A user can save while the asynchronous pull is in flight.
+        // In that case NEVER overwrite the new local entry with the old cloud snapshot.
+        if(this.dirty)return;
+        Store.data=merged;Store._rosterChanged=false;Store.migrate();if(Auth.isAdmin())await this.pullAudit();Store.saveLocalOnly();this.lastPull=new Date().toISOString();if(Auth.isAdmin()&&Store._rosterChanged){this.busy=false;await this.push(true);return;}
       }
-    }catch(e){console.error('Cloud pull',e);throw e}finally{this.busy=false}
+    }catch(e){console.error('Cloud pull',e);throw e}finally{this.busy=false;if(this.dirty)this.schedule(0)}
   },
   async restoreBackupData(data){
     if(!this.enabled()||!Auth.isAdmin())throw new Error('Die Wiederherstellung ist nur mit dem angemeldeten Admin-Konto möglich.');
