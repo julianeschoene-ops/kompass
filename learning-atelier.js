@@ -323,7 +323,7 @@ const LA_DAY_OFFERS={
       "vor der Glastür Stichgang 6/7"
     ],
     [
-      "5.",
+      "5. + 6.",
       "IT-Studio",
       "",
       "vor den Computerräumen"
@@ -373,7 +373,7 @@ const LA_DAY_OFFERS={
       "Treppe zur großen Schulstraße"
     ],
     [
-      "5.–6.",
+      "5. oder 6.",
       "IT-Studio",
       "",
       "vor den Computerräumen"
@@ -429,7 +429,7 @@ const LA_DAY_OFFERS={
       "Treppe zur großen Schulstraße"
     ],
     [
-      "5.–6.",
+      "5. oder 6.",
       "IT-Studio",
       "",
       "vor den Computerräumen"
