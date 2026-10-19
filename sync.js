@@ -133,7 +133,18 @@ const Sync={
     try{
       const now=new Date().toISOString(),years=Auth.allowedGrades(),failures=[];let saved=0;
       for(const grade of years){
-        const localPayload=this.gradePayload(grade),baseline=this.baseGrades[grade];if(!baseline){failures.push({part:'grade',grade,error:new Error('Cloud-Ausgangsstand fehlt; Änderungen sind nur auf diesem Gerät gespeichert')});continue;}const base=clone(baseline);let done=false,error=null,persistedPayload=null;
+        const localPayload=this.gradePayload(grade);
+        // A restored browser session may contain local changes but no verified
+        // baseline. Read the grade directly before attempting any write.
+        if(!this.baseGrades[grade]){
+          const recovery=await Auth.cloudClient.from('kompass_grade_state').select('payload').eq('grade',grade).maybeSingle();
+          if(recovery.error){failures.push({part:'grade',grade,error:recovery.error});continue;}
+          if(!Array.isArray(recovery.data?.payload?.pupils)||!recovery.data.payload.pupils.length){
+            failures.push({part:'grade',grade,error:new Error('Kein vollständiger Cloud-Datenbestand vorhanden; lokale Einträge bleiben erhalten')});continue;
+          }
+          this.baseGrades[grade]=clone(recovery.data.payload);
+        }
+        const baseline=this.baseGrades[grade],base=clone(baseline);let done=false,error=null,persistedPayload=null;
         // Never allow a damaged or freshly emptied browser state to erase a
         // complete grade in the cloud. Deliberate roster changes remain possible
         // as long as at least one pupil is present.
