@@ -256,10 +256,26 @@ const Sync={
               merged.activityRecords[key]={...(remote||{}),...updated};
             }
           }
-          // Non-leaders may change only creative visits and counters, not protected grade data.
+          // Competency assessments are shared teaching records: authorized teachers
+          // may write them even without grade-lead permissions. Merge only locally
+          // changed records against the cloud baseline, preserving colleagues' work.
+          const cloudCompetencyRecords=remotePayload.records||{};
+          const localCompetencyRecords=localPayload.records||{};
+          const baseCompetencyRecords=base.records||{};
+          merged.records=clone(cloudCompetencyRecords);
+          for(const [key,localRecord] of Object.entries(localCompetencyRecords)){
+            const oldRecord=baseCompetencyRecords[key];
+            if(oldRecord&&this.same(localRecord,oldRecord))continue;
+            const cloudRecord=cloudCompetencyRecords[key];
+            merged.records[key]=oldRecord&&cloudRecord
+              ?this.mergeConcurrent(oldRecord,localRecord,cloudRecord)
+              :clone(localRecord);
+          }
+          // Non-leaders may change competency assessments, creative visits and
+          // creative counters, but never overwrite protected grade administration.
           if(!Auth.canLead(grade)){
             for(const key of Object.keys(remotePayload)){
-              if(key!=='dailyCreativeVisits'&&key!=='activityRecords')merged[key]=clone(remotePayload[key]);
+              if(!['records','dailyCreativeVisits','activityRecords'].includes(key))merged[key]=clone(remotePayload[key]);
             }
           }
           const updated=await Auth.cloudClient.from('kompass_grade_state').update({payload:merged,updated_at:stamp}).eq('grade',grade).eq('updated_at',current.data.updated_at).select('grade,payload');
