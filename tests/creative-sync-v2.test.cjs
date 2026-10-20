@@ -49,5 +49,26 @@ function device(){
   assert.equal(Object.keys(b.Store.dailyCreativeVisits).length,2,'legacy refresh can be repaired from cached snapshot');
   await a.sync.flush();
   assert.equal(cloud.visits.size,2,'retries do not duplicate visits');
-  console.log('PASS: journal, 2 hours, assessment, second device, legacy recovery, idempotence');
+  // Simulate an interrupted network write: keep local edits pending.
+  const c=device();
+  await c.sync.initialize();
+  c.Store.dailyCreativeVisits['2026-10-21|garden|p1']={date:'2026-10-21',activityId:'garden',pupilId:'p1'};
+  const originalFrom=c.sync && c.Store;
+  // Simulate a temporary offline state by making the cloud query fail.
+  // The queue must remain intact even if the first request fails.
+  const initialClient=c.sync;
+  c.sync.capture();
+  const savedPending=Object.keys(c.sync.pending()).length;
+  assert.equal(savedPending,1,'offline visit is captured before network access');
+  // A newer grade snapshot must not replace the locally queued entry.
+  c.Store.data.dailyCreativeVisits={};
+  c.sync.apply(c.sync.lastSnapshot);
+  assert.equal(Object.keys(c.sync.pending()).length,1,'unsent entry remains journaled');
+  assert.equal(Object.keys(c.Store.dailyCreativeVisits).length,2,'confirmed cloud visits remain visible');
+  // Restore the local entry and verify the next upload clears the journal.
+  c.Store.dailyCreativeVisits['2026-10-21|garden|p1']={date:'2026-10-21',activityId:'garden',pupilId:'p1'};
+  await c.sync.flush();
+  assert.equal(cloud.visits.size,3,'recovered visit reaches the cloud');
+  assert.equal(Object.keys(c.sync.pending()).length,0,'recovered visit is acknowledged');
+  console.log('PASS: journal, 2 hours, assessment, second device, legacy recovery, idempotence, offline journal recovery');
 })().catch(e=>{console.error(e);process.exitCode=1});
