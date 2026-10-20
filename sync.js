@@ -137,6 +137,17 @@ const Sync={
             needsCreativeUpload=true;
           }
         }
+        // Recover teacher competency assessments that were saved on this device
+        // but were not uploaded by older KOMPASS versions. Never overwrite a
+        // cloud assessment already present for the same pupil and competency.
+        for(const [key,record] of Object.entries(localBeforePull.records||{})){
+          const pupilId=String(key).split('|').pop();
+          if(!record||!mergedPupilIds.has(pupilId))continue;
+          if(!Object.prototype.hasOwnProperty.call(merged.records||{},key)){
+            merged.records[key]=clone(record);
+            needsCreativeUpload=true;
+          }
+        }
         const creativeActivityIds=new Set((merged.activities||[]).filter(a=>a.type==='Kreativband').map(a=>String(a.id)));
         for(const [key,record] of Object.entries(localBeforePull.activityRecords||{})){
           if(!record||!mergedPupilIds.has(String(record.pupilId))||!creativeActivityIds.has(String(record.activityId)))continue;
