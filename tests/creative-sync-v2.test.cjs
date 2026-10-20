@@ -92,5 +92,14 @@ function device(){
   e.Store.activityRecords['garden|p1'].creativeAssessment.level='E';
   e.sync.capture();
   assert.equal(e.sync.pending()['assessment:6:garden|p1'].value.level,'E','same timestamp correction must be queued');
+  // A second device's older, conflicting assessment must not overwrite cloud data.
+  const f=device();
+  await f.sync.initialize();
+  f.Store.activityRecords['garden|p1']={activityId:'garden',pupilId:'p1',creativeAssessment:{level:'G',assessedAt:'2026-10-21T08:00:00Z'}};
+  f.sync.capture();
+  await f.sync.flush();
+  assert.equal([...cloud.assessments.values()][0].assessment.level,'M','newer cloud assessment wins');
+  assert.equal(Object.keys(f.sync.pending()).length,0,'conflict exits upload queue');
+  assert.ok([...f.memory.keys()].some(k=>k.startsWith('kompass_creative_v2_conflict_')),'older device edit saved as conflict copy');
   console.log('PASS: journal, 2 hours, assessment, second device, legacy recovery, idempotence, offline journal recovery');
 })().catch(e=>{console.error(e);process.exitCode=1});
