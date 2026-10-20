@@ -28,7 +28,7 @@ function ensureSpecialOffers(){
 function ensureActivityDefaults(){const before=Store.activities.length;ensureCreativeRooms();ensureSpecialOffers();if(Store.activities.length!==before)Store.save('Standardangebote ergänzt');}
 function isCountableActivity(a){return !!a&&COUNTABLE_ACTIVITY_TYPES.has(a.type);}
 function activityRecord(a,p){const key=a+'|'+p;return Store.activityRecords[key]||{activityId:a,pupilId:p,active:false,count:0,note:'',licenses:[]};}
-function datedVisitsForActivity(activityId,pupilId){return Object.values(Store.dailyCreativeVisits||{}).filter(v=>v&&v.activityId===activityId&&v.pupilId===pupilId&&v.date);}
+function datedVisitsForActivity(activityId,pupilId){return Object.values(Store.dailyCreativeVisits||{}).filter(v=>v&&String(v.activityId)===String(activityId)&&String(v.pupilId)===String(pupilId)&&v.date);}
 function activityAttendance(activityId,pupilId){
   const r=activityRecord(activityId,pupilId),dated=datedVisitsForActivity(activityId,pupilId).length;
   const visits=Math.max(0,Math.max(Number(r.count||0),dated));
