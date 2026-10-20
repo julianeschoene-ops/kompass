@@ -75,5 +75,15 @@ function device(){
   await c.sync.flush();
   assert.equal(cloud.visits.size,3,'recovered visit reaches the cloud');
   assert.equal(Object.keys(c.sync.pending()).length,0,'recovered visit is acknowledged');
+  const d=device();
+  await d.sync.initialize();
+  d.Store.activityRecords['garden|p1']={activityId:'garden',pupilId:'p1',creativeAssessment:{level:'M',assessedAt:'2026-10-22T10:00:00Z'}};
+  d.sync.capture();
+  d.Store.data.activityRecords={};
+  d.sync.apply(d.sync.lastSnapshot);
+  assert.equal(d.Store.activityRecords['garden|p1'].creativeAssessment.level,'M');
+  await d.sync.flush();
+  assert.equal([...cloud.assessments.values()][0].assessment.level,'M');
+  assert.equal(Object.keys(d.sync.pending()).length,0);
   console.log('PASS: journal, 2 hours, assessment, second device, legacy recovery, idempotence, offline journal recovery');
 })().catch(e=>{console.error(e);process.exitCode=1});
