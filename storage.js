@@ -120,6 +120,7 @@ const Store = {
     const sections=this.changedSections(before,this.data);
     if(sections.length){this.data.auditLog=this.data.auditLog||[];const u=(typeof Auth!=='undefined'&&Auth.currentUser)?Auth.currentUser():null;this.data.auditLog.push({id:uid('log'),at:new Date().toISOString(),userId:u?.id||null,user:u?.name||'System',role:u?.role||null,action,details:{...details,sections},sections});if(this.data.auditLog.length>2500)this.data.auditLog=this.data.auditLog.slice(-2500);}
     this.saveLocalOnly();
+    if(typeof CreativeSyncV2!=='undefined'&&CreativeSyncV2.ready){try{CreativeSyncV2.capture();CreativeSyncV2.flush().catch(e=>console.warn('CreativeSyncV2',e));}catch(e){console.error('CreativeSyncV2 local capture',e)}}
     if(typeof Sync!=='undefined'&&Sync.schedule)Sync.schedule();
   },
   exportData(){ return {...this.data, exportedAt:new Date().toISOString()}; },

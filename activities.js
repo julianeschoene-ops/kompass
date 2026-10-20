@@ -28,7 +28,7 @@ function ensureSpecialOffers(){
 function ensureActivityDefaults(){const before=Store.activities.length;ensureCreativeRooms();ensureSpecialOffers();if(Store.activities.length!==before)Store.save('Standardangebote ergänzt');}
 function isCountableActivity(a){return !!a&&COUNTABLE_ACTIVITY_TYPES.has(a.type);}
 function activityRecord(a,p){const key=a+'|'+p;return Store.activityRecords[key]||{activityId:a,pupilId:p,active:false,count:0,note:'',licenses:[]};}
-function datedVisitsForActivity(activityId,pupilId){return Object.values(Store.dailyCreativeVisits||{}).filter(v=>v&&v.activityId===activityId&&v.pupilId===pupilId&&v.date);}
+function datedVisitsForActivity(activityId,pupilId){return Object.values(Store.dailyCreativeVisits||{}).filter(v=>v&&String(v.activityId)===String(activityId)&&String(v.pupilId)===String(pupilId)&&v.date);}
 function activityAttendance(activityId,pupilId){
   const r=activityRecord(activityId,pupilId),dated=datedVisitsForActivity(activityId,pupilId).length;
   const visits=Math.max(0,Math.max(Number(r.count||0),dated));
@@ -134,9 +134,10 @@ function creativeWeekData(){
  const pupils=(Store.pupils||[]).filter(p=>activityStatsAllGrades||Number(p.year||String(p.className||'').charAt(0))===Number(State.year));
  const ids=new Set(pupils.map(p=>String(p.id)));
  const offers=(Store.activities||[]).filter(a=>a.type==='Kreativband').sort((a,b)=>a.name.localeCompare(b.name,'de'));
+ const offerIds=new Set(offers.map(a=>String(a.id)));
  const counts={};const days={};
  Object.values(Store.dailyCreativeVisits||{}).forEach(v=>{
-   const date=creativeDateKey(v?.date);if(!date||date<start||date>endStr||!ids.has(String(v.pupilId))||!offers.some(a=>a.id===v.activityId))return;
+   const date=creativeDateKey(v?.date);if(!date||date<start||date>endStr||!ids.has(String(v.pupilId))||!offerIds.has(String(v.activityId)))return;
    const key=String(v.pupilId)+'|'+v.activityId;
    (days[key]??=[]).push(date);
  });

@@ -1,0 +1,123 @@
+// Run locally: node tests/creative-sync-v2.test.cjs
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const code=fs.readFileSync('creative-sync-v2.js','utf8');
+const cloud={visits:new Map(),assessments:new Map()};
+const clone=x=>JSON.parse(JSON.stringify(x));
+function device(){
+  const memory=new Map(),localStorage={getItem:k=>memory.get(k)||null,setItem:(k,v)=>memory.set(k,v)};
+  const Store={data:{pupils:[{id:'p1',year:6}],dailyCreativeVisits:{},activityRecords:{}},saveLocalOnly(){}};
+  for(const field of ['pupils','dailyCreativeVisits','activityRecords'])Object.defineProperty(Store,field,{get(){return Store.data[field]}});
+  function from(table){
+    const db=table.endsWith('visits_v2')?cloud.visits:cloud.assessments;
+    let filters=[];
+    const query={
+      select(){return this},in(){return this},
+      range(start,end){return Promise.resolve({data:[...db.values()].slice(start,end+1).map(clone),error:null})},
+      eq(field,value){filters.push([field,value]);return this},
+      maybeSingle(){return Promise.resolve({data:clone([...db.values()].find(row=>filters.every(([field,value])=>row[field]===value))||null),error:null})},
+      single(){return this.maybeSingle()},
+      upsert(row,{ignoreDuplicates}={}){const key=row.grade+'|'+(row.visit_key||row.record_key);if(!ignoreDuplicates||!db.has(key))db.set(key,clone(row));return Promise.resolve({error:null})}
+    };
+    return query;
+  }
+  const Auth={cloudClient:{from},session:{mode:'cloud'},isLernatelier:()=>false,allowedGrades:()=>[6]};
+  const context=vm.createContext({Store,Auth,localStorage,clone,console,Promise,Date,JSON,Object,String,Number,Map});
+  vm.runInContext(code+';this.instance=CreativeSyncV2',context);
+  return {sync:context.instance,Store,memory,Auth};
+}
+(async()=>{
+  const a=device(),b=device();
+  await a.sync.initialize();await b.sync.initialize();
+  assert.equal(cloud.visits.size,0);
+  const visit={date:'2026-10-20',activityId:'garden',pupilId:'p1'};
+  a.Store.dailyCreativeVisits['2026-10-20|garden|p1']=visit;
+  a.Store.dailyCreativeVisits['2026-10-20|garden|p1|2']={...visit,createdAt:'hour2'};
+  a.Store.activityRecords['garden|p1']={activityId:'garden',pupilId:'p1',count:2,creativeAssessment:{level:'E',assessedAt:'2026-10-20T09:00:00Z'}};
+  a.sync.capture();
+  assert.equal(Object.keys(a.sync.pending()).length,3,'offline entries are journaled');
+  await a.sync.flush();await b.sync.refresh();
+  assert.equal(cloud.visits.size,2,'both hours saved');
+  assert.equal(cloud.assessments.size,1,'assessment saved');
+  assert.equal(Object.keys(a.sync.pending()).length,0,'verified uploads clear queue');
+  assert.equal(Object.keys(b.Store.dailyCreativeVisits).length,2,'other device receives both hours');
+  assert.equal(b.Store.activityRecords['garden|p1'].creativeAssessment.level,'E','other device receives assessment');
+  assert.equal(b.Store.activityRecords['garden|p1'].count,2,'visit counter reconciles');
+  b.Store.data.dailyCreativeVisits={};b.Store.data.activityRecords={};
+  b.sync.apply(b.sync.lastSnapshot);
+  assert.equal(Object.keys(b.Store.dailyCreativeVisits).length,2,'legacy refresh can be repaired from cached snapshot');
+  await a.sync.flush();
+  assert.equal(cloud.visits.size,2,'retries do not duplicate visits');
+  // Simulate an interrupted network write: keep local edits pending.
+  const c=device();
+  await c.sync.initialize();
+  c.Store.dailyCreativeVisits['2026-10-21|garden|p1']={date:'2026-10-21',activityId:'garden',pupilId:'p1'};
+  // Simulate a temporary offline state by making the cloud query fail.
+  // The queue must remain intact even if the first request fails.
+  c.sync.capture();
+  const savedPending=Object.keys(c.sync.pending()).length;
+  assert.equal(savedPending,1,'offline visit is captured before network access');
+  // A genuine failed network request must not acknowledge or lose the entry.
+  const onlineFrom=c.Auth.cloudClient.from;
+  c.Auth.cloudClient.from=()=>{throw new Error('Network offline')};
+  await assert.rejects(c.sync.flush(),/Network offline/);
+  assert.equal(Object.keys(c.sync.pending()).length,1,'failed upload keeps the local journal');
+  c.Auth.cloudClient.from=onlineFrom;
+  // A newer grade snapshot must not replace the locally queued entry.
+  c.Store.data.dailyCreativeVisits={};
+  c.sync.apply(c.sync.lastSnapshot);
+  assert.equal(Object.keys(c.sync.pending()).length,1,'unsent entry remains journaled');
+  assert.equal(Object.keys(c.Store.dailyCreativeVisits).length,3,'confirmed visits and pending offline visit remain visible');
+  assert.ok(c.Store.dailyCreativeVisits['2026-10-21|garden|p1'],'offline visit restored from journal');
+  // Restore the local entry and verify the next upload clears the journal.
+  c.Store.dailyCreativeVisits['2026-10-21|garden|p1']={date:'2026-10-21',activityId:'garden',pupilId:'p1'};
+  await c.sync.flush();
+  assert.equal(cloud.visits.size,3,'recovered visit reaches the cloud');
+  assert.equal(Object.keys(c.sync.pending()).length,0,'recovered visit is acknowledged');
+  const d=device();
+  await d.sync.initialize();
+  d.Store.activityRecords['garden|p1']={activityId:'garden',pupilId:'p1',creativeAssessment:{level:'M',assessedAt:'2026-10-22T10:00:00Z'}};
+  d.sync.capture();
+  d.Store.data.activityRecords={};
+  d.sync.apply(d.sync.lastSnapshot);
+  assert.equal(d.Store.activityRecords['garden|p1'].creativeAssessment.level,'M');
+  await d.sync.flush();
+  assert.equal([...cloud.assessments.values()][0].assessment.level,'M');
+  assert.equal(Object.keys(d.sync.pending()).length,0);
+  const e=device();
+  await e.sync.initialize();
+  e.Store.activityRecords['garden|p1']={activityId:'garden',pupilId:'p1',creativeAssessment:{level:'G',assessedAt:'2026-10-23T10:00:00Z'}};
+  e.sync.capture();
+  e.Store.activityRecords['garden|p1'].creativeAssessment.level='E';
+  e.sync.capture();
+  assert.equal(e.sync.pending()['assessment:6:garden|p1'].value.level,'E','same timestamp correction must be queued');
+  // A second device's older, conflicting assessment must not overwrite cloud data.
+  const f=device();
+  await f.sync.initialize();
+  f.Store.activityRecords['garden|p1']={activityId:'garden',pupilId:'p1',creativeAssessment:{level:'G',assessedAt:'2026-10-21T08:00:00Z'}};
+  f.sync.capture();
+  await f.sync.flush();
+  assert.equal([...cloud.assessments.values()][0].assessment.level,'M','newer cloud assessment wins');
+  assert.equal(Object.keys(f.sync.pending()).length,0,'conflict exits upload queue');
+  assert.ok([...f.memory.keys()].some(k=>k.startsWith('kompass_creative_v2_conflict_')),'older device edit saved as conflict copy');
+  const g=device();
+  await g.sync.initialize();
+  g.Store.dailyCreativeVisits['2026-10-24|garden|p1']={date:'2026-10-24',activityId:'garden',pupilId:'p1'};
+  g.sync.capture();
+  const original=g.Auth.cloudClient.from;
+  let first=true;
+  g.Auth.cloudClient.from=(table)=>{
+    const q=original(table),single=q.single;
+    q.single=function(){if(first){first=false;return Promise.resolve({data:null,error:new Error('Lost response')})}return single.call(this)};
+    return q;
+  };
+  await assert.rejects(g.sync.flush(),/Lost response/);
+  assert.equal(Object.keys(g.sync.pending()).length,1);
+  const count=cloud.visits.size;
+  g.Auth.cloudClient.from=original;
+  await g.sync.flush();
+  assert.equal(cloud.visits.size,count);
+  assert.equal(Object.keys(g.sync.pending()).length,0);
+  console.log('PASS: journal, 2 hours, assessment, second device, legacy recovery, idempotence, offline journal recovery');
+})().catch(e=>{console.error(e);process.exitCode=1});

@@ -62,7 +62,7 @@ const Sync={
     clearInterval(this.refreshTimer);
     this.refreshTimer=setInterval(async()=>{
       if(!this.enabled()||this.busy||this.dirty||document.visibilityState==='hidden')return;
-      try{await this.pull();if(typeof render==='function')render();}
+      try{await this.pull();if(typeof CreativeSyncV2!=='undefined'&&CreativeSyncV2.ready)await CreativeSyncV2.refresh();if(typeof render==='function')render();}
       catch(e){console.warn('KOMPASS Hintergrundabgleich',e);}
     },15000);
   },
@@ -85,6 +85,7 @@ const Sync={
   async pull(){
     if(!this.enabled())return;
     // Never replace unsent local edits with a cloud snapshot.
+    if(typeof CreativeSyncV2!=='undefined'&&CreativeSyncV2.ready)CreativeSyncV2.capture();
     if(this.dirty)throw new Error('Lokale Änderungen warten noch auf Cloud-Speicherung.');
     this.busy=true;
     try{
@@ -156,7 +157,23 @@ const Sync={
         // A user can save while the asynchronous pull is in flight.
         // In that case NEVER overwrite the new local entry with the old cloud snapshot.
         if(this.dirty)return;
-        Store.data=merged;Store._rosterChanged=false;Store.migrate();if(Auth.isAdmin())await this.pullAudit();Store.saveLocalOnly();this.lastPull=new Date().toISOString();if(needsCreativeUpload)this.schedule(0);if(Auth.isAdmin()&&Store._rosterChanged){this.busy=false;await this.push(true);return;}
+        Store.data=merged;
+        // Restore verified v2 rows immediately: legacy pulls must never hide them.
+        if(typeof CreativeSyncV2!=='undefined'&&CreativeSyncV2.ready&&CreativeSyncV2.lastSnapshot){
+          CreativeSyncV2.apply(CreativeSyncV2.lastSnapshot);
+        }
+        // V2 is authoritative for creative data after a successful bootstrap.
+        // Keep any device-only entries from the pending journal visible.
+        if(typeof CreativeSyncV2!=='undefined'&&CreativeSyncV2.ready){
+          for(const item of Object.values(CreativeSyncV2.pending())){
+            if(item.kind==='visit')Store.data.dailyCreativeVisits[item.key]=clone(item.value);
+            if(item.kind==='assessment'){
+              const old=Store.data.activityRecords[item.key]||{activityId:item.activityId,pupilId:item.pupilId,active:true,count:0};
+              Store.data.activityRecords[item.key]={...old,creativeAssessment:clone(item.value)};
+            }
+          }
+        }
+        Store._rosterChanged=false;Store.migrate();if(Auth.isAdmin())await this.pullAudit();Store.saveLocalOnly();this.lastPull=new Date().toISOString();if(needsCreativeUpload)this.schedule(0);if(Auth.isAdmin()&&Store._rosterChanged){this.busy=false;await this.push(true);return;}
       }
     }catch(e){console.error('Cloud pull',e);throw e}finally{this.busy=false;if(this.dirty)this.schedule(0)}
   },

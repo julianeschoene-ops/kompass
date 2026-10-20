@@ -1,0 +1,185 @@
+/* KOMPASS creative sync v2 — isolated from legacy grade snapshot sync.
+ * Explicit pending journal: never infer that localStorage means cloud saved.
+ * V2 tables must be deployed/backfilled before this module is enabled.
+ */
+const CreativeSyncV2={
+  journalKey:'kompass_creative_v2_pending',ackKey:'kompass_creative_v2_ack',busy:false,ready:false,lastError:null,retryRequested:false,lastSnapshot:null,
+  acknowledgements(){try{return JSON.parse(localStorage.getItem(this.ackKey)||'{}')}catch(e){return {}}},
+  saveAcknowledgements(a){localStorage.setItem(this.ackKey,JSON.stringify(a))},
+  pending(){try{return JSON.parse(localStorage.getItem(this.journalKey)||'{}')}catch(e){throw new Error('Lokale Kreativband-Warteschlange beschädigt: '+e.message)}},
+  persist(queue){localStorage.setItem(this.journalKey,JSON.stringify(queue))},
+  gradeOf(p){return Number(p?.year||String(p?.className||'').charAt(0))||0},
+  pupilGrade(id){const p=(Store.pupils||[]).find(p=>String(p.id)===String(id));return p?this.gradeOf(p):0},
+  capture(){
+    if(!Auth.cloudClient||Auth.session?.mode!=='cloud'||Auth.isLernatelier())return;
+    const q=this.pending(),ack=this.acknowledgements(),now=new Date().toISOString();
+    for(const [key,v] of Object.entries(Store.dailyCreativeVisits||{})){
+      const grade=this.pupilGrade(v?.pupilId);
+      if(!v?.activityId)continue;
+      if(!grade){console.warn('Kreativband-Besuch wartet auf Schülerzuordnung',key);continue;}
+      const id='visit:'+grade+':'+key;
+      if(ack[id]!==JSON.stringify(v)&&(!q[id]||JSON.stringify(q[id].value)!==JSON.stringify(v)))q[id]={kind:'visit',grade,key,pupilId:String(v.pupilId),activityId:String(v.activityId),value:clone(v),capturedAt:now};
+    }
+    for(const [key,r] of Object.entries(Store.activityRecords||{})){
+      if(!r?.creativeAssessment||!r.activityId)continue;
+      const grade=this.pupilGrade(r.pupilId);
+      if(!grade||!r.activityId)continue;
+      const id='assessment:'+grade+':'+key,prior=q[id];
+      const incoming=Date.parse(r.creativeAssessment.assessedAt||'')||0;
+      const previous=Date.parse(prior?.value?.assessedAt||'')||0;
+      if(ack[id]!==JSON.stringify(r.creativeAssessment)&&(!prior||incoming>previous||(incoming===previous&&JSON.stringify(prior.value)!==JSON.stringify(r.creativeAssessment))))q[id]={kind:'assessment',grade,key,pupilId:String(r.pupilId),activityId:String(r.activityId),value:clone(r.creativeAssessment),capturedAt:now};
+    }
+    this.persist(q);
+  },
+  hasPending(){return Object.keys(this.pending()).length>0},
+  async readAll(){
+    const client=Auth.cloudClient,years=Auth.allowedGrades();
+    if(!years.length)return {visits:[],assessments:[]};
+    const fetchAll=async table=>{
+      const out=[];let from=0;const limit=500;
+      while(true){
+        const {data,error}=await client.from(table).select('*').in('grade',years).range(from,from+limit-1);
+        if(error)throw error;out.push(...(data||[]));
+        if(!data||data.length<limit)return out;
+        from+=limit;if(from>100000)throw new Error('Zu viele Datensätze für einen vollständigen Abgleich');
+      }
+    };
+    const [visits,assessments]=await Promise.all([fetchAll('kompass_creative_visits_v2'),fetchAll('kompass_creative_assessments_v2')]);
+    return {visits,assessments};
+  },
+  apply(snapshot){
+    const pending=this.pending(),d=Store.data;
+    d.dailyCreativeVisits=d.dailyCreativeVisits||{};d.activityRecords=d.activityRecords||{};
+    for(const row of snapshot.visits){
+      const id='visit:'+row.grade+':'+row.visit_key;
+      if(!pending[id])d.dailyCreativeVisits[row.visit_key]=clone(row.visit);
+    }
+    // Keep unconfirmed local attendance visible even after a legacy cloud pull.
+    for(const item of Object.values(pending)){
+      if(item.kind==='visit')d.dailyCreativeVisits[item.key]=clone(item.value);
+      if(item.kind==='assessment'){
+        const old=d.activityRecords[item.key]||{activityId:item.activityId,pupilId:item.pupilId,active:true,count:0};
+        d.activityRecords[item.key]={...old,creativeAssessment:clone(item.value)};
+      }
+    }
+    // A legacy grade snapshot may omit recently saved visits; never delete a v2 visit.
+    // Recalculate counters from the complete dated visit set.
+    const totals={};
+    for(const v of Object.values(d.dailyCreativeVisits)){
+      if(!v?.activityId||!v?.pupilId)continue;
+      const key=String(v.activityId)+'|'+String(v.pupilId);
+      totals[key]=(totals[key]||0)+1;
+    }
+    for(const [key,count] of Object.entries(totals)){
+      const [activityId,pupilId]=key.split('|');
+      const rec=d.activityRecords[key]||{activityId,pupilId,active:true,count:0};
+      rec.count=Math.max(Number(rec.count)||0,count);
+      d.activityRecords[key]=rec;
+    }
+    // Cloud visit rows are append-only; keep local entries but ensure v2 rows win on key collisions.
+    for(const row of snapshot.assessments){
+      const id='assessment:'+row.grade+':'+row.record_key;
+      if(pending[id])continue;
+      const key=row.record_key,old=d.activityRecords[key]||{activityId:row.activity_id,pupilId:row.pupil_id,active:true,count:0};
+      const current=old.creativeAssessment,remote=row.assessment;
+      if(!current||(Date.parse(remote?.assessedAt||'')||0)>=(Date.parse(current.assessedAt||'')||0)){
+        d.activityRecords[key]={...old,creativeAssessment:clone(remote)};
+      }
+    }
+    // An acknowledgement is only valid for the exact value that was read from cloud.
+    Store.saveLocalOnly();
+  },
+  async initialize(){
+    // Capture device-only entries before importing any remote state.
+    this.capture();
+    const snapshot=await this.readAll();
+    const ack=this.acknowledgements();
+    for(const row of snapshot.visits){const id='visit:'+row.grade+':'+row.visit_key;if(!this.pending()[id])ack[id]=JSON.stringify(row.visit)}
+    for(const row of snapshot.assessments){const id='assessment:'+row.grade+':'+row.record_key;if(!this.pending()[id])ack[id]=JSON.stringify(row.assessment)}
+    this.saveAcknowledgements(ack);
+    this.lastSnapshot=snapshot;
+    this.apply(snapshot);
+    this.ready=true;
+    await this.flush();
+  },
+  async flush(){
+    if(this.busy){this.retryRequested=true;return;}
+    if(!Auth.cloudClient||Auth.session?.mode!=='cloud'||Auth.isLernatelier())return;
+    this.busy=true;
+    try{
+      this.capture();
+      const q=this.pending(),client=Auth.cloudClient;
+      for(const [id,item] of Object.entries(q)){
+        const table=item.kind==='visit'?'kompass_creative_visits_v2':'kompass_creative_assessments_v2';
+        const row=item.kind==='visit'
+          ?{grade:item.grade,visit_key:item.key,pupil_id:item.pupilId,activity_id:item.activityId,visit:item.value}
+          :{grade:item.grade,record_key:item.key,pupil_id:item.pupilId,activity_id:item.activityId,assessment:item.value};
+        const conflict=item.kind==='visit'?'grade,visit_key':'grade,record_key';
+        // A conflict on a visit key is an idempotent retry, not a second attendance hour.
+        const column=item.kind==='visit'?'visit_key':'record_key';
+        const previous=await client.from(table).select('*').eq('grade',item.grade).eq(column,item.key).maybeSingle();
+        if(previous.error)throw previous.error;
+        if(item.kind==='assessment'&&previous.data){
+          const cloudDate=Date.parse(previous.data.assessment?.assessedAt||'')||0;
+          const localDate=Date.parse(item.value?.assessedAt||'')||0;
+          if(cloudDate>=localDate&&JSON.stringify(previous.data.assessment)!==JSON.stringify(item.value)){
+            // Do not silently discard the older device-only assessment: preserve a conflict copy.
+            const conflictKey='kompass_creative_v2_conflict_'+id;
+            try{localStorage.setItem(conflictKey,JSON.stringify({local:item.value,remote:previous.data.assessment,at:new Date().toISOString()}))}catch(e){throw new Error('Bewertungskonflikt konnte nicht lokal gesichert werden')}
+            const ack=this.acknowledgements();ack[id]=JSON.stringify(previous.data.assessment);this.saveAcknowledgements(ack);
+            const existing=Store.activityRecords?.[item.key];if(existing)existing.creativeAssessment=clone(previous.data.assessment);
+            const queue=this.pending();if(JSON.stringify(queue[id])===JSON.stringify(item)){delete queue[id];this.persist(queue)}
+            continue;
+          }
+        }
+        const {error}=await client.from(table).upsert(row,{onConflict:conflict,ignoreDuplicates:item.kind==='visit'});
+        if(error)throw error;
+        const col=item.kind==='visit'?'visit_key':'record_key';
+        const {data,error:readError}=await client.from(table).select('*').eq('grade',item.grade).eq(col,item.key).single();
+        if(readError||!data)throw readError||new Error('Speicherung nicht lesbar');
+        const stored=item.kind==='visit'?data.visit:data.assessment;
+        if(JSON.stringify(stored)!==JSON.stringify(item.value)){
+          if(item.kind==='visit'){
+            // Existing cloud visit wins; retain the differing local entry for manual reconciliation.
+            throw new Error('Besuchskonflikt: lokaler Eintrag bleibt in der Warteschlange');
+          }
+          throw new Error('Cloud-Bestätigung stimmt nicht mit lokalem Eintrag überein');
+        }
+        const latest=this.pending();
+        if(JSON.stringify(latest[id])===JSON.stringify(item)){
+          const ack=this.acknowledgements();ack[id]=JSON.stringify(item.value);
+          this.saveAcknowledgements(ack);delete latest[id];this.persist(latest);
+        }
+      }
+      const snapshot=await this.readAll();
+      this.lastSnapshot=snapshot;
+      this.apply(snapshot);
+      const ack=this.acknowledgements();
+      const outstanding=this.pending();
+      for(const row of snapshot.visits){const id='visit:'+row.grade+':'+row.visit_key;if(!outstanding[id])ack[id]=JSON.stringify(row.visit)}
+      for(const row of snapshot.assessments){const id='assessment:'+row.grade+':'+row.record_key;if(!outstanding[id])ack[id]=JSON.stringify(row.assessment)}
+      this.saveAcknowledgements(ack);
+      this.lastError=null;this.ready=true;
+    }catch(e){this.lastError=e;console.error('Kreativband Cloud v2',e);throw e}
+    finally{
+      this.busy=false;
+      if(this.retryRequested){
+        this.retryRequested=false;
+        Promise.resolve().then(()=>this.flush()).catch(e=>console.warn('Kreativband Wiederholung',e));
+      }
+    }
+  },
+  async refresh(){
+    if(this.busy||!this.ready)return;
+    this.capture();
+    if(this.hasPending())return this.flush();
+    const snapshot=await this.readAll();
+    this.lastSnapshot=snapshot;
+    this.apply(snapshot);
+    const ack=this.acknowledgements();
+    const outstanding=this.pending();
+    for(const row of snapshot.visits){const id='visit:'+row.grade+':'+row.visit_key;if(!outstanding[id])ack[id]=JSON.stringify(row.visit)}
+    for(const row of snapshot.assessments){const id='assessment:'+row.grade+':'+row.record_key;if(!outstanding[id])ack[id]=JSON.stringify(row.assessment)}
+    this.saveAcknowledgements(ack);
+  }
+};

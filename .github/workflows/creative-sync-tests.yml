@@ -1,0 +1,19 @@
+name: Kreativband Sync Tests
+on:
+  push:
+    branches: [rewrite/cloud-sync-v2]
+  pull_request:
+    paths:
+      - 'creative-sync-v2.js'
+      - 'tests/creative-sync-v2.test.cjs'
+      - '.github/workflows/creative-sync-tests.yml'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run sync regression tests
+        run: node tests/creative-sync-v2.test.cjs
