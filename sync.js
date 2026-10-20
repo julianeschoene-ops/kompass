@@ -136,8 +136,9 @@ const Sync={
             needsCreativeUpload=true;
           }
         }
+        const creativeActivityIds=new Set((merged.activities||[]).filter(a=>a.type==='Kreativband').map(a=>String(a.id)));
         for(const [key,record] of Object.entries(localBeforePull.activityRecords||{})){
-          if(!record||!mergedPupilIds.has(String(record.pupilId)))continue;
+          if(!record||!mergedPupilIds.has(String(record.pupilId))||!creativeActivityIds.has(String(record.activityId)))continue;
           const remoteRecord=merged.activityRecords?.[key];
           if(!remoteRecord){
             merged.activityRecords[key]=clone(record);
@@ -149,11 +150,6 @@ const Sync={
           if(localAssessment&&(!cloudAssessment||
             (Date.parse(localAssessment.assessedAt||'')||0)>(Date.parse(cloudAssessment.assessedAt||'')||0))){
             merged.activityRecords[key]={...remoteRecord,creativeAssessment:clone(localAssessment)};
-            needsCreativeUpload=true;
-          }
-          // Never reduce an existing attendance counter on recovery.
-          if(Number(record.count||0)>Number(remoteRecord.count||0)){
-            merged.activityRecords[key]={...merged.activityRecords[key],count:Number(record.count)};
             needsCreativeUpload=true;
           }
         }
