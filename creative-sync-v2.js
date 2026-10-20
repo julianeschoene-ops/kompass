@@ -29,6 +29,7 @@ const CreativeSyncV2={
     }
     this.persist(q);
   },
+  hasPending(){return Object.keys(this.pending()).length>0},
   async readAll(){
     const client=Auth.cloudClient,years=Auth.allowedGrades();
     const fetchAll=async table=>{
@@ -88,5 +89,11 @@ const CreativeSyncV2={
       this.lastError=null;this.ready=true;
     }catch(e){this.lastError=e;console.error('Kreativband Cloud v2',e);throw e}
     finally{this.busy=false}
+  },
+  async refresh(){
+    if(this.busy||!this.ready)return;
+    this.capture();
+    if(this.hasPending())return this.flush();
+    this.apply(await this.readAll());
   }
 };
