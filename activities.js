@@ -176,11 +176,21 @@ function creativeWeekData(){
  Object.entries(days).forEach(([k,dates])=>counts[k]=dates.length);
  return{start,end:endStr,pupils,offers,counts,days};
 }
+function creativeStatsGroupName(name){
+ const n=String(name||'').toLocaleLowerCase('de').replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue');
+ if((n.includes('koch')&&n.includes('naeh'))||n.includes('nähstudio')||n.includes('naehstudio')||n.includes('kochen')||n.includes('kochstudio'))return 'Kochen & Nähstudio';
+ return String(name||'');
+}
+function creativeStatsGroups(d){
+ const ids=new Set(d.pupils.map(p=>String(p.id))),byId=new Map(d.offers.map(a=>[String(a.id),creativeStatsGroupName(a.name)])),groups=new Map();
+ for(const a of d.offers){const name=byId.get(String(a.id));if(!groups.has(name))groups.set(name,{name,week:0,all:0,children:new Set()});}
+ for(const p of d.pupils)for(const a of d.offers)groups.get(byId.get(String(a.id))).week+=d.counts[String(p.id)+'|'+a.id]||0;
+ Object.values(Store.dailyCreativeVisits||{}).forEach(v=>{const group=groups.get(byId.get(String(v?.activityId)));if(!v||!group||!ids.has(String(v.pupilId))||!creativeDateKey(v.date))return;group.all++;group.children.add(String(v.pupilId));});
+ return [...groups.values()].sort((a,b)=>a.name.localeCompare(b.name,'de'));
+}
 function creativeWeeklyCsv(){
- const d=creativeWeekData(),ids=new Set(d.pupils.map(p=>String(p.id))),all={};
- Object.values(Store.dailyCreativeVisits||{}).forEach(v=>{if(v&&ids.has(String(v.pupilId))&&creativeDateKey(v.date))all[v.activityId]=(all[v.activityId]||0)+1;});
- const rows=[['Kreativband','Besuche Woche','Besuche insgesamt']];
- for(const a of d.offers)rows.push([a.name,d.pupils.reduce((n,p)=>n+(d.counts[String(p.id)+'|'+a.id]||0),0),all[a.id]||0]);
+ const d=creativeWeekData(),rows=[['Kreativband','Besuche Woche','Besuche insgesamt']];
+ for(const g of creativeStatsGroups(d))rows.push([g.name,g.week,g.all]);
  const csv='\uFEFF'+rows.map(row=>row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');
  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),link=document.createElement('a');
  link.href=url;link.download='KOMPASS_Kreativband_Statistik_'+d.start+'.csv';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
@@ -199,16 +209,14 @@ async function creativeRefreshFromCloud(){
  }catch(e){toast('Cloud-Abruf fehlgeschlagen: '+(e?.message||String(e)),8000);}
 }
 function renderCreativeWeeklyStatistics(){
- const d=creativeWeekData(),ids=new Set(d.pupils.map(p=>String(p.id))),weekly={},overall={},children={};
+ const d=creativeWeekData(),groups=creativeStatsGroups(d);
  const fmt=s=>new Date(s+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});
- for(const a of d.offers){weekly[a.id]=0;overall[a.id]=0;children[a.id]=new Set();}
- for(const p of d.pupils)for(const a of d.offers)weekly[a.id]+=d.counts[String(p.id)+'|'+a.id]||0;
- Object.values(Store.dailyCreativeVisits||{}).forEach(v=>{if(!v||!ids.has(String(v.pupilId))||!creativeDateKey(v.date)||!Object.hasOwn(overall,String(v.activityId)))return;overall[v.activityId]++;children[v.activityId].add(String(v.pupilId));});
- const totalWeek=Object.values(weekly).reduce((a,b)=>a+b,0),totalAll=Object.values(overall).reduce((a,b)=>a+b,0);
+
+ const totalWeek=groups.reduce((n,g)=>n+g.week,0),totalAll=groups.reduce((n,g)=>n+g.all,0);
  return `<div class="card"><h2>📊 Kreativband · Besuchsstatistik</h2><p class="mini">Besuche je Angebot, ohne Schülernamen. Gezählt werden datierte Anwesenheitseinträge.</p>
  <div class="toolbar"><button class="chip ${activityStatsAllGrades?'dark':''}" onclick="activityStatsAllGrades=!activityStatsAllGrades;render()">${activityStatsAllGrades?'✓ Jahrgänge 5–7':'Jahrgänge 5–7 gesamt'}</button><button class="chip dark" onclick="creativeRefreshFromCloud()">↻ Cloud-Anwesenheiten laden</button><button class="chip" onclick="creativeWeekMove(-1)">← Vorwoche</button><strong>${fmt(d.start)} – ${fmt(d.end)}</strong><button class="chip" onclick="creativeWeekMove(1)">Folgewoche →</button><input type="date" aria-label="Datum in gewünschter Woche" value="${esc(activityWeekDate)}" onchange="activityWeekDate=this.value;render()"><button class="chip dark" onclick="creativeWeeklyCsv()">↓ CSV exportieren</button></div>
  <div class="creativeStatsScroll"><table class="creativeStatsTable"><thead><tr><th style="text-align:left">Kreativband-Angebot</th><th>Diese Woche</th><th>Insgesamt</th><th>Kinder insgesamt</th></tr></thead><tbody>
- ${d.offers.map(a=>`<tr><td>${esc(a.name)}</td><td style="text-align:center">${weekly[a.id]}</td><td style="text-align:center"><b>${overall[a.id]}</b></td><td style="text-align:center">${children[a.id].size}</td></tr>`).join('')}
+ ${groups.map(g=>`<tr><td>${esc(g.name)}</td><td style="text-align:center">${g.week}</td><td style="text-align:center"><b>${g.all}</b></td><td style="text-align:center">${g.children.size}</td></tr>`).join('')}
  <tr><th style="text-align:left">Alle Angebote</th><th>${totalWeek}</th><th>${totalAll}</th><th>–</th></tr></tbody></table></div>
  <p class="mini">„Kinder insgesamt“ zählt unterschiedliche Kinder je Angebot. Besuche ohne Datum sind nicht enthalten.</p></div>`;
 }
