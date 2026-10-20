@@ -75,13 +75,19 @@ const CreativeSyncV2={
           :{grade:item.grade,record_key:item.key,pupil_id:item.pupilId,activity_id:item.activityId,assessment:item.value};
         const conflict=item.kind==='visit'?'grade,visit_key':'grade,record_key';
         // A conflict on a visit key is an idempotent retry, not a second attendance hour.
-        const {error}=await client.from(table).upsert(row,{onConflict:conflict});
+        const {error}=await client.from(table).upsert(row,{onConflict:conflict,ignoreDuplicates:item.kind==='visit'});
         if(error)throw error;
         const col=item.kind==='visit'?'visit_key':'record_key';
         const {data,error:readError}=await client.from(table).select('*').eq('grade',item.grade).eq(col,item.key).single();
         if(readError||!data)throw readError||new Error('Speicherung nicht lesbar');
         const stored=item.kind==='visit'?data.visit:data.assessment;
-        if(JSON.stringify(stored)!==JSON.stringify(item.value))throw new Error('Cloud-Bestätigung stimmt nicht mit lokalem Eintrag überein');
+        if(JSON.stringify(stored)!==JSON.stringify(item.value)){
+          if(item.kind==='visit'){
+            // Existing cloud visit wins; retain the differing local entry for manual reconciliation.
+            throw new Error('Besuchskonflikt: lokaler Eintrag bleibt in der Warteschlange');
+          }
+          throw new Error('Cloud-Bestätigung stimmt nicht mit lokalem Eintrag überein');
+        }
         const latest=this.pending();
         if(JSON.stringify(latest[id])===JSON.stringify(item)){delete latest[id];this.persist(latest)}
       }
