@@ -63,6 +63,7 @@ function saveCreativeAssessment(activityId,pupilId,field,value){
  if(activity?.type!=='Kreativband'||!pupil||!Auth.canAccessGrade(Number(pupil.year||String(pupil.className||'').charAt(0))))return;
  if(field==='level'&&!['','G','M','E'].includes(value))return;
  if(field==='color'&&!['','red','yellow','green'].includes(value))return;
+ if(field==='note')value=String(value||'').trim();
  const key=activityId+'|'+pupilId,r=activityRecord(activityId,pupilId);
  r.creativeAssessment={...(r.creativeAssessment||{}),[field]:value,assessedBy:Auth.currentUser()?.name||'Lehrkraft',assessedAt:new Date().toISOString()};r.active=true;
  Store.activityRecords[key]=r;
@@ -72,31 +73,46 @@ function saveCreativeAssessment(activityId,pupilId,field,value){
  // Keep the other dropdown and current scroll position untouched.
 }
 async function confirmCreativeAssessment(activityId,pupilId){
- if(typeof CreativeSyncV2==='undefined'||Auth.session?.mode!=='cloud'){toast('Cloud-Speicherung nicht verfügbar',7000);return;}
- const key=activityId+'|'+pupilId;
+ const key=activityId+'|'+pupilId,el=document.getElementById('assessmentStatus_'+activityId+'_'+pupilId),btn=document.getElementById('assessmentSave_'+activityId+'_'+pupilId);
+ if(btn){btn.disabled=true;btn.textContent='Speichert …';}
+ if(el)el.textContent='Cloud-Speicherung wird geprüft …';
  try{
+  if(typeof CreativeSyncV2==='undefined'||Auth.session?.mode!=='cloud')throw new Error('Cloud-Verbindung nicht verfügbar');
   CreativeSyncV2.capture();
+  for(let i=0;i<40&&CreativeSyncV2.busy;i++)await new Promise(resolve=>setTimeout(resolve,250));
+  if(CreativeSyncV2.busy)throw new Error('Cloud-Abgleich dauert zu lange');
   await CreativeSyncV2.flush();
+  for(let i=0;i<40&&CreativeSyncV2.busy;i++)await new Promise(resolve=>setTimeout(resolve,250));
+  if(CreativeSyncV2.busy)throw new Error('Cloud-Bestätigung dauert zu lange');
   const grade=CreativeSyncV2.pupilGrade(pupilId);
   const result=await Auth.cloudClient.from('kompass_creative_assessments_v2').select('assessment').eq('grade',grade).eq('record_key',key).maybeSingle();
   if(result.error)throw result.error;
   const local=Store.activityRecords?.[key]?.creativeAssessment;
-  if(!result.data||JSON.stringify(result.data.assessment)!==JSON.stringify(local))throw new Error('Bewertung wurde noch nicht bestätigt');
-  const el=document.getElementById('assessmentStatus_'+activityId+'_'+pupilId);
-  if(el)el.textContent=(local.level||'–')+'-Niveau ('+(local.assessedBy||'Lehrkraft')+') · Cloud gespeichert';
-  toast('Niveau in Cloud gespeichert',3500);
- }catch(e){toast('Niveau nicht in Cloud bestätigt: '+(e?.message||String(e)),8000);}
+  if(!local||!result.data||JSON.stringify(result.data.assessment)!==JSON.stringify(local))throw new Error('Cloud-Daten stimmen noch nicht überein');
+  if(el)el.textContent=creativeAssessmentSummary(local)+' · Cloud gespeichert';
+  toast('Bewertung in Cloud gespeichert',3500);
+ }catch(e){if(el)el.textContent='Nicht bestätigt: '+(e?.message||String(e));toast('Speichern fehlgeschlagen: '+(e?.message||String(e)),8000);}
+ finally{if(btn){btn.disabled=false;btn.textContent='Speichern';}}
+}
+function creativeAssessmentSummary(a){
+ if(!a?.assessedBy)return 'Noch keine Bewertung';
+ const d=a.assessedAt?new Date(a.assessedAt).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'}):'';
+ return (a.level?a.level+'-Niveau':'Bewertung')+' ('+a.assessedBy+')'+(d?' · Stand '+d:'');
 }
 function creativeAssessmentControls(a,p,r){
  if(a.type!=='Kreativband')return '';
  const assessment=r.creativeAssessment||{};
  const opts=(values,selected)=>values.map(([v,label])=>'<option value="'+v+'" '+(v===selected?'selected':'')+'>'+label+'</option>').join('');
- const attrs=(field)=>'onchange="saveCreativeAssessment('+JSON.stringify(a.id)+','+JSON.stringify(p.id)+','+JSON.stringify(field)+',this.value)"';
- return '<div class="creativeInlineAssessment"><label class="mini">Niveau <select aria-label="Niveau für '+esc(p.short||p.first)+'" '+attrs('level')+'>'+opts([['','–'],['G','G'],['M','M'],['E','E']],assessment.level||'')+'</select></label> <label class="mini">Bewertung <select aria-label="Bewertung für '+esc(p.short||p.first)+'" '+attrs('color')+'>'+opts([['','–'],['red','🔴 Rot'],['yellow','🟡 Gelb'],['green','🟢 Grün']],assessment.color||'')+'</select></label> <button class="miniBtn" onclick="confirmCreativeAssessment('+JSON.stringify(a.id)+','+JSON.stringify(p.id)+')">Speichern</button></div><p class="mini" id="assessmentStatus_'+esc(a.id)+'_'+esc(p.id)+'">'+(assessment.assessedBy?(assessment.level?esc(assessment.level)+'-Niveau':'Bewertung')+' ('+esc(assessment.assessedBy)+')'+(assessment.assessedAt?' · '+esc(new Date(assessment.assessedAt).toLocaleDateString('de-DE')):''):'Änderungen werden automatisch gespeichert')+'</p>';
+ const attrs=field=>'onchange="saveCreativeAssessment('+JSON.stringify(a.id)+','+JSON.stringify(p.id)+','+JSON.stringify(field)+',this.value)"';
+ return '<div class="mini" id="assessmentStatus_'+esc(a.id)+'_'+esc(p.id)+'">'+esc(creativeAssessmentSummary(assessment))+'</div>'+
+ '<div class="creativeInlineAssessment"><label class="mini">Niveau <select '+attrs('level')+'>'+opts([['','–'],['G','G'],['M','M'],['E','E']],assessment.level||'')+'</select></label>'+
+ ' <label class="mini">Bewertung <select '+attrs('color')+'>'+opts([['','–'],['red','🔴 Rot'],['yellow','🟡 Gelb'],['green','🟢 Grün']],assessment.color||'')+'</select></label></div>'+
+ '<label class="mini">Notiz <textarea rows="2" placeholder="Notiz zur Bewertung" '+attrs('note')+'>'+esc(assessment.note||'')+'</textarea></label>'+
+ '<button class="miniBtn" id="assessmentSave_'+esc(a.id)+'_'+esc(p.id)+'" onclick="confirmCreativeAssessment('+JSON.stringify(a.id)+','+JSON.stringify(p.id)+')">Speichern</button>';
 }
 function activityQuickRow(a,p){
   const r=activityRecord(a.id,p.id),att=isCountableActivity(a)?activityAttendance(a.id,p.id):null;
-  return`<div class="quickRow"><div><b>${esc(p.short)}</b><div class="mini">${esc(p.team)} · ${esc(p.className)}</div>${att?`<div class="mini">${activityAttendancePill(a.id,p.id)}</div>${a.type==='Kreativband'&&datedVisitsForActivity(a.id,p.id).length?`<div class="mini">${datedVisitsForActivity(a.id,p.id).slice().sort((x,y)=>String(x.date).localeCompare(String(y.date))).map(v=>esc(new Date(v.date+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'}))+' ('+esc(v.recordedBy||'Lehrkraft nicht hinterlegt')+')').join(' · ')}</div>`:''}`:''}${creativeAssessmentControls(a,p,r)}</div><div class="quickActions">${isCountableActivity(a)?`<strong>${att.visits}/${ACTIVITY_MAX_COUNT}</strong><button class="visitBtn" onclick="addVisit('${a.id}','${p.id}',1)">+1</button><button class="miniBtn" onclick="addVisit('${a.id}','${p.id}',-1)">−</button>${a.type==='Kreativband'?`<button class="miniBtn" onclick="openQualification('${a.id}','${p.id}')">🏅</button>`:''}`:`<button class="memberBtn ${r.active?'selected':''}" onclick="toggleMember('${a.id}','${p.id}')">${r.active?'✓ dabei':'+ hinzufügen'}</button>`}<button class="miniBtn" onclick="editActivityNote('${a.id}','${p.id}')">📝</button></div>${r.licenses?.length?`<div class="licenseLine">${r.licenses.map(x=>`<span class="badge">${esc(x)}</span>`).join('')}</div>`:''}${r.note?`<div class="mini noteLine">${esc(r.note)}</div>`:''}</div>`;
+  return`<div class="quickRow"><div><b>${esc(p.short)}</b><div class="mini">${esc(p.team)} · ${esc(p.className)}</div>${att?`<div class="mini">${activityAttendancePill(a.id,p.id)}</div>`:''}${creativeAssessmentControls(a,p,r)}</div><div class="quickActions">${isCountableActivity(a)?`<strong>${att.visits}/${ACTIVITY_MAX_COUNT}</strong><button class="visitBtn" onclick="addVisit('${a.id}','${p.id}',1)">+1</button><button class="miniBtn" onclick="addVisit('${a.id}','${p.id}',-1)">−</button>${a.type==='Kreativband'?`<button class="miniBtn" onclick="openQualification('${a.id}','${p.id}')">🏅</button>`:''}`:`<button class="memberBtn ${r.active?'selected':''}" onclick="toggleMember('${a.id}','${p.id}')">${r.active?'✓ dabei':'+ hinzufügen'}</button>`}<button class="miniBtn" onclick="editActivityNote('${a.id}','${p.id}')">📝</button></div>${r.licenses?.length?`<div class="licenseLine">${r.licenses.map(x=>`<span class="badge">${esc(x)}</span>`).join('')}</div>`:''}${r.note?`<div class="mini noteLine">${esc(r.note)}</div>`:''}</div>`;
 }
 function addVisit(a,p,delta){
   const pupil=(Store.pupils||[]).find(x=>String(x.id)===String(p));
