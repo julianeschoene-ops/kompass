@@ -85,5 +85,12 @@ function device(){
   await d.sync.flush();
   assert.equal([...cloud.assessments.values()][0].assessment.level,'M');
   assert.equal(Object.keys(d.sync.pending()).length,0);
+  const e=device();
+  await e.sync.initialize();
+  e.Store.activityRecords['garden|p1']={activityId:'garden',pupilId:'p1',creativeAssessment:{level:'G',assessedAt:'2026-10-23T10:00:00Z'}};
+  e.sync.capture();
+  e.Store.activityRecords['garden|p1'].creativeAssessment.level='E';
+  e.sync.capture();
+  assert.equal(e.sync.pending()['assessment:6:garden|p1'].value.level,'E','same timestamp correction must be queued');
   console.log('PASS: journal, 2 hours, assessment, second device, legacy recovery, idempotence, offline journal recovery');
 })().catch(e=>{console.error(e);process.exitCode=1});
