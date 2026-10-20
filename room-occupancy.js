@@ -67,14 +67,15 @@ let roomSelected='Lernatelier 1';
 function roomData(){return Store.data.roomOccupancy||ROOM_SEED}
 function roomOccupancy(){
  const editable=Auth.isAdmin();
- const all=roomData(),rooms=Object.keys(ROOM_SEED),rows=all[roomSelected]||ROOM_SEED[roomSelected];
+ const all=roomData(),rooms=[...Object.keys(ROOM_SEED),...Object.keys(EXTRA_PLANS)],extra=EXTRA_PLANS[roomSelected],rows=all[roomSelected]||extra?.rows||ROOM_SEED[roomSelected],times=extra?.times||ROOM_TIMES;
  const buttons=rooms.map(r=>'<button class="chip '+(r===roomSelected?'dark':'')+'" onclick="roomSelected='+JSON.stringify(r).replace(/"/g,'&quot;')+';render()">'+esc(r)+'</button>').join(' ');
- const table='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;table-layout:fixed;min-width:780px"><thead><tr><th style="width:110px;padding:12px">Stunde</th>'+ROOM_DAYS.map(d=>'<th style="padding:12px">'+d+'</th>').join('')+'</tr></thead><tbody>'+rows.map((row,h)=>'<tr><th style="border:1px solid #ddd;padding:10px">'+(h+1)+'. Stunde<div class="mini">'+ROOM_TIMES[h]+'</div></th>'+ROOM_DAYS.map((d,i)=>'<td style="border:1px solid #ddd;padding:5px;vertical-align:top"><textarea aria-label="'+d+', '+(h+1)+'. Stunde" style="width:100%;min-height:62px;box-sizing:border-box;border:0;background:transparent;resize:vertical;font:inherit" onchange="roomSave('+h+','+i+',this.value)">'+esc(row[i]||'')+'</textarea></td>').join('')+'</tr>').join('')+'</tbody></table></div>';
- shell(header('Raumbelegung Stufe 6',(editable?'Raumpläne bearbeiten · gemeinsame Speicherung':'Raumpläne ansehen · nur Admins können Änderungen vornehmen'))+'<div class="toolbar" style="flex-wrap:wrap">'+buttons+'</div><div class="card"><h2>'+esc(roomSelected)+'</h2>'+table+'<p class="mini">'+(editable?'Einträge antippen und bearbeiten. Beim Verlassen des Feldes wird gespeichert. ':'')+'* = Anwesenheitskontrolle bzw. Mitbetreuung.</p></div>');
+ const table='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;table-layout:fixed;min-width:780px"><thead><tr><th style="width:110px;padding:12px">Stunde</th>'+ROOM_DAYS.map(d=>'<th style="padding:12px">'+d+'</th>').join('')+'</tr></thead><tbody>'+rows.map((row,h)=>'<tr><th style="border:1px solid #ddd;padding:10px">'+(h+1)+'. Stunde<div class="mini">'+(times[h]||'')+'</div></th>'+ROOM_DAYS.map((d,i)=>'<td style="border:1px solid #ddd;padding:5px;vertical-align:top"><textarea aria-label="'+d+', '+(h+1)+'. Stunde" style="width:100%;min-height:62px;box-sizing:border-box;border:0;background:transparent;resize:vertical;font:inherit" onchange="roomSave('+h+','+i+',this.value)">'+esc(row[i]||'')+'</textarea></td>').join('')+'</tr>').join('')+'</tbody></table></div>';
+ shell(header('Raum- & Wochenpläne',(editable?'Raumpläne bearbeiten · gemeinsame Speicherung':'Raumpläne ansehen · nur Admins können Änderungen vornehmen'))+'<div class="toolbar" style="flex-wrap:wrap">'+buttons+'</div><div class="card"><h2>'+esc(roomSelected)+'</h2>'+(extra?.note?'<p class="mini">'+esc(extra.note)+'</p>':'')+table+'<p class="mini">'+(editable?'Einträge antippen und bearbeiten. Beim Verlassen des Feldes wird gespeichert. ':'')+'* = Anwesenheitskontrolle bzw. Mitbetreuung.</p></div>');
 }
 function roomSave(hour,day,value){
  if(!Auth.isAdmin())return;
  if(!Store.data.roomOccupancy)Store.data.roomOccupancy=JSON.parse(JSON.stringify(ROOM_SEED));
+ if(!Store.data.roomOccupancy[roomSelected])Store.data.roomOccupancy[roomSelected]=JSON.parse(JSON.stringify(EXTRA_PLANS[roomSelected]?.rows||ROOM_SEED[roomSelected]));
  Store.data.roomOccupancy[roomSelected][hour][day]=String(value);
  Store.save();
  toast();
