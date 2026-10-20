@@ -57,42 +57,41 @@ function renderActivityDetail(id){
   let pupils=(Store.pupils||[]).filter(p=>a.type==='Kreativband'?(activityPupilYear==='alle'||Number(p.year||String(p.className||'').charAt(0))===Number(activityPupilYear)):Number(p.year||String(p.className||'').charAt(0))===Number(State.year)).filter(p=>activityTeam==='alle'||p.team===activityTeam).filter(p=>!activitySearch||(p.first+' '+p.last+' '+p.short).toLowerCase().includes(activitySearch.toLowerCase())).sort((x,y)=>x.last.localeCompare(y.last,'de')||x.first.localeCompare(y.first,'de'));
   return`<button class="chip" onclick="activitySelected=null;render()">← Übersicht</button>${a.type!=='Kreativband'&&canEdit()?`<button class="chip" onclick="openActivityEditor('${a.id}')">Bearbeiten</button>`:''}<div class="card focusCard"><div><h2>${a.icon||activityIcon(a.type)} ${esc(a.name)}</h2></div>${isCountableActivity(a)?'':`<div class="scoreHint">${activityMemberCount(a.id)}<br><span class="mini">Kinder mit Eintrag</span></div>`}</div>${isCountableActivity(a)?`<div class="card"><div class="formgrid"><div><label>Besuchsdatum</label><input type="date" value="${esc(activityVisitDate)}" onchange="activityVisitDate=this.value"></div><div><label>Cloud-Abgleich</label><button class="chip dark" onclick="creativeRefreshFromCloud()">↻ Cloud-Anwesenheiten laden</button></div></div></div>`:''}<div class="toolbar formgrid">${a.type==='Kreativband'?`<div><label>Jahrgang</label><select onchange="activityPupilYear=this.value;activityTeam='alle';render()"><option value="alle" ${activityPupilYear==='alle'?'selected':''}>Alle Jahrgänge (5–7)</option>${[5,6,7].map(y=>`<option value="${y}" ${String(activityPupilYear)===String(y)?'selected':''}>Jahrgang ${y}</option>`).join('')}</select></div>`:''}<div><label>Lerngruppe</label><select onchange="activityTeam=this.value;render()">${own?`<option value="${esc(own)}" ${activityTeam===own?'selected':''}>Meine Lerngruppe · ${esc(own)}</option>`:''}<option value="alle" ${activityTeam==='alle'?'selected':''}>alle Teams</option>${teams.filter(t=>t!==own).map(t=>`<option ${activityTeam===t?'selected':''}>${esc(t)}</option>`).join('')}</select></div><div><label>Name filtern</label><input id="activityNameSearch" value="${esc(activitySearch)}" oninput="activitySearch=this.value;renderKeepingFocus('activityNameSearch')" placeholder="Name suchen …"></div></div><div class="quickList">${pupils.map(p=>activityQuickRow(a,p)).join('')||'<div class="card empty">Keine Schüler*innen in dieser Auswahl.</div>'}</div>`;
 }
-function saveCreativeAssessment(activityId,pupilId,field,value){
- const activity=Store.activities.find(x=>x.id===activityId);
- const pupil=(Store.pupils||[]).find(x=>String(x.id)===String(pupilId));
- if(activity?.type!=='Kreativband'||!pupil||!Auth.canAccessGrade(Number(pupil.year||String(pupil.className||'').charAt(0))))return;
- if(field==='level'&&!['','G','M','E'].includes(value))return;
- if(field==='color'&&!['','red','yellow','green'].includes(value))return;
- if(field==='note')value=String(value||'').trim();
- const key=activityId+'|'+pupilId,r=activityRecord(activityId,pupilId);
- r.creativeAssessment={...(r.creativeAssessment||{}),[field]:value,assessedBy:Auth.currentUser()?.name||'Lehrkraft',assessedAt:new Date().toISOString()};r.active=true;
- Store.activityRecords[key]=r;
- Store.save('Kreativband-Bewertung geändert',{target:pupilId,activity:activityId,field});
- const status=document.getElementById('assessmentStatus_'+activityId+'_'+pupilId);if(status)status.textContent='Automatisch gespeichert · '+(Auth.currentUser()?.name||'Lehrkraft')+' · '+new Date().toLocaleDateString('de-DE')+' · Cloud-Synchronisierung läuft';
- toast('Nur lokal gespeichert – warte auf Cloud-Bestätigung',4000);
- // Keep the other dropdown and current scroll position untouched.
-}
 async function confirmCreativeAssessment(activityId,pupilId){
- const key=activityId+'|'+pupilId,el=document.getElementById('assessmentStatus_'+activityId+'_'+pupilId),btn=document.getElementById('assessmentSave_'+activityId+'_'+pupilId);
+ const key=activityId+'|'+pupilId;
+ const el=document.getElementById('assessmentStatus_'+activityId+'_'+pupilId);
+ const btn=document.getElementById('assessmentSave_'+activityId+'_'+pupilId);
+ const level=document.getElementById('assessmentLevel_'+activityId+'_'+pupilId)?.value||'';
+ const color=document.getElementById('assessmentColor_'+activityId+'_'+pupilId)?.value||'';
+ const note=document.getElementById('assessmentNote_'+activityId+'_'+pupilId)?.value||'';
+ const pupil=(Store.pupils||[]).find(p=>String(p.id)===String(pupilId));
+ const activity=Store.activities.find(a=>String(a.id)===String(activityId));
+ if(!pupil||activity?.type!=='Kreativband'||!Auth.canAccessGrade(Number(pupil.year||String(pupil.className||'').charAt(0)))){toast('Keine Berechtigung für diese Bewertung',6000);return;}
+ if(!['','G','M','E'].includes(level)||!['','red','yellow','green'].includes(color)){toast('Ungültige Bewertung',6000);return;}
+ const old=activityRecord(activityId,pupilId);
+ const assessment={...(old.creativeAssessment||{}),level,color,note:note.trim(),assessedBy:Auth.currentUser()?.name||'Lehrkraft',assessedAt:new Date().toISOString()};
+ Store.activityRecords[key]={...old,activityId,pupilId,active:true,creativeAssessment:assessment};
+ // Commit all three fields together, including text not yet blurred on iPad.
+ Store.saveLocalOnly();
  if(btn){btn.disabled=true;btn.textContent='Speichert …';}
- if(el)el.textContent='Cloud-Speicherung wird geprüft …';
+ if(el)el.textContent='Lokal gespeichert · Cloud wird geprüft …';
  try{
-  if(typeof CreativeSyncV2==='undefined'||Auth.session?.mode!=='cloud')throw new Error('Cloud-Verbindung nicht verfügbar');
+  if(typeof CreativeSyncV2==='undefined'||Auth.session?.mode!=='cloud')throw new Error('Keine Cloud-Verbindung');
   CreativeSyncV2.capture();
-  for(let i=0;i<40&&CreativeSyncV2.busy;i++)await new Promise(resolve=>setTimeout(resolve,250));
-  if(CreativeSyncV2.busy)throw new Error('Cloud-Abgleich dauert zu lange');
+  // Wait for any ongoing attendance/assessment transfer, then upload this assessment.
+  for(let i=0;i<60&&CreativeSyncV2.busy;i++)await new Promise(resolve=>setTimeout(resolve,200));
+  if(CreativeSyncV2.busy)throw new Error('Cloud-Abgleich noch beschäftigt');
   await CreativeSyncV2.flush();
-  for(let i=0;i<40&&CreativeSyncV2.busy;i++)await new Promise(resolve=>setTimeout(resolve,250));
-  if(CreativeSyncV2.busy)throw new Error('Cloud-Bestätigung dauert zu lange');
   const grade=CreativeSyncV2.pupilGrade(pupilId);
   const result=await Auth.cloudClient.from('kompass_creative_assessments_v2').select('assessment').eq('grade',grade).eq('record_key',key).maybeSingle();
   if(result.error)throw result.error;
-  const local=Store.activityRecords?.[key]?.creativeAssessment;
-  if(!local||!result.data||JSON.stringify(result.data.assessment)!==JSON.stringify(local))throw new Error('Cloud-Daten stimmen noch nicht überein');
-  if(el)el.textContent=creativeAssessmentSummary(local)+' · Cloud gespeichert';
-  toast('Bewertung in Cloud gespeichert',3500);
- }catch(e){if(el)el.textContent='Nicht bestätigt: '+(e?.message||String(e));toast('Speichern fehlgeschlagen: '+(e?.message||String(e)),8000);}
- finally{if(btn){btn.disabled=false;btn.textContent='Speichern';}}
+  if(!result.data||JSON.stringify(result.data.assessment)!==JSON.stringify(assessment))throw new Error('Cloud-Bestätigung stimmt nicht überein');
+  if(el)el.textContent=creativeAssessmentSummary(assessment)+' · Cloud gespeichert';
+  toast('Bewertung und Notiz gespeichert',3500);
+ }catch(e){
+  if(el)el.textContent='Lokal gesichert · Cloud noch nicht bestätigt';
+  toast('Cloud-Speicherung nicht bestätigt: '+(e?.message||String(e)),8000);
+ }finally{if(btn){btn.disabled=false;btn.textContent='Speichern';}}
 }
 function creativeAssessmentSummary(a){
  if(!a?.assessedBy)return 'Noch keine Bewertung';
@@ -101,14 +100,13 @@ function creativeAssessmentSummary(a){
 }
 function creativeAssessmentControls(a,p,r){
  if(a.type!=='Kreativband')return '';
- const assessment=r.creativeAssessment||{};
+ const assessment=r.creativeAssessment||{},id=esc(a.id+'_'+p.id);
  const opts=(values,selected)=>values.map(([v,label])=>'<option value="'+v+'" '+(v===selected?'selected':'')+'>'+label+'</option>').join('');
- const attrs=field=>'onchange="saveCreativeAssessment('+JSON.stringify(a.id)+','+JSON.stringify(p.id)+','+JSON.stringify(field)+',this.value)"';
- return '<div class="mini" id="assessmentStatus_'+esc(a.id)+'_'+esc(p.id)+'">'+esc(creativeAssessmentSummary(assessment))+'</div>'+
- '<div class="creativeInlineAssessment"><label class="mini">Niveau <select '+attrs('level')+'>'+opts([['','–'],['G','G'],['M','M'],['E','E']],assessment.level||'')+'</select></label>'+
- ' <label class="mini">Bewertung <select '+attrs('color')+'>'+opts([['','–'],['red','🔴 Rot'],['yellow','🟡 Gelb'],['green','🟢 Grün']],assessment.color||'')+'</select></label></div>'+
- '<label class="mini">Notiz <textarea rows="2" placeholder="Notiz zur Bewertung" '+attrs('note')+'>'+esc(assessment.note||'')+'</textarea></label>'+
- '<button class="miniBtn" id="assessmentSave_'+esc(a.id)+'_'+esc(p.id)+'" onclick="confirmCreativeAssessment('+JSON.stringify(a.id)+','+JSON.stringify(p.id)+')">Speichern</button>';
+ return '<div class="mini" id="assessmentStatus_'+id+'">'+esc(creativeAssessmentSummary(assessment))+'</div>'+
+ '<div class="creativeInlineAssessment"><label class="mini">Niveau <select id="assessmentLevel_'+id+'">'+opts([['','–'],['G','G'],['M','M'],['E','E']],assessment.level||'')+'</select></label>'+
+ ' <label class="mini">Bewertung <select id="assessmentColor_'+id+'">'+opts([['','–'],['red','🔴 Rot'],['yellow','🟡 Gelb'],['green','🟢 Grün']],assessment.color||'')+'</select></label></div>'+
+ '<label class="mini">Notiz <textarea id="assessmentNote_'+id+'" rows="2" placeholder="Notiz zur Bewertung">'+esc(assessment.note||'')+'</textarea></label>'+
+ '<button type="button" class="miniBtn" id="assessmentSave_'+id+'" onclick="confirmCreativeAssessment('+JSON.stringify(a.id)+','+JSON.stringify(p.id)+')">Speichern</button>';
 }
 function activityQuickRow(a,p){
   const r=activityRecord(a.id,p.id),att=isCountableActivity(a)?activityAttendance(a.id,p.id):null;
