@@ -52,6 +52,20 @@ const CreativeSyncV2={
       const id='visit:'+row.grade+':'+row.visit_key;
       if(!pending[id])d.dailyCreativeVisits[row.visit_key]=clone(row.visit);
     }
+    // A legacy grade snapshot may omit recently saved visits; never delete a v2 visit.
+    // Recalculate counters from the complete dated visit set.
+    const totals={};
+    for(const v of Object.values(d.dailyCreativeVisits)){
+      if(!v?.activityId||!v?.pupilId)continue;
+      const key=String(v.activityId)+'|'+String(v.pupilId);
+      totals[key]=(totals[key]||0)+1;
+    }
+    for(const [key,count] of Object.entries(totals)){
+      const [activityId,pupilId]=key.split('|');
+      const rec=d.activityRecords[key]||{activityId,pupilId,active:true,count:0};
+      rec.count=Math.max(Number(rec.count)||0,count);
+      d.activityRecords[key]=rec;
+    }
     for(const row of snapshot.assessments){
       const id='assessment:'+row.grade+':'+row.record_key;
       if(pending[id])continue;
