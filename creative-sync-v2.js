@@ -3,7 +3,7 @@
  * V2 tables must be deployed/backfilled before this module is enabled.
  */
 const CreativeSyncV2={
-  journalKey:'kompass_creative_v2_pending',ackKey:'kompass_creative_v2_ack',busy:false,ready:false,lastError:null,retryRequested:false,
+  journalKey:'kompass_creative_v2_pending',ackKey:'kompass_creative_v2_ack',busy:false,ready:false,lastError:null,retryRequested:false,lastSnapshot:null,
   acknowledgements(){try{return JSON.parse(localStorage.getItem(this.ackKey)||'{}')}catch(e){return {}}},
   saveAcknowledgements(a){localStorage.setItem(this.ackKey,JSON.stringify(a))},
   pending(){try{return JSON.parse(localStorage.getItem(this.journalKey)||'{}')}catch(e){throw new Error('Lokale Kreativband-Warteschlange beschädigt: '+e.message)}},
@@ -87,6 +87,7 @@ const CreativeSyncV2={
     for(const row of snapshot.visits){const id='visit:'+row.grade+':'+row.visit_key;if(!this.pending()[id])ack[id]=JSON.stringify(row.visit)}
     for(const row of snapshot.assessments){const id='assessment:'+row.grade+':'+row.record_key;if(!this.pending()[id])ack[id]=JSON.stringify(row.assessment)}
     this.saveAcknowledgements(ack);
+    this.lastSnapshot=snapshot;
     this.apply(snapshot);
     this.ready=true;
     await this.flush();
@@ -141,6 +142,7 @@ const CreativeSyncV2={
         }
       }
       const snapshot=await this.readAll();
+      this.lastSnapshot=snapshot;
       this.apply(snapshot);
       const ack=this.acknowledgements();
       for(const row of snapshot.visits)ack['visit:'+row.grade+':'+row.visit_key]=JSON.stringify(row.visit);
@@ -161,6 +163,7 @@ const CreativeSyncV2={
     this.capture();
     if(this.hasPending())return this.flush();
     const snapshot=await this.readAll();
+    this.lastSnapshot=snapshot;
     this.apply(snapshot);
     const ack=this.acknowledgements();
     for(const row of snapshot.visits)ack['visit:'+row.grade+':'+row.visit_key]=JSON.stringify(row.visit);
