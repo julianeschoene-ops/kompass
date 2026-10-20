@@ -158,6 +158,10 @@ const Sync={
         // In that case NEVER overwrite the new local entry with the old cloud snapshot.
         if(this.dirty)return;
         Store.data=merged;
+        // Restore verified v2 rows immediately: legacy pulls must never hide them.
+        if(typeof CreativeSyncV2!=='undefined'&&CreativeSyncV2.ready&&CreativeSyncV2.lastSnapshot){
+          CreativeSyncV2.apply(CreativeSyncV2.lastSnapshot);
+        }
         // V2 is authoritative for creative data after a successful bootstrap.
         // Keep any device-only entries from the pending journal visible.
         if(typeof CreativeSyncV2!=='undefined'&&CreativeSyncV2.ready){
