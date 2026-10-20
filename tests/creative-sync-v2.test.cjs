@@ -53,13 +53,18 @@ function device(){
   const c=device();
   await c.sync.initialize();
   c.Store.dailyCreativeVisits['2026-10-21|garden|p1']={date:'2026-10-21',activityId:'garden',pupilId:'p1'};
-  const originalFrom=c.sync && c.Store;
   // Simulate a temporary offline state by making the cloud query fail.
   // The queue must remain intact even if the first request fails.
-  const initialClient=c.sync;
   c.sync.capture();
   const savedPending=Object.keys(c.sync.pending()).length;
   assert.equal(savedPending,1,'offline visit is captured before network access');
+  // A genuine failed network request must not acknowledge or lose the entry.
+  const workingClient=c.sync;
+  const offlineFrom=c.sync && c.sync.readAll;
+  c.sync.readAll=async()=>{throw new Error('Network offline')};
+  await assert.rejects(c.sync.flush(),/Network offline/);
+  assert.equal(Object.keys(c.sync.pending()).length,1,'failed upload keeps the local journal');
+  c.sync.readAll=offlineFrom;
   // A newer grade snapshot must not replace the locally queued entry.
   c.Store.data.dailyCreativeVisits={};
   c.sync.apply(c.sync.lastSnapshot);
