@@ -19,9 +19,8 @@ const CreativeSyncV2={
       const id='visit:'+grade+':'+key;
       if(!q[id]&&ack[id]!==JSON.stringify(v))q[id]={kind:'visit',grade,key,pupilId:String(v.pupilId),activityId:String(v.activityId),value:clone(v),capturedAt:now};
     }
-    const creativeIds=new Set((Store.activities||[]).filter(a=>a.type==='Kreativband').map(a=>String(a.id)));
     for(const [key,r] of Object.entries(Store.activityRecords||{})){
-      if(!r?.creativeAssessment||!creativeIds.has(String(r.activityId)))continue;
+      if(!r?.creativeAssessment||!r.activityId)continue;
       const grade=this.pupilGrade(r.pupilId);
       if(!grade||!r.activityId)continue;
       const id='assessment:'+grade+':'+key,prior=q[id];
