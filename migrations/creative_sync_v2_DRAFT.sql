@@ -24,18 +24,24 @@ alter table public.kompass_creative_visits_v2 enable row level security;
 alter table public.kompass_creative_assessments_v2 enable row level security;
 grant select,insert,update on public.kompass_creative_visits_v2 to authenticated;
 grant select,insert,update on public.kompass_creative_assessments_v2 to authenticated;
+drop policy if exists creative_visits_read_v2 on public.kompass_creative_visits_v2;
 create policy creative_visits_read_v2 on public.kompass_creative_visits_v2
   for select to authenticated using (public.has_kompass_grade_access(grade,'teacher'));
+drop policy if exists creative_visits_insert_v2 on public.kompass_creative_visits_v2;
 create policy creative_visits_insert_v2 on public.kompass_creative_visits_v2
   for insert to authenticated with check (public.has_kompass_grade_access(grade,'teacher'));
+drop policy if exists creative_visits_update_v2 on public.kompass_creative_visits_v2;
 create policy creative_visits_update_v2 on public.kompass_creative_visits_v2
   for update to authenticated
   using (public.has_kompass_grade_access(grade,'teacher'))
   with check (public.has_kompass_grade_access(grade,'teacher'));
+drop policy if exists creative_assessments_read_v2 on public.kompass_creative_assessments_v2;
 create policy creative_assessments_read_v2 on public.kompass_creative_assessments_v2
   for select to authenticated using (public.has_kompass_grade_access(grade,'teacher'));
+drop policy if exists creative_assessments_insert_v2 on public.kompass_creative_assessments_v2;
 create policy creative_assessments_insert_v2 on public.kompass_creative_assessments_v2
   for insert to authenticated with check (public.has_kompass_grade_access(grade,'teacher'));
+drop policy if exists creative_assessments_update_v2 on public.kompass_creative_assessments_v2;
 create policy creative_assessments_update_v2 on public.kompass_creative_assessments_v2
   for update to authenticated
   using (public.has_kompass_grade_access(grade,'teacher'))
