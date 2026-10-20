@@ -109,7 +109,7 @@ const CreativeSyncV2={
     try{
       this.capture();
       const q=this.pending(),client=Auth.cloudClient;
-      for(const [id,item] of Object.entries(q)){
+      for(const [id,item] of Object.entries(q).sort((a,b)=>Number(b[1].kind==='assessment')-Number(a[1].kind==='assessment'))){
         const table=item.kind==='visit'?'kompass_creative_visits_v2':'kompass_creative_assessments_v2';
         const row=item.kind==='visit'
           ?{grade:item.grade,visit_key:item.key,pupil_id:item.pupilId,activity_id:item.activityId,visit:item.value}
@@ -141,7 +141,7 @@ const CreativeSyncV2={
         if(JSON.stringify(stored)!==JSON.stringify(item.value)){
           if(item.kind==='visit'){
             // Existing cloud visit wins; retain the differing local entry for manual reconciliation.
-            throw new Error('Besuchskonflikt: lokaler Eintrag bleibt in der Warteschlange');
+            console.warn('Besuchskonflikt bleibt lokal gesichert; andere Einträge werden weiter übertragen',id);continue;
           }
           throw new Error('Cloud-Bestätigung stimmt nicht mit lokalem Eintrag überein');
         }
