@@ -64,21 +64,37 @@ const ROOM_SEED={
 ['Werkstattunterricht: COMP 2, Marktplatz','Werkstattunterricht: COMP 2, Marktplatz','','Werkstattunterricht: COMP 2, Marktplatz','']]
 };
 let roomSelected='Lernatelier 1';
+let roomLevelOpen=false;
+let roomCategory='Räume';
+const ROOM_CATEGORIES={
+'Räume':['Lernatelier 1','Lernatelier 2','Lernatelier 3','Flexraum','Sprachenraum','Matheraum','Weitere Räume'],
+'Teamstundenpläne':['Teamstundenplan Blau','Teamstundenplan Rot','Teamstundenplan Gelb','Teamstundenplan Violett','Teamstundenplan Grün'],
+'Unterricht & Angebote':['Flexstunden Stufe 6','Kreativband Stufe 5–7','Bläserklasse Stufe 6'],
+'Aufsicht':['Pausenaufsicht']
+};
 function roomData(){return Store.data.roomOccupancy||ROOM_SEED}
+function roomSelectCategory(category){roomCategory=category;roomSelected=ROOM_CATEGORIES[category][0];render()}
+function roomSelectPlan(plan){roomSelected=plan;render()}
 function roomOccupancy(){
  const editable=Auth.isAdmin();
- const all=roomData(),rooms=[...Object.keys(ROOM_SEED),...Object.keys(EXTRA_PLANS)],extra=EXTRA_PLANS[roomSelected],rows=all[roomSelected]||extra?.rows||ROOM_SEED[roomSelected],times=extra?.times||ROOM_TIMES;
- const buttons=rooms.map(r=>'<button class="chip '+(r===roomSelected?'dark':'')+'" onclick="roomSelected='+JSON.stringify(r).replace(/"/g,'&quot;')+';render()">'+esc(r)+'</button>').join(' ');
- const table='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;table-layout:fixed;min-width:780px"><thead><tr><th style="width:110px;padding:12px">Stunde</th>'+ROOM_DAYS.map(d=>'<th style="padding:12px">'+d+'</th>').join('')+'</tr></thead><tbody>'+rows.map((row,h)=>'<tr><th style="border:1px solid #ddd;padding:10px">'+(h+1)+'. Stunde<div class="mini">'+(times[h]||'')+'</div></th>'+ROOM_DAYS.map((d,i)=>'<td style="border:1px solid #ddd;padding:5px;vertical-align:top"><textarea aria-label="'+d+', '+(h+1)+'. Stunde" style="width:100%;min-height:62px;box-sizing:border-box;border:0;background:transparent;resize:vertical;font:inherit" onchange="roomSave('+h+','+i+',this.value)">'+esc(row[i]||'')+'</textarea></td>').join('')+'</tr>').join('')+'</tbody></table></div>';
+ const intro=header('Raum- & Wochenpläne','Gemeinsame Übersichten · '+(editable?'Bearbeitung durch Admins':'Nur Lesezugriff'));
+ const level='<div class="card" style="margin-bottom:14px"><button class="chip '+(roomLevelOpen?'dark':'')+'" onclick="roomLevelOpen=!roomLevelOpen;render()">▸ Stufe 6 '+(roomLevelOpen?'▾':'▸')+'</button></div>';
+ if(!roomLevelOpen){shell(intro+level);return;}
+ const categories='<div class="toolbar" style="flex-wrap:wrap;gap:8px;margin-bottom:12px">'+Object.keys(ROOM_CATEGORIES).map(c=>'<button class="chip '+(roomCategory===c?'dark':'')+'" onclick="roomSelectCategory('+JSON.stringify(c).replace(/"/g,'&quot;')+')">'+esc(c)+'</button>').join('')+'</div>';
+ const rooms=ROOM_CATEGORIES[roomCategory],all=roomData(),extra=EXTRA_PLANS[roomSelected],rows=all[roomSelected]||extra?.rows||ROOM_SEED[roomSelected]||[],times=extra?.times||ROOM_TIMES;
+ const buttons='<div class="toolbar" style="flex-wrap:wrap;gap:8px">'+rooms.map(r=>'<button class="chip '+(r===roomSelected?'dark':'')+'" onclick="roomSelectPlan('+JSON.stringify(r).replace(/"/g,'&quot;')+')">'+esc(r)+'</button>').join('')+'</div>';
  const colorMap={blau:'#dbeafe',rot:'#fee2e2',gelb:'#fef9c3',violett:'#ede9fe',gruen:'#dcfce7'};
  const teamBg=extra?.teamColor?colorMap[extra.teamColor]:null;
- shell(header('Raum- & Wochenpläne',(editable?'Raumpläne bearbeiten · gemeinsame Speicherung':'Raumpläne ansehen · nur Admins können Änderungen vornehmen'))+'<div class="toolbar" style="flex-wrap:wrap">'+buttons+'</div><div class="card"><h2>'+esc(roomSelected)+'</h2>'+(extra?.note?'<p class="mini">'+esc(extra.note)+'</p>':'')+table+'<p class="mini">'+(editable?'Einträge antippen und bearbeiten. Beim Verlassen des Feldes wird gespeichert. ':'')+'* = Anwesenheitskontrolle bzw. Mitbetreuung.</p></div>');
+ const isTeam=Boolean(extra?.teamColor);
+ const isFlexible=roomSelected==='Flexstunden Stufe 6'||roomSelected==='Kreativband Stufe 5–7'||roomSelected==='Bläserklasse Stufe 6';
+ const firstLabel=extra?.label||'Stunde';
+ const table='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;table-layout:fixed;min-width:780px"><thead><tr><th style="width:130px;padding:12px;background:'+(teamBg||'#f1f5f9')+'">'+esc(firstLabel)+'</th>'+ROOM_DAYS.map(d=>'<th style="padding:12px;background:'+(teamBg||'#f1f5f9')+'">'+d+'</th>').join('')+'</tr></thead><tbody>'+rows.map((row,h)=>'<tr><th style="border:1px solid #ddd;padding:10px;vertical-align:top;background:#f8fafc">'+(extra?esc(times[h]||''):((h+1)+'. Stunde<div class="mini">'+esc(times[h]||'')+'</div>'))+'</th>'+ROOM_DAYS.map((d,i)=>{const value=String(row[i]||'');const content=editable?'<textarea aria-label="'+d+', '+(h+1)+'. Zeile" rows="'+Math.max(2,Math.ceil(value.length/21))+'" style="display:block;width:100%;min-height:74px;box-sizing:border-box;border:0;background:transparent;resize:vertical;font:inherit;line-height:1.4;overflow:hidden;white-space:pre-wrap;overflow-wrap:anywhere" oninput="this.style.height=\'auto\';this.style.height=this.scrollHeight+\'px\'" onchange="roomSave('+h+','+i+',this.value)">'+esc(value)+'</textarea>':'<div style="min-height:58px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.4;padding:7px">'+esc(value)+'</div>';return '<td style="border:1px solid #ddd;padding:6px;vertical-align:top;'+(isTeam?'background:'+((h===0)?teamBg:'#fff')+';':'')+'">'+content+'</td>'}).join('')+'</tr>').join('')+'</tbody></table></div>';
+ shell(intro+level+'<div class="card">'+categories+buttons+'</div><div class="card" style="'+(teamBg?'border-top:6px solid '+teamBg+';':'')+'"><h2>'+esc(roomSelected)+'</h2>'+(extra?.note?'<p class="mini">'+esc(extra.note)+'</p>':'')+table+'<p class="mini">'+(editable?'Einträge bearbeiten: Speicherung beim Verlassen des Feldes. ':'')+(isFlexible?'Längere Einträge werden vollständig angezeigt.':'')+'</p></div>');
 }
 function roomSave(hour,day,value){
  if(!Auth.isAdmin())return;
  if(!Store.data.roomOccupancy)Store.data.roomOccupancy=JSON.parse(JSON.stringify(ROOM_SEED));
  if(!Store.data.roomOccupancy[roomSelected])Store.data.roomOccupancy[roomSelected]=JSON.parse(JSON.stringify(EXTRA_PLANS[roomSelected]?.rows||ROOM_SEED[roomSelected]));
  Store.data.roomOccupancy[roomSelected][hour][day]=String(value);
- Store.save();
- toast();
+ Store.save();toast();
 }
