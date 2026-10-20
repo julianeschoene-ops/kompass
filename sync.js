@@ -123,10 +123,44 @@ const Sync={
         }
         if(emptyGrades.length)console.warn('Cloud-Jahrgänge ohne vollständige Schülerliste; lokale Daten geschützt:',emptyGrades);
         await this.overlayLernatelier(years.filter(g=>!emptyGrades.includes(g)),merged).catch(e=>console.warn('Optional LA overlay failed',e));
+        // Recover locally recorded creative visits that are missing from the
+        // cloud snapshot. Never replace newer cloud assessments with old ones.
+        // These are append-only attendance records; keep them until a verified push.
+        const localBeforePull=Store.data;
+        let needsCreativeUpload=false;
+        const mergedPupilIds=new Set((merged.pupils||[]).map(p=>String(p.id)));
+        for(const [key,visit] of Object.entries(localBeforePull.dailyCreativeVisits||{})){
+          if(!visit||!mergedPupilIds.has(String(visit.pupilId)))continue;
+          if(!Object.prototype.hasOwnProperty.call(merged.dailyCreativeVisits||{},key)){
+            merged.dailyCreativeVisits[key]=clone(visit);
+            needsCreativeUpload=true;
+          }
+        }
+        for(const [key,record] of Object.entries(localBeforePull.activityRecords||{})){
+          if(!record||!mergedPupilIds.has(String(record.pupilId)))continue;
+          const remoteRecord=merged.activityRecords?.[key];
+          if(!remoteRecord){
+            merged.activityRecords[key]=clone(record);
+            needsCreativeUpload=true;
+            continue;
+          }
+          const localAssessment=record.creativeAssessment;
+          const cloudAssessment=remoteRecord.creativeAssessment;
+          if(localAssessment&&(!cloudAssessment||
+            (Date.parse(localAssessment.assessedAt||'')||0)>(Date.parse(cloudAssessment.assessedAt||'')||0))){
+            merged.activityRecords[key]={...remoteRecord,creativeAssessment:clone(localAssessment)};
+            needsCreativeUpload=true;
+          }
+          // Never reduce an existing attendance counter on recovery.
+          if(Number(record.count||0)>Number(remoteRecord.count||0)){
+            merged.activityRecords[key]={...merged.activityRecords[key],count:Number(record.count)};
+            needsCreativeUpload=true;
+          }
+        }
         // A user can save while the asynchronous pull is in flight.
         // In that case NEVER overwrite the new local entry with the old cloud snapshot.
         if(this.dirty)return;
-        Store.data=merged;Store._rosterChanged=false;Store.migrate();if(Auth.isAdmin())await this.pullAudit();Store.saveLocalOnly();this.lastPull=new Date().toISOString();if(Auth.isAdmin()&&Store._rosterChanged){this.busy=false;await this.push(true);return;}
+        Store.data=merged;Store._rosterChanged=false;Store.migrate();if(Auth.isAdmin())await this.pullAudit();Store.saveLocalOnly();this.lastPull=new Date().toISOString();if(needsCreativeUpload)this.schedule(0);if(Auth.isAdmin()&&Store._rosterChanged){this.busy=false;await this.push(true);return;}
       }
     }catch(e){console.error('Cloud pull',e);throw e}finally{this.busy=false;if(this.dirty)this.schedule(0)}
   },
