@@ -33,6 +33,7 @@ const CreativeSyncV2={
   hasPending(){return Object.keys(this.pending()).length>0},
   async readAll(){
     const client=Auth.cloudClient,years=Auth.allowedGrades();
+    if(!years.length)return {visits:[],assessments:[]};
     const fetchAll=async table=>{
       const out=[];let from=0;const limit=500;
       while(true){
