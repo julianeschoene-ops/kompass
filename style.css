@@ -592,3 +592,13 @@
 .app{background:linear-gradient(to right,#fff 0 292px,var(--bg) 292px)}
 aside{background:#fff;min-height:100vh}
 @media(max-width:950px){.app{background:var(--bg)}aside{min-height:0}.creativeStatsTable .creativeStatsName{min-width:155px}.creativeStatsTable .creativeStatsTeam{left:155px}}
+
+.roomPlanTable{width:100%;border-collapse:collapse;table-layout:fixed;min-width:900px}
+.roomPlanTable th,.roomPlanTable td{border:1px solid #d9dfe7;vertical-align:top;padding:10px}
+.roomPlanTable th{overflow-wrap:anywhere}
+.roomPlanTable td{height:auto;overflow:visible}
+.roomPlanTable textarea{display:block;width:100%;height:auto;min-height:84px;box-sizing:border-box;border:0;outline-offset:2px;background:transparent;resize:vertical;font:inherit;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;overflow-y:auto;field-sizing:content}
+.roomPlanTable .roomReadCell{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5;min-height:54px}
+.roomPlanTable .roomTime{font-weight:750;line-height:1.35}
+.roomPlanScroll{width:100%;overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch}
+@media(min-width:951px){body{background:linear-gradient(to right,#fff 0 292px,#f6f7fb 292px) fixed}.app{background:transparent}aside{position:relative;top:auto;height:auto;min-height:100%;align-self:stretch;background:#fff}}
