@@ -177,14 +177,13 @@ function creativeWeekData(){
  return{start,end:endStr,pupils,offers,counts,days};
 }
 function creativeWeeklyCsv(){
- const d=creativeWeekData(),rows=[['Woche ab','Jahrgang','Vorname','Nachname','Farbteam','Kreativband','Besuche','Besuchstage']];
- for(const p of d.pupils)for(const a of d.offers){
-  const key=String(p.id)+'|'+a.id,n=d.counts[key]||0;
-  if(n)rows.push([d.start,State.year,p.first||'',p.last||'',p.team||'',a.name,n,[...(d.days[key]||[])].sort().join('; ')]);
- }
+ const d=creativeWeekData(),ids=new Set(d.pupils.map(p=>String(p.id))),all={};
+ Object.values(Store.dailyCreativeVisits||{}).forEach(v=>{if(v&&ids.has(String(v.pupilId))&&creativeDateKey(v.date))all[v.activityId]=(all[v.activityId]||0)+1;});
+ const rows=[['Kreativband','Besuche Woche','Besuche insgesamt']];
+ for(const a of d.offers)rows.push([a.name,d.pupils.reduce((n,p)=>n+(d.counts[String(p.id)+'|'+a.id]||0),0),all[a.id]||0]);
  const csv='\uFEFF'+rows.map(row=>row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');
  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),link=document.createElement('a');
- link.href=url;link.download='KOMPASS_Kreativband_KW_'+d.start+'_Jg'+State.year+'.csv';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ link.href=url;link.download='KOMPASS_Kreativband_Statistik_'+d.start+'.csv';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 async function creativeRefreshFromCloud(){
  if(typeof Sync==='undefined'||!Sync.enabled()){toast('Keine Cloud-Verbindung aktiv. Bitte mit einem Lehrkraftkonto anmelden.',7000);return;}
@@ -200,26 +199,16 @@ async function creativeRefreshFromCloud(){
  }catch(e){toast('Cloud-Abruf fehlgeschlagen: '+(e?.message||String(e)),8000);}
 }
 function renderCreativeWeeklyStatistics(){
- const d=creativeWeekData(),filtered=d.pupils.filter(p=>activityTeam==='alle'||p.team===activityTeam).filter(p=>!activitySearch||(p.first+' '+p.last+' '+p.short).toLowerCase().includes(activitySearch.toLowerCase())).sort((a,b)=>(a.last||'').localeCompare(b.last||'','de')||(a.first||'').localeCompare(b.first||'','de'));
+ const d=creativeWeekData(),ids=new Set(d.pupils.map(p=>String(p.id))),weekly={},overall={},children={};
  const fmt=s=>new Date(s+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});
- const totals=d.offers.map(a=>filtered.reduce((n,p)=>n+(d.counts[String(p.id)+'|'+a.id]||0),0));
- const total=totals.reduce((a,b)=>a+b,0);
- const gradeSummary=[5,6,7].map(y=>({year:y,visits:filtered.filter(p=>Number(p.year||String(p.className||'').charAt(0))===y).reduce((sum,p)=>sum+d.offers.reduce((n,a)=>n+(d.counts[String(p.id)+'|'+a.id]||0),0),0)}));
- const undatedByGrade=[5,6,7].map(year=>{
-  const ps=filtered.filter(p=>Number(p.year||String(p.className||'').charAt(0))===year);
-  const undated=ps.reduce((sum,p)=>sum+d.offers.reduce((n,a)=>{
-   const recorded=Number(activityRecord(a.id,p.id).count||0);
-   const datedAll=datedVisitsForActivity(a.id,p.id).filter(v=>creativeDateKey(v.date)).length;
-   return n+Math.max(0,recorded-datedAll);
-  },0),0);
-  return {year,undated};
- });
- const undatedTotal=undatedByGrade.reduce((n,g)=>n+g.undated,0);
- return `<div class="card"><h2>📊 Kreativband · Wochenstatistik</h2><p class="mini">Nur von Lehrkräften mit Datum erfasste Anwesenheiten werden gezählt. Jeder Schüler zählt je Angebot und Tag höchstens einmal.</p>
- <div class="toolbar"><button class="chip ${activityStatsAllGrades?'dark':''}" onclick="activityStatsAllGrades=!activityStatsAllGrades;activityTeam='alle';render()">${activityStatsAllGrades?'✓ Jahrgänge 5–7':'Jahrgänge 5–7 gesamt'}</button><button class="chip dark" onclick="creativeRefreshFromCloud()">↻ Cloud-Anwesenheiten laden</button><button class="chip" onclick="creativeWeekMove(-1)">← Vorwoche</button><strong>${fmt(d.start)} – ${fmt(d.end)}</strong><button class="chip" onclick="creativeWeekMove(1)">Folgewoche →</button><input type="date" aria-label="Datum in gewünschter Woche" value="${esc(activityWeekDate)}" onchange="activityWeekDate=this.value;render()"><button class="chip dark" onclick="creativeWeeklyCsv()">↓ CSV exportieren</button></div>
- <div class="toolbar formgrid"><div><label>Farbteam</label><select onchange="activityTeam=this.value;render()"><option value="alle">Alle Teams</option>${activityTeamsForGrade(State.year).map(t=>`<option value="${esc(t)}" ${activityTeam===t?'selected':''}>${esc(t)}</option>`).join('')}</select></div><div><label>Schüler:in suchen</label><input value="${esc(activitySearch)}" id="activityNameSearch" oninput="activitySearch=this.value;renderKeepingFocus('activityNameSearch')" placeholder="Name suchen …"></div></div>
- <div class="toolbar">${gradeSummary.map(g=>`<span class="chip">Jg. ${g.year}: <b>${g.visits}</b> datierte Wochenbesuche</span>`).join('')}</div>${undatedTotal?`<div class="card"><b>${undatedTotal} weitere Besuche ohne zugeordnetes Datum</b><p class="mini">Diese Besuche sind in den Gesamtzählern vorhanden, können aber keiner Kalenderwoche zuverlässig zugeordnet werden.</p><p>${undatedByGrade.map(g=>`Jg. ${g.year}: ${g.undated}`).join(" · ")}</p></div>`:""}<p><b>${total}</b> erfasste Besuche · <b>${filtered.filter(p=>d.offers.some(a=>d.counts[String(p.id)+'|'+a.id])).length}</b> Kinder mit mindestens einem Besuch</p>
- <div class="creativeStatsScroll"><table class="creativeStatsTable"><thead><tr><th class="creativeStatsName">Schüler:in</th><th class="creativeStatsTeam">Team</th>${d.offers.map(a=>`<th class="creativeStatsOffer" title="${esc(a.name)}">${esc(a.name)}</th>`).join('')}<th>Gesamt</th></tr></thead><tbody>
- ${filtered.map(p=>{const nums=d.offers.map(a=>d.counts[String(p.id)+'|'+a.id]||0);return`<tr><td>${esc((p.first||'')+' '+(p.last||''))}</td><td>${esc(p.team||'')}</td>${nums.map(n=>`<td style="text-align:center">${n||'–'}</td>`).join('')}<td style="text-align:center"><b>${nums.reduce((a,b)=>a+b,0)}</b></td></tr>`}).join('')}
- <tr><th style="text-align:left">Summe</th><th></th>${totals.map(n=>`<th>${n}</th>`).join('')}<th>${total}</th></tr></tbody></table></div></div>`;
+ for(const a of d.offers){weekly[a.id]=0;overall[a.id]=0;children[a.id]=new Set();}
+ for(const p of d.pupils)for(const a of d.offers)weekly[a.id]+=d.counts[String(p.id)+'|'+a.id]||0;
+ Object.values(Store.dailyCreativeVisits||{}).forEach(v=>{if(!v||!ids.has(String(v.pupilId))||!creativeDateKey(v.date)||!Object.hasOwn(overall,String(v.activityId)))return;overall[v.activityId]++;children[v.activityId].add(String(v.pupilId));});
+ const totalWeek=Object.values(weekly).reduce((a,b)=>a+b,0),totalAll=Object.values(overall).reduce((a,b)=>a+b,0);
+ return `<div class="card"><h2>📊 Kreativband · Besuchsstatistik</h2><p class="mini">Besuche je Angebot, ohne Schülernamen. Gezählt werden datierte Anwesenheitseinträge.</p>
+ <div class="toolbar"><button class="chip ${activityStatsAllGrades?'dark':''}" onclick="activityStatsAllGrades=!activityStatsAllGrades;render()">${activityStatsAllGrades?'✓ Jahrgänge 5–7':'Jahrgänge 5–7 gesamt'}</button><button class="chip dark" onclick="creativeRefreshFromCloud()">↻ Cloud-Anwesenheiten laden</button><button class="chip" onclick="creativeWeekMove(-1)">← Vorwoche</button><strong>${fmt(d.start)} – ${fmt(d.end)}</strong><button class="chip" onclick="creativeWeekMove(1)">Folgewoche →</button><input type="date" aria-label="Datum in gewünschter Woche" value="${esc(activityWeekDate)}" onchange="activityWeekDate=this.value;render()"><button class="chip dark" onclick="creativeWeeklyCsv()">↓ CSV exportieren</button></div>
+ <div class="creativeStatsScroll"><table class="creativeStatsTable"><thead><tr><th style="text-align:left">Kreativband-Angebot</th><th>Diese Woche</th><th>Insgesamt</th><th>Kinder insgesamt</th></tr></thead><tbody>
+ ${d.offers.map(a=>`<tr><td>${esc(a.name)}</td><td style="text-align:center">${weekly[a.id]}</td><td style="text-align:center"><b>${overall[a.id]}</b></td><td style="text-align:center">${children[a.id].size}</td></tr>`).join('')}
+ <tr><th style="text-align:left">Alle Angebote</th><th>${totalWeek}</th><th>${totalAll}</th><th>–</th></tr></tbody></table></div>
+ <p class="mini">„Kinder insgesamt“ zählt unterschiedliche Kinder je Angebot. Besuche ohne Datum sind nicht enthalten.</p></div>`;
 }
