@@ -3,7 +3,7 @@ const Sync={
   enabled(){return Auth.session?.mode==='cloud'&&!Auth.isLernatelier()&&!!Auth.cloudClient},
   gradeOf(p){return Number(p?.year||String(p?.className||'').charAt(0))||0},
   filterObject(obj,pred){return Object.fromEntries(Object.entries(obj||{}).filter(([k,v])=>pred(k,v)))},
-  sharedPayload(){const d=Store.data;return {version:d.version,subjects:d.subjects,coreSubjects:d.coreSubjects,competencies:d.competencies,settings:d.settings,projectTemplates:d.projectTemplates,creativeRooms:d.creativeRooms,timetable:d.timetable,calendarEvents:(d.calendarEvents||[]).filter(e=>!e.grade||e.grade==='all'),metadata:d.metadata,activities:(d.activities||[]).filter(a=>a.type==='Kreativband')};},
+  sharedPayload(){const d=Store.data;return {version:d.version,subjects:d.subjects,coreSubjects:d.coreSubjects,competencies:d.competencies,settings:d.settings,projectTemplates:d.projectTemplates,creativeRooms:d.creativeRooms,timetable:d.timetable,roomOccupancy:d.roomOccupancy||ROOM_SEED,calendarEvents:(d.calendarEvents||[]).filter(e=>!e.grade||e.grade==='all'),metadata:d.metadata,activities:(d.activities||[]).filter(a=>a.type==='Kreativband')};},
   gradePayload(grade){
     const d=Store.data,pupils=(d.pupils||[]).filter(p=>this.gradeOf(p)===Number(grade)),ids=new Set(pupils.map(p=>String(p.id)));
     // IDs may be numeric in the roster and strings in record keys.
