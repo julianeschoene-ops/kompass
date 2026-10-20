@@ -54,6 +54,14 @@ const CreativeSyncV2={
       const id='visit:'+row.grade+':'+row.visit_key;
       if(!pending[id])d.dailyCreativeVisits[row.visit_key]=clone(row.visit);
     }
+    // Keep unconfirmed local attendance visible even after a legacy cloud pull.
+    for(const item of Object.values(pending)){
+      if(item.kind==='visit')d.dailyCreativeVisits[item.key]=clone(item.value);
+      if(item.kind==='assessment'){
+        const old=d.activityRecords[item.key]||{activityId:item.activityId,pupilId:item.pupilId,active:true,count:0};
+        d.activityRecords[item.key]={...old,creativeAssessment:clone(item.value)};
+      }
+    }
     // A legacy grade snapshot may omit recently saved visits; never delete a v2 visit.
     // Recalculate counters from the complete dated visit set.
     const totals={};
