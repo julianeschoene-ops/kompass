@@ -3,19 +3,21 @@
  * V2 tables must be deployed/backfilled before this module is enabled.
  */
 const CreativeSyncV2={
-  journalKey:'kompass_creative_v2_pending',busy:false,ready:false,lastError:null,
+  journalKey:'kompass_creative_v2_pending',ackKey:'kompass_creative_v2_ack',busy:false,ready:false,lastError:null,
+  acknowledgements(){try{return JSON.parse(localStorage.getItem(this.ackKey)||'{}')}catch(e){return {}}},
+  saveAcknowledgements(a){localStorage.setItem(this.ackKey,JSON.stringify(a))},
   pending(){try{return JSON.parse(localStorage.getItem(this.journalKey)||'{}')}catch(e){throw new Error('Lokale Kreativband-Warteschlange beschädigt: '+e.message)}},
   persist(queue){localStorage.setItem(this.journalKey,JSON.stringify(queue))},
   gradeOf(p){return Number(p?.year||String(p?.className||'').charAt(0))||0},
   pupilGrade(id){const p=(Store.pupils||[]).find(p=>String(p.id)===String(id));return p?this.gradeOf(p):0},
   capture(){
     if(!Auth.cloudClient||Auth.session?.mode!=='cloud'||Auth.isLernatelier())return;
-    const q=this.pending(),now=new Date().toISOString();
+    const q=this.pending(),ack=this.acknowledgements(),now=new Date().toISOString();
     for(const [key,v] of Object.entries(Store.dailyCreativeVisits||{})){
       const grade=this.pupilGrade(v?.pupilId);
       if(!grade||!v?.activityId)continue;
       const id='visit:'+grade+':'+key;
-      if(!q[id])q[id]={kind:'visit',grade,key,pupilId:String(v.pupilId),activityId:String(v.activityId),value:clone(v),capturedAt:now};
+      if(!q[id]&&ack[id]!==JSON.stringify(v))q[id]={kind:'visit',grade,key,pupilId:String(v.pupilId),activityId:String(v.activityId),value:clone(v),capturedAt:now};
     }
     const creativeIds=new Set((Store.activities||[]).filter(a=>a.type==='Kreativband').map(a=>String(a.id)));
     for(const [key,r] of Object.entries(Store.activityRecords||{})){
@@ -25,7 +27,7 @@ const CreativeSyncV2={
       const id='assessment:'+grade+':'+key,prior=q[id];
       const incoming=Date.parse(r.creativeAssessment.assessedAt||'')||0;
       const previous=Date.parse(prior?.value?.assessedAt||'')||0;
-      if(!prior||incoming>previous)q[id]={kind:'assessment',grade,key,pupilId:String(r.pupilId),activityId:String(r.activityId),value:clone(r.creativeAssessment),capturedAt:now};
+      if(ack[id]!==JSON.stringify(r.creativeAssessment)&&(!prior||incoming>previous))q[id]={kind:'assessment',grade,key,pupilId:String(r.pupilId),activityId:String(r.activityId),value:clone(r.creativeAssessment),capturedAt:now};
     }
     this.persist(q);
   },
@@ -89,9 +91,17 @@ const CreativeSyncV2={
           throw new Error('Cloud-Bestätigung stimmt nicht mit lokalem Eintrag überein');
         }
         const latest=this.pending();
-        if(JSON.stringify(latest[id])===JSON.stringify(item)){delete latest[id];this.persist(latest)}
+        if(JSON.stringify(latest[id])===JSON.stringify(item)){
+          const ack=this.acknowledgements();ack[id]=JSON.stringify(item.value);
+          this.saveAcknowledgements(ack);delete latest[id];this.persist(latest);
+        }
       }
-      this.apply(await this.readAll());
+      const snapshot=await this.readAll();
+      this.apply(snapshot);
+      const ack=this.acknowledgements();
+      for(const row of snapshot.visits)ack['visit:'+row.grade+':'+row.visit_key]=JSON.stringify(row.visit);
+      for(const row of snapshot.assessments)ack['assessment:'+row.grade+':'+row.record_key]=JSON.stringify(row.assessment);
+      this.saveAcknowledgements(ack);
       this.lastError=null;this.ready=true;
     }catch(e){this.lastError=e;console.error('Kreativband Cloud v2',e);throw e}
     finally{this.busy=false}
