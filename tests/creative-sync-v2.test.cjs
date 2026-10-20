@@ -25,7 +25,7 @@ function device(){
   const Auth={cloudClient:{from},session:{mode:'cloud'},isLernatelier:()=>false,allowedGrades:()=>[6]};
   const context=vm.createContext({Store,Auth,localStorage,clone,console,Promise,Date,JSON,Object,String,Number,Map});
   vm.runInContext(code+';this.instance=CreativeSyncV2',context);
-  return {sync:context.instance,Store,memory};
+  return {sync:context.instance,Store,memory,Auth};
 }
 (async()=>{
   const a=device(),b=device();
@@ -59,12 +59,11 @@ function device(){
   const savedPending=Object.keys(c.sync.pending()).length;
   assert.equal(savedPending,1,'offline visit is captured before network access');
   // A genuine failed network request must not acknowledge or lose the entry.
-  const workingClient=c.sync;
-  const offlineFrom=c.sync && c.sync.readAll;
-  c.sync.readAll=async()=>{throw new Error('Network offline')};
+  const onlineFrom=c.Auth.cloudClient.from;
+  c.Auth.cloudClient.from=()=>{throw new Error('Network offline')};
   await assert.rejects(c.sync.flush(),/Network offline/);
   assert.equal(Object.keys(c.sync.pending()).length,1,'failed upload keeps the local journal');
-  c.sync.readAll=offlineFrom;
+  c.Auth.cloudClient.from=onlineFrom;
   // A newer grade snapshot must not replace the locally queued entry.
   c.Store.data.dailyCreativeVisits={};
   c.sync.apply(c.sync.lastSnapshot);
