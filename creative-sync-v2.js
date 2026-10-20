@@ -87,6 +87,18 @@ const CreativeSyncV2={
           :{grade:item.grade,record_key:item.key,pupil_id:item.pupilId,activity_id:item.activityId,assessment:item.value};
         const conflict=item.kind==='visit'?'grade,visit_key':'grade,record_key';
         // A conflict on a visit key is an idempotent retry, not a second attendance hour.
+        const column=item.kind==='visit'?'visit_key':'record_key';
+        const previous=await client.from(table).select('*').eq('grade',item.grade).eq(column,item.key).maybeSingle();
+        if(previous.error)throw previous.error;
+        if(item.kind==='assessment'&&previous.data){
+          const cloudDate=Date.parse(previous.data.assessment?.assessedAt||'')||0;
+          const localDate=Date.parse(item.value?.assessedAt||'')||0;
+          if(cloudDate>localDate){
+            const ack=this.acknowledgements();ack[id]=JSON.stringify(previous.data.assessment);this.saveAcknowledgements(ack);
+            const queue=this.pending();if(JSON.stringify(queue[id])===JSON.stringify(item)){delete queue[id];this.persist(queue)}
+            continue;
+          }
+        }
         const {error}=await client.from(table).upsert(row,{onConflict:conflict,ignoreDuplicates:item.kind==='visit'});
         if(error)throw error;
         const col=item.kind==='visit'?'visit_key':'record_key';
