@@ -64,7 +64,8 @@ function device(){
   c.Store.data.dailyCreativeVisits={};
   c.sync.apply(c.sync.lastSnapshot);
   assert.equal(Object.keys(c.sync.pending()).length,1,'unsent entry remains journaled');
-  assert.equal(Object.keys(c.Store.dailyCreativeVisits).length,2,'confirmed cloud visits remain visible');
+  assert.equal(Object.keys(c.Store.dailyCreativeVisits).length,3,'confirmed visits and pending offline visit remain visible');
+  assert.ok(c.Store.dailyCreativeVisits['2026-10-21|garden|p1'],'offline visit restored from journal');
   // Restore the local entry and verify the next upload clears the journal.
   c.Store.dailyCreativeVisits['2026-10-21|garden|p1']={date:'2026-10-21',activityId:'garden',pupilId:'p1'};
   await c.sync.flush();
