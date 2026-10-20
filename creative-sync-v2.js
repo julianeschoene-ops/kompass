@@ -15,7 +15,8 @@ const CreativeSyncV2={
     const q=this.pending(),ack=this.acknowledgements(),now=new Date().toISOString();
     for(const [key,v] of Object.entries(Store.dailyCreativeVisits||{})){
       const grade=this.pupilGrade(v?.pupilId);
-      if(!grade||!v?.activityId)continue;
+      if(!v?.activityId)continue;
+      if(!grade){console.warn('Kreativband-Besuch wartet auf Schülerzuordnung',key);continue;}
       const id='visit:'+grade+':'+key;
       if(ack[id]!==JSON.stringify(v)&&(!q[id]||JSON.stringify(q[id].value)!==JSON.stringify(v)))q[id]={kind:'visit',grade,key,pupilId:String(v.pupilId),activityId:String(v.activityId),value:clone(v),capturedAt:now};
     }
