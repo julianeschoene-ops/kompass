@@ -17,7 +17,7 @@ const CreativeSyncV2={
       const grade=this.pupilGrade(v?.pupilId);
       if(!grade||!v?.activityId)continue;
       const id='visit:'+grade+':'+key;
-      if(!q[id]&&ack[id]!==JSON.stringify(v))q[id]={kind:'visit',grade,key,pupilId:String(v.pupilId),activityId:String(v.activityId),value:clone(v),capturedAt:now};
+      if(ack[id]!==JSON.stringify(v))q[id]={kind:'visit',grade,key,pupilId:String(v.pupilId),activityId:String(v.activityId),value:clone(v),capturedAt:now};
     }
     for(const [key,r] of Object.entries(Store.activityRecords||{})){
       if(!r?.creativeAssessment||!r.activityId)continue;
