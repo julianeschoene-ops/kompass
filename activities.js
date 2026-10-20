@@ -136,7 +136,7 @@ function creativeWeekData(){
  const offers=(Store.activities||[]).filter(a=>a.type==='Kreativband').sort((a,b)=>a.name.localeCompare(b.name,'de'));
  const counts={};const days={};
  Object.values(Store.dailyCreativeVisits||{}).forEach(v=>{
-   const date=creativeDateKey(v?.date);if(!date||date<start||date>endStr||!ids.has(String(v.pupilId))||!offers.some(a=>a.id===v.activityId))return;
+   const date=creativeDateKey(v?.date);if(!date||date<start||date>endStr||!ids.has(String(v.pupilId))||!offers.some(a=>String(a.id)===String(v.activityId)))return;
    const key=String(v.pupilId)+'|'+v.activityId;
    (days[key]??=[]).push(date);
  });
