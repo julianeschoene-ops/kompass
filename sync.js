@@ -62,7 +62,7 @@ const Sync={
     clearInterval(this.refreshTimer);
     this.refreshTimer=setInterval(async()=>{
       if(!this.enabled()||this.busy||this.dirty||document.visibilityState==='hidden')return;
-      try{await this.pull();if(typeof render==='function')render();}
+      try{await this.pull();if(typeof CreativeSyncV2!=='undefined'&&CreativeSyncV2.ready)await CreativeSyncV2.refresh();if(typeof render==='function')render();}
       catch(e){console.warn('KOMPASS Hintergrundabgleich',e);}
     },15000);
   },
