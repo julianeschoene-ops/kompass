@@ -167,8 +167,9 @@ const CreativeSyncV2={
     this.lastSnapshot=snapshot;
     this.apply(snapshot);
     const ack=this.acknowledgements();
-    for(const row of snapshot.visits)ack['visit:'+row.grade+':'+row.visit_key]=JSON.stringify(row.visit);
-    for(const row of snapshot.assessments)ack['assessment:'+row.grade+':'+row.record_key]=JSON.stringify(row.assessment);
+    const outstanding=this.pending();
+    for(const row of snapshot.visits){const id='visit:'+row.grade+':'+row.visit_key;if(!outstanding[id])ack[id]=JSON.stringify(row.visit)}
+    for(const row of snapshot.assessments){const id='assessment:'+row.grade+':'+row.record_key;if(!outstanding[id])ack[id]=JSON.stringify(row.assessment)}
     this.saveAcknowledgements(ack);
   }
 };
