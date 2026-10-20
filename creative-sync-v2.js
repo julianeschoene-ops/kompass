@@ -95,11 +95,12 @@ const CreativeSyncV2={
         if(item.kind==='assessment'&&previous.data){
           const cloudDate=Date.parse(previous.data.assessment?.assessedAt||'')||0;
           const localDate=Date.parse(item.value?.assessedAt||'')||0;
-          if(cloudDate>localDate){
+          if(cloudDate>=localDate&&JSON.stringify(previous.data.assessment)!==JSON.stringify(item.value)){
             // Do not silently discard the older device-only assessment: preserve a conflict copy.
             const conflictKey='kompass_creative_v2_conflict_'+id;
             try{localStorage.setItem(conflictKey,JSON.stringify({local:item.value,remote:previous.data.assessment,at:new Date().toISOString()}))}catch(e){throw new Error('Bewertungskonflikt konnte nicht lokal gesichert werden')}
             const ack=this.acknowledgements();ack[id]=JSON.stringify(previous.data.assessment);this.saveAcknowledgements(ack);
+            const existing=Store.activityRecords?.[item.key];if(existing)existing.creativeAssessment=clone(previous.data.assessment);
             const queue=this.pending();if(JSON.stringify(queue[id])===JSON.stringify(item)){delete queue[id];this.persist(queue)}
             continue;
           }
