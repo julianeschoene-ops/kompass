@@ -101,5 +101,23 @@ function device(){
   assert.equal([...cloud.assessments.values()][0].assessment.level,'M','newer cloud assessment wins');
   assert.equal(Object.keys(f.sync.pending()).length,0,'conflict exits upload queue');
   assert.ok([...f.memory.keys()].some(k=>k.startsWith('kompass_creative_v2_conflict_')),'older device edit saved as conflict copy');
+  const g=device();
+  await g.sync.initialize();
+  g.Store.dailyCreativeVisits['2026-10-24|garden|p1']={date:'2026-10-24',activityId:'garden',pupilId:'p1'};
+  g.sync.capture();
+  const original=g.Auth.cloudClient.from;
+  let first=true;
+  g.Auth.cloudClient.from=(table)=>{
+    const q=original(table),single=q.single;
+    q.single=function(){if(first){first=false;return Promise.resolve({data:null,error:new Error('Lost response')})}return single.call(this)};
+    return q;
+  };
+  await assert.rejects(g.sync.flush(),/Lost response/);
+  assert.equal(Object.keys(g.sync.pending()).length,1);
+  const count=cloud.visits.size;
+  g.Auth.cloudClient.from=original;
+  await g.sync.flush();
+  assert.equal(cloud.visits.size,count);
+  assert.equal(Object.keys(g.sync.pending()).length,0);
   console.log('PASS: journal, 2 hours, assessment, second device, legacy recovery, idempotence, offline journal recovery');
 })().catch(e=>{console.error(e);process.exitCode=1});
