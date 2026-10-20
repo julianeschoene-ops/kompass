@@ -3,7 +3,7 @@
  * V2 tables must be deployed/backfilled before this module is enabled.
  */
 const CreativeSyncV2={
-  journalKey:'kompass_creative_v2_pending',ackKey:'kompass_creative_v2_ack',busy:false,ready:false,lastError:null,
+  journalKey:'kompass_creative_v2_pending',ackKey:'kompass_creative_v2_ack',busy:false,ready:false,lastError:null,retryRequested:false,
   acknowledgements(){try{return JSON.parse(localStorage.getItem(this.ackKey)||'{}')}catch(e){return {}}},
   saveAcknowledgements(a){localStorage.setItem(this.ackKey,JSON.stringify(a))},
   pending(){try{return JSON.parse(localStorage.getItem(this.journalKey)||'{}')}catch(e){throw new Error('Lokale Kreativband-Warteschlange beschädigt: '+e.message)}},
@@ -90,7 +90,8 @@ const CreativeSyncV2={
     await this.flush();
   },
   async flush(){
-    if(this.busy||!Auth.cloudClient||Auth.session?.mode!=='cloud'||Auth.isLernatelier())return;
+    if(this.busy){this.retryRequested=true;return;}
+    if(!Auth.cloudClient||Auth.session?.mode!=='cloud'||Auth.isLernatelier())return;
     this.busy=true;
     try{
       this.capture();
@@ -145,7 +146,13 @@ const CreativeSyncV2={
       this.saveAcknowledgements(ack);
       this.lastError=null;this.ready=true;
     }catch(e){this.lastError=e;console.error('Kreativband Cloud v2',e);throw e}
-    finally{this.busy=false}
+    finally{
+      this.busy=false;
+      if(this.retryRequested){
+        this.retryRequested=false;
+        Promise.resolve().then(()=>this.flush()).catch(e=>console.warn('Kreativband Wiederholung',e));
+      }
+    }
   },
   async refresh(){
     if(this.busy||!this.ready)return;
