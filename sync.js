@@ -85,6 +85,7 @@ const Sync={
   async pull(){
     if(!this.enabled())return;
     // Never replace unsent local edits with a cloud snapshot.
+    if(typeof CreativeSyncV2!=='undefined'&&CreativeSyncV2.ready)CreativeSyncV2.capture();
     if(this.dirty)throw new Error('Lokale Änderungen warten noch auf Cloud-Speicherung.');
     this.busy=true;
     try{
