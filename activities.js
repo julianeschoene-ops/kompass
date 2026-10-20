@@ -96,7 +96,9 @@ async function confirmCreativeAssessment(activityId,pupilId){
 function creativeAssessmentSummary(a){
  if(!a?.assessedBy)return 'Noch keine Bewertung';
  const d=a.assessedAt?new Date(a.assessedAt).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'}):'';
- return (a.level?a.level+'-Niveau':'Bewertung')+' ('+a.assessedBy+')'+(d?' · Stand '+d:'');
+ const colors={red:'Rot',yellow:'Gelb',green:'Grün'};
+ const parts=[a.level?a.level+'-Niveau':null,colors[a.color]||null].filter(Boolean);
+ return (parts.length?parts.join(' – '):'Bewertung')+' ('+a.assessedBy+')'+(d?' · Stand '+d:'');
 }
 function creativeAssessmentControls(a,p,r){
  if(a.type!=='Kreativband')return '';
