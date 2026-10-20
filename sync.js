@@ -157,7 +157,19 @@ const Sync={
         // A user can save while the asynchronous pull is in flight.
         // In that case NEVER overwrite the new local entry with the old cloud snapshot.
         if(this.dirty)return;
-        Store.data=merged;Store._rosterChanged=false;Store.migrate();if(Auth.isAdmin())await this.pullAudit();Store.saveLocalOnly();this.lastPull=new Date().toISOString();if(needsCreativeUpload)this.schedule(0);if(Auth.isAdmin()&&Store._rosterChanged){this.busy=false;await this.push(true);return;}
+        Store.data=merged;
+        // V2 is authoritative for creative data after a successful bootstrap.
+        // Keep any device-only entries from the pending journal visible.
+        if(typeof CreativeSyncV2!=='undefined'&&CreativeSyncV2.ready){
+          for(const item of Object.values(CreativeSyncV2.pending())){
+            if(item.kind==='visit')Store.data.dailyCreativeVisits[item.key]=clone(item.value);
+            if(item.kind==='assessment'){
+              const old=Store.data.activityRecords[item.key]||{activityId:item.activityId,pupilId:item.pupilId,active:true,count:0};
+              Store.data.activityRecords[item.key]={...old,creativeAssessment:clone(item.value)};
+            }
+          }
+        }
+        Store._rosterChanged=false;Store.migrate();if(Auth.isAdmin())await this.pullAudit();Store.saveLocalOnly();this.lastPull=new Date().toISOString();if(needsCreativeUpload)this.schedule(0);if(Auth.isAdmin()&&Store._rosterChanged){this.busy=false;await this.push(true);return;}
       }
     }catch(e){console.error('Cloud pull',e);throw e}finally{this.busy=false;if(this.dirty)this.schedule(0)}
   },
