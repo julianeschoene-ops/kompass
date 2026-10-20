@@ -71,12 +71,28 @@ function saveCreativeAssessment(activityId,pupilId,field,value){
  toast('Nur lokal gespeichert – warte auf Cloud-Bestätigung',4000);
  // Keep the other dropdown and current scroll position untouched.
 }
+async function confirmCreativeAssessment(activityId,pupilId){
+ if(typeof CreativeSyncV2==='undefined'||Auth.session?.mode!=='cloud'){toast('Cloud-Speicherung nicht verfügbar',7000);return;}
+ const key=activityId+'|'+pupilId;
+ try{
+  CreativeSyncV2.capture();
+  await CreativeSyncV2.flush();
+  const grade=CreativeSyncV2.pupilGrade(pupilId);
+  const result=await Auth.cloudClient.from('kompass_creative_assessments_v2').select('assessment').eq('grade',grade).eq('record_key',key).maybeSingle();
+  if(result.error)throw result.error;
+  const local=Store.activityRecords?.[key]?.creativeAssessment;
+  if(!result.data||JSON.stringify(result.data.assessment)!==JSON.stringify(local))throw new Error('Bewertung wurde noch nicht bestätigt');
+  const el=document.getElementById('assessmentStatus_'+activityId+'_'+pupilId);
+  if(el)el.textContent=(local.level||'–')+'-Niveau ('+(local.assessedBy||'Lehrkraft')+') · Cloud gespeichert';
+  toast('Niveau in Cloud gespeichert',3500);
+ }catch(e){toast('Niveau nicht in Cloud bestätigt: '+(e?.message||String(e)),8000);}
+}
 function creativeAssessmentControls(a,p,r){
  if(a.type!=='Kreativband')return '';
  const assessment=r.creativeAssessment||{};
  const opts=(values,selected)=>values.map(([v,label])=>'<option value="'+v+'" '+(v===selected?'selected':'')+'>'+label+'</option>').join('');
  const attrs=(field)=>'onchange="saveCreativeAssessment('+JSON.stringify(a.id)+','+JSON.stringify(p.id)+','+JSON.stringify(field)+',this.value)"';
- return '<div class="creativeInlineAssessment"><label class="mini">Niveau <select aria-label="Niveau für '+esc(p.short||p.first)+'" '+attrs('level')+'>'+opts([['','–'],['G','G'],['M','M'],['E','E']],assessment.level||'')+'</select></label> <label class="mini">Bewertung <select aria-label="Bewertung für '+esc(p.short||p.first)+'" '+attrs('color')+'>'+opts([['','–'],['red','🔴 Rot'],['yellow','🟡 Gelb'],['green','🟢 Grün']],assessment.color||'')+'</select></label></div><p class="mini" id="assessmentStatus_'+esc(a.id)+'_'+esc(p.id)+'">'+(assessment.assessedBy?(assessment.level?esc(assessment.level)+'-Niveau':'Bewertung')+' ('+esc(assessment.assessedBy)+')'+(assessment.assessedAt?' · '+esc(new Date(assessment.assessedAt).toLocaleDateString('de-DE')):''):'Änderungen werden automatisch gespeichert')+'</p>';
+ return '<div class="creativeInlineAssessment"><label class="mini">Niveau <select aria-label="Niveau für '+esc(p.short||p.first)+'" '+attrs('level')+'>'+opts([['','–'],['G','G'],['M','M'],['E','E']],assessment.level||'')+'</select></label> <label class="mini">Bewertung <select aria-label="Bewertung für '+esc(p.short||p.first)+'" '+attrs('color')+'>'+opts([['','–'],['red','🔴 Rot'],['yellow','🟡 Gelb'],['green','🟢 Grün']],assessment.color||'')+'</select></label> <button class="miniBtn" onclick="confirmCreativeAssessment('+JSON.stringify(a.id)+','+JSON.stringify(p.id)+')">Speichern</button></div><p class="mini" id="assessmentStatus_'+esc(a.id)+'_'+esc(p.id)+'">'+(assessment.assessedBy?(assessment.level?esc(assessment.level)+'-Niveau':'Bewertung')+' ('+esc(assessment.assessedBy)+')'+(assessment.assessedAt?' · '+esc(new Date(assessment.assessedAt).toLocaleDateString('de-DE')):''):'Änderungen werden automatisch gespeichert')+'</p>';
 }
 function activityQuickRow(a,p){
   const r=activityRecord(a.id,p.id),att=isCountableActivity(a)?activityAttendance(a.id,p.id):null;
