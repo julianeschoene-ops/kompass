@@ -106,7 +106,7 @@ function creativeAssessmentControls(a,p,r){
  '<div class="creativeInlineAssessment"><label class="mini">Niveau <select id="assessmentLevel_'+id+'">'+opts([['','–'],['G','G'],['M','M'],['E','E']],assessment.level||'')+'</select></label>'+
  ' <label class="mini">Bewertung <select id="assessmentColor_'+id+'">'+opts([['','–'],['red','🔴 Rot'],['yellow','🟡 Gelb'],['green','🟢 Grün']],assessment.color||'')+'</select></label></div>'+
  '<label class="mini">Notiz <textarea id="assessmentNote_'+id+'" rows="2" placeholder="Notiz zur Bewertung">'+esc(assessment.note||'')+'</textarea></label>'+
- '<button type="button" class="miniBtn" id="assessmentSave_'+id+'" onclick="confirmCreativeAssessment('+JSON.stringify(a.id)+','+JSON.stringify(p.id)+')">Speichern</button>';
+ '<button type="button" class="miniBtn" id="assessmentSave_'+id+'" onclick="confirmCreativeAssessment('+esc(JSON.stringify(a.id))+','+esc(JSON.stringify(p.id))+')">Speichern</button>';
 }
 function activityQuickRow(a,p){
   const r=activityRecord(a.id,p.id),att=isCountableActivity(a)?activityAttendance(a.id,p.id):null;
