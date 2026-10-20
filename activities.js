@@ -42,7 +42,6 @@ function activities(){
   const offers=Store.activities.filter(a=>a.type===activityType&&(a.type==='Kreativband'||Number(a.year)===Number(State.year))).sort((a,b)=>a.name.localeCompare(b.name,'de'));
   let content=header('Angebote','Kreativband und weitere Angebote zählen jeden Besuch. 39 Besuche entsprechen 100 %.');
   content+=`<div class="toolbar formgrid">${activityType==='Kreativband'?'':`<div><label>Jahrgang</label><select onchange="State.year=Number(this.value);activitySelected=null;activityTeam='alle';render()">${visibleYears().map(y=>`<option value="${y}" ${State.year===y?'selected':''}>Jahrgang ${y}</option>`).join('')}</select></div>`}<div><label>Bereich</label><select onchange="activityType=this.value;activitySelected=null;activityTeam='alle';render()">${ACTIVITY_TYPES.map(t=>`<option value="${t}" ${activityType===t?'selected':''}>${t==='Besonderes Angebot'?'Weitere Angebote':t}</option>`).join('')}</select></div></div>`;
-  if(activityType==='Kreativband'&&(Auth.isAdmin()||Auth.canLead(6)))content+=`<div class="toolbar"><label class="chip dark" style="cursor:pointer">📄 Anwesenheitsliste (CSV) importieren<input type="file" accept=".csv,text/csv" style="display:none" onchange="importCreativeAttendanceCsv(this)"></label></div>`;
   if(activityType==='Kreativband')content+=`<div class="toolbar"><button class="chip ${activityWeeklyView?'dark':''}" onclick="activityWeeklyView=!activityWeeklyView;activitySelected=null;render()">${activityWeeklyView?'← Anwesenheit erfassen':'📊 Wochenstatistik'}</button></div>`;
   if(activityType==='Besonderes Angebot'&&canEdit())content+=`<button class="chip dark" onclick="openActivityEditor()">+ Weiteres Angebot</button>`;
   if(activityType==='Club'&&canEdit())content+=`<button class="chip dark" onclick="openActivityEditor()">+ Club anlegen</button>`;
@@ -51,90 +50,6 @@ function activities(){
 }
 function activityIcon(type){return type==='Kreativband'?'🎨':type==='Club'?'🏆':'✨';}
 function activityMemberCount(id){return Object.values(Store.activityRecords).filter(r=>r.activityId===id&&r.active).length;}
-
-function creativeImportNormalize(s){
- return String(s||'').toLocaleLowerCase('de-DE').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ß/g,'ss').replace(/[^a-z0-9]/g,'');
-}
-function creativeImportCsvRows(text){
- const lines=String(text||'').replace(/^\uFEFF/,'').split(/\r?\n/).filter(x=>x.trim());
- const parse=line=>{const out=[];let field='',quoted=false;for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"'){if(quoted&&line[i+1]==='"'){field+='"';i++;}else quoted=!quoted;}else if(ch===';'&&!quoted){out.push(field);field='';}else field+=ch;}out.push(field);return out;};
- const head=parse(lines.shift()||'').map(x=>x.trim().toLowerCase());
- const required=['datum','stunde','name','status','notiz'];
- if(required.some(x=>!head.includes(x)))throw Error('Die CSV benötigt die Spalten Datum, Stunde, Name, Status und Notiz.');
- return lines.map((line,i)=>{const cells=parse(line);const v=k=>(cells[head.indexOf(k)]||'').trim();return{date:v('datum'),hour:Number(v('stunde')),name:v('name'),status:v('status').toLowerCase(),note:v('notiz'),line:i+2};});
-}
-async function importCreativeAttendanceCsv(input){
- const file=input.files?.[0];if(!file)return;
- input.value='';
- if(Auth.isLernatelier()||!(Auth.isAdmin()||Auth.canLead(6))){toast('Import nur für die Stufenleitung');return;}
- let rows;try{rows=creativeImportCsvRows(await file.text());}catch(e){alert('CSV-Import: '+e.message);return;}
- const rooms=(Store.activities||[]).filter(a=>a.type==='Kreativband'&&creativeStatsGroupName(a.name)==='Kochen & Nähstudio');
- if(!rooms.length){alert('Kein Koch- oder Nähstudio in KOMPASS gefunden.');return;}
- const preferred=rooms.find(a=>/koch.*näh|koch.*naeh/i.test(a.name))||rooms.find(a=>/näh|naeh/i.test(a.name))||rooms[0];
- const names=new Map();
- for(const p of Store.pupils||[]){
-   for(const name of [p.first+' '+p.last,p.short,p.last+' '+p.first]){
-     const key=creativeImportNormalize(name);if(!key)continue;
-     const arr=names.get(key)||[];if(!arr.some(x=>String(x.id)===String(p.id)))arr.push(p);names.set(key,arr);
-   }
- }
- const prepared=[],unmatched=[],invalid=[];
- for(const row of rows){
-   if(!/^\d{4}-\d{2}-\d{2}$/.test(row.date)||![5,6].includes(row.hour)||!['anwesend','abwesend','unklar'].includes(row.status)){invalid.push(row.line+': '+row.name);continue;}
-   const found=names.get(creativeImportNormalize(row.name))||[];
-   if(found.length!==1){unmatched.push(row.line+': '+row.name+(found.length?' (mehrdeutig)':' (nicht gefunden)'));continue;}
-   if(!Auth.canAccessGrade(Number(found[0].year||String(found[0].className||'').charAt(0)))){unmatched.push(row.line+': '+row.name+' (kein Jahrgangszugriff)');continue;}
-   prepared.push({...row,pupil:found[0]});
- }
- const present=prepared.filter(x=>x.status==='anwesend').length,absent=prepared.filter(x=>x.status==='abwesend').length;
- const warning=unmatched.length||invalid.length?'\n\nNicht zugeordnet ('+(unmatched.length+invalid.length)+'):\n'+[...unmatched,...invalid].slice(0,18).join('\n')+(unmatched.length+invalid.length>18?'\n…':''):'';
- if(!confirm('Koch- und Nähstudio – Anwesenheit importieren?\n'+present+' anwesend, '+absent+' abwesend, '+prepared.filter(x=>x.status==='unklar').length+' unklar.\nVorhandene Besuche werden nicht doppelt gezählt. Notizen werden ergänzt.'+warning+'\n\nNur eindeutig zugeordnete Einträge übernehmen?'))return;
- let created=0,existing=0,noted=0;
- // 5th period first, so an older unlabelled visit can be safely matched
- // before a separate 6th-period visit is added.
- prepared.sort((a,b)=>a.date.localeCompare(b.date)||a.hour-b.hour||a.name.localeCompare(b.name,'de'));
- const consumed=new Set();
- for(const row of prepared){
-   const p=row.pupil,day=row.date,display=day.slice(8,10)+'.'+day.slice(5,7)+'.'+day.slice(0,4);
-   const entries=Object.entries(Store.dailyCreativeVisits||{}).filter(([k,v])=>v&&v.date===day&&String(v.pupilId)===String(p.id)&&rooms.some(a=>String(a.id)===String(v.activityId)));
-   let entry=entries.find(([k,v])=>Number(v.lesson)===row.hour);
-   if(!entry&&row.status==='anwesend')entry=entries.find(([k,v])=>!v.lesson&&!consumed.has(k));
-   if(row.status==='anwesend'){
-     let activity=preferred;
-     if(entry){
-       consumed.add(entry[0]);activity=rooms.find(a=>String(a.id)===String(entry[1].activityId))||preferred;
-       if(!entry[1].lesson)entry[1].lesson=row.hour;
-       existing++;
-     }else{
-       if(entries.length>=2){unmatched.push(display+': '+row.name+' (bereits 2 Besuche, bitte prüfen)');continue;}
-       const keyBase=day+'|'+activity.id+'|'+p.id;
-       let key=keyBase;
-       if(Store.dailyCreativeVisits[key])key=keyBase+'|2';
-       if(Store.dailyCreativeVisits[key]){unmatched.push(display+': '+row.name+' (Schlüsselkonflikt)');continue;}
-       Store.dailyCreativeVisits[key]={date:day,lesson:row.hour,activityId:activity.id,pupilId:p.id,createdAt:new Date().toISOString(),recordedBy:'Nachtrag Kreuzberger',importSource:'Kreuzberger Anwesenheitsliste'};
-       created++;
-     }
-     const k=activity.id+'|'+p.id,r=activityRecord(activity.id,p.id);
-     r.active=true;
-     r.count=Math.max(Number(r.count||0),datedVisitsForActivity(activity.id,p.id).length);
-     if(row.note){
-       const tag=display+' ('+row.hour+'. Std.): '+row.note;
-       if(!String(r.note||'').includes(tag)){r.note=[r.note,tag].filter(Boolean).join('\n');noted++;}
-     }
-     Store.activityRecords[k]=r;
-   }else if(row.status==='abwesend'||row.note){
-     // Absences and unclear markings never become counted visits.
-     const k=preferred.id+'|'+p.id,r=activityRecord(preferred.id,p.id);
-     const tag=display+' ('+row.hour+'. Std.): '+(row.status==='abwesend'?'Abwesend'+(row.note?' – '+row.note:''):row.note||'Anwesenheit unklar');
-     if(!String(r.note||'').includes(tag)){r.note=[r.note,tag].filter(Boolean).join('\n');noted++;}
-     Store.activityRecords[k]=r;
-   }
- }
- Store.save('Kreativband Anwesenheitsliste Kreuzberger importiert',{created,existing,noted});
- render();
- alert('Import lokal übernommen: '+created+' neue Besuche, '+existing+' bereits vorhandene Besuche, '+noted+' Notizen. Die Cloud-Synchronisierung läuft.'+(unmatched.length?'\n\nBitte prüfen:\n'+unmatched.slice(0,18).join('\n'):''));
-}
-
 function renderActivityDetail(id){
   for(const grade of [5,6,7])if(!(Store.pupils||[]).some(p=>Number(p.year)===grade)&&typeof ensureStudentRosterLoaded==='function')setTimeout(()=>ensureStudentRosterLoaded(grade),0);
   const a=Store.activities.find(x=>x.id===id);if(!a)return'';ensureActivityDefaultTeam();
