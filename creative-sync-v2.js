@@ -64,6 +64,16 @@ const CreativeSyncV2={
     }
     Store.saveLocalOnly();
   },
+  async initialize(){
+    const snapshot=await this.readAll();
+    const ack=this.acknowledgements();
+    for(const row of snapshot.visits){const id='visit:'+row.grade+':'+row.visit_key;if(!this.pending()[id])ack[id]=JSON.stringify(row.visit)}
+    for(const row of snapshot.assessments){const id='assessment:'+row.grade+':'+row.record_key;if(!this.pending()[id])ack[id]=JSON.stringify(row.assessment)}
+    this.saveAcknowledgements(ack);
+    this.apply(snapshot);
+    this.ready=true;
+    await this.flush();
+  },
   async flush(){
     if(this.busy||!Auth.cloudClient||Auth.session?.mode!=='cloud'||Auth.isLernatelier())return;
     this.busy=true;
