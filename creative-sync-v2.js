@@ -66,6 +66,7 @@ const CreativeSyncV2={
       rec.count=Math.max(Number(rec.count)||0,count);
       d.activityRecords[key]=rec;
     }
+    // Cloud visit rows are append-only; keep local entries but ensure v2 rows win on key collisions.
     for(const row of snapshot.assessments){
       const id='assessment:'+row.grade+':'+row.record_key;
       if(pending[id])continue;
@@ -75,6 +76,7 @@ const CreativeSyncV2={
         d.activityRecords[key]={...old,creativeAssessment:clone(remote)};
       }
     }
+    // An acknowledgement is only valid for the exact value that was read from cloud.
     Store.saveLocalOnly();
   },
   async initialize(){
