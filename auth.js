@@ -71,7 +71,7 @@ const Auth={
     if(window.CreativeSyncV2){try{CreativeSyncV2.capture();}catch(e){console.error('Lokale Kreativband-Sicherung',e);}}
     if(window.Sync){try{await Sync.pull();Sync.startAutoRefresh();}catch(e){State.cloudLoadError=e?.message||String(e);render();return;}}
     // V2 remains inactive unless its dedicated tables are available. Never block login.
-    if(window.CreativeSyncV2){try{await CreativeSyncV2.initialize();}catch(e){console.warn('Kreativband v2 noch nicht bereit',e);}}
+    if(window.CreativeSyncV2){try{await CreativeSyncV2.flush();}catch(e){console.warn('Kreativband v2 noch nicht bereit',e);}}
     render();
   },
   async cloudLogin(email,password){const {data,error}=await this.cloudClient.auth.signInWithPassword({email:String(email||'').trim().toLowerCase(),password});if(error){if(String(error.message||'').toLowerCase().includes('invalid login credentials'))throw new Error('E-Mail oder Passwort ist nicht korrekt.');throw error;}await this.applyCloudSession(data.session)},
