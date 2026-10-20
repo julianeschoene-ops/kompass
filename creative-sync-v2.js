@@ -27,7 +27,7 @@ const CreativeSyncV2={
       const id='assessment:'+grade+':'+key,prior=q[id];
       const incoming=Date.parse(r.creativeAssessment.assessedAt||'')||0;
       const previous=Date.parse(prior?.value?.assessedAt||'')||0;
-      if(ack[id]!==JSON.stringify(r.creativeAssessment)&&(!prior||incoming>previous))q[id]={kind:'assessment',grade,key,pupilId:String(r.pupilId),activityId:String(r.activityId),value:clone(r.creativeAssessment),capturedAt:now};
+      if(ack[id]!==JSON.stringify(r.creativeAssessment)&&(!prior||incoming>previous||(incoming===previous&&JSON.stringify(prior.value)!==JSON.stringify(r.creativeAssessment))))q[id]={kind:'assessment',grade,key,pupilId:String(r.pupilId),activityId:String(r.activityId),value:clone(r.creativeAssessment),capturedAt:now};
     }
     this.persist(q);
   },
