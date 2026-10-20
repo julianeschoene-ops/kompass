@@ -65,6 +65,8 @@ const CreativeSyncV2={
     Store.saveLocalOnly();
   },
   async initialize(){
+    // Capture device-only entries before importing any remote state.
+    this.capture();
     const snapshot=await this.readAll();
     const ack=this.acknowledgements();
     for(const row of snapshot.visits){const id='visit:'+row.grade+':'+row.visit_key;if(!this.pending()[id])ack[id]=JSON.stringify(row.visit)}
@@ -132,6 +134,11 @@ const CreativeSyncV2={
     if(this.busy||!this.ready)return;
     this.capture();
     if(this.hasPending())return this.flush();
-    this.apply(await this.readAll());
+    const snapshot=await this.readAll();
+    this.apply(snapshot);
+    const ack=this.acknowledgements();
+    for(const row of snapshot.visits)ack['visit:'+row.grade+':'+row.visit_key]=JSON.stringify(row.visit);
+    for(const row of snapshot.assessments)ack['assessment:'+row.grade+':'+row.record_key]=JSON.stringify(row.assessment);
+    this.saveAcknowledgements(ack);
   }
 };
