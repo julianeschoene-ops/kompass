@@ -1,112 +1,94 @@
-/* English Practice results remain separate from teacher competency assessments. */
+/* Results are stored in normal competency records by the database. */
 const EnglishPractice = {
-  cache: null, busy: false, error: '', loadedAt: 0,
+  tasks: [], taskUser: null, taskBusy: false, taskError: '',
   userKey() { return Auth.session?.mode === 'cloud' && !Auth.isLernatelier() ? Auth.currentUser()?.id : null; },
-  async refresh(force = false) {
-    const user = this.userKey(), grade = Number(State.year);
-    if (!user || !Auth.cloudClient || this.busy) return;
-    if (!force && this.cache?.user === user && this.cache.grade === grade && Date.now() - this.loadedAt < 15000) return;
-    this.busy = true;
+  async loadTasks(force = false) {
+    const user = this.userKey();
+    if (!user || this.taskBusy || (!force && this.taskUser === user)) return;
+    this.taskBusy = true;
     try {
-      // Paginate to avoid silently hiding results after Supabase's row limit.
-      let rows = [], offset = 0;
-      while (true) {
-        const result = await Auth.cloudClient.from('kompass_english_results')
-          .select('id,pupil_id,task_key,topic,points,max_points,submitted_at,attempt_id')
-          .eq('grade', grade).order('submitted_at', {ascending: false}).order('id')
-          .range(offset, offset + 499);
-        if (result.error) throw result.error;
-        rows.push(...(result.data || []));
-        if ((result.data || []).length < 500) break;
-        offset += 500;
-      }
-      if (this.userKey() !== user || Number(State.year) !== grade) return;
-      this.cache = {user, grade, rows}; this.error = ''; this.loadedAt = Date.now();
+      const r = await Auth.cloudClient.from('kompass_english_tasks').select('task_key,title,unit,competency_id').order('title');
+      if (r.error) throw r.error;
+      if (this.userKey() !== user) return;
+      this.tasks = r.data || []; this.taskUser = user; this.taskError = '';
     } catch (e) {
-      if (this.userKey() !== user || Number(State.year) !== grade) return;
-      this.cache = {user, grade, rows: []};
-      this.error = /PGRST205|42P01|PGRST202/.test(e?.code || '')
-        ? 'Die Datenbank-Verbindung für English Practice ist noch nicht eingerichtet.'
-        : 'Testergebnisse konnten nicht geladen werden. Bitte erneut versuchen.';
-      this.loadedAt = Date.now();
-    } finally {
-      this.busy = false;
-      if (this.userKey() === user && Number(State.year) === grade &&
-          (State.view === 'core' || State.view === 'students')) render();
-    }
+      if (this.userKey() !== user) return;
+      this.taskError = 'Die Testzuordnung konnte nicht geladen werden.'; this.taskUser = user;
+    } finally { this.taskBusy = false; if (this.userKey() === user && State.view === 'core') render(); }
   },
-  rows() {
-    return this.cache?.user === this.userKey() && this.cache?.grade === Number(State.year)
-      ? this.cache.rows : [];
+  forGrade(all = false) {
+    return all ? (Store.pupils || []).filter(p => !p.archived && Number(p.year || String(p.className).charAt(0)) === Number(State.year)) : filteredPupils();
   },
-  panel(pupil = null) {
+  tools(comp) {
     if (!this.userKey()) return '';
-    const fresh = this.cache?.user === this.userKey() && this.cache?.grade === Number(State.year);
-    if (!fresh || Date.now() - this.loadedAt >= 15000) setTimeout(() => this.refresh(), 0);
-    const pupils = pupil ? [pupil] : filteredPupils();
-    const allowed = new Map(pupils.map(p => [p.id, p]));
-    const rows = this.rows().filter(r => allowed.has(r.pupil_id));
-    const counts = new Map();
-    // Number attempts per pupil and task, in chronological order.
-    const attempts = new Map();
-    for (const r of [...this.rows()].reverse()) {
-      const key = r.pupil_id + '|' + r.task_key;
-      counts.set(key, (counts.get(key) || 0) + 1); attempts.set(r.id, counts.get(key));
-    }
-    return `<section class="card ep-results"><h2>English Practice · Testergebnisse</h2>
-      <p class="mini">Automatisch übertragene Selbsttests. Die Kompetenzbewertungen werden weiterhin von der Lehrkraft vergeben.</p>
-      <div class="toolbar"><button class="chip" onclick="EnglishPractice.refresh(true)">↻ Ergebnisse laden</button>
-      ${canManageRoster() ? `<button class="chip dark" onclick="EnglishPractice.printCodes(${pupil ? `'${esc(pupil.id)}'` : ''})">${pupil ? 'Persönlichen QR-Code' : 'QR-Codes für die Auswahl'} erstellen</button>${pupil ? `<button class="chip" onclick="EnglishPractice.revoke('${esc(pupil.id)}')">Code sperren</button>` : ''}` : ''}</div>
-      ${fresh && this.error ? `<p role="status">${esc(this.error)}</p>` : ''}
-      ${!fresh ? '<p role="status">Testergebnisse werden geladen …</p>' : rows.length ?
-      `<div style="overflow-x:auto"><table style="width:100%"><thead><tr>${pupil ? '' : '<th>Kind</th>'}<th>Thema</th><th>Datum</th><th>Ergebnis</th><th>Versuch</th></tr></thead><tbody>${rows.map(r => `<tr>
-        ${pupil ? '' : `<td>${esc(allowed.get(r.pupil_id)?.short)}</td>`}<td>${esc(r.topic)}</td>
-        <td>${esc(new Date(r.submitted_at).toLocaleString('de-DE', {dateStyle:'short',timeStyle:'short'}))}</td>
-        <td>${Number(r.points)}/${Number(r.max_points)} P. · ${Math.round(r.points/r.max_points*100)} %</td>
-        <td>${attempts.get(r.id) || 1}</td></tr>`).join('')}</tbody></table></div>` :
-      !this.error ? '<p class="mini">Noch keine übertragenen Tests für diese Auswahl.</p>' : ''}</section>`;
+    if (this.taskUser !== this.userKey() && !this.taskBusy) setTimeout(() => this.loadTasks(), 0);
+    const all = this.forGrade(true), selected = this.forGrade();
+    return `<div class="toolbar" style="margin-bottom:12px;flex-wrap:wrap"><button class="chip" onclick="reloadTeacherCloudData()">↻ Ergebnisse aktualisieren</button>
+      ${canManageRoster() ? `<button class="chip dark" onclick="EnglishPractice.printCodes(null,true)">QR + PIN · ganzer Jahrgang (${all.length})</button>
+      ${State.team !== 'alle' ? `<button class="chip" onclick="EnglishPractice.printCodes()">QR + PIN · ${esc(State.team)} (${selected.length})</button>` : ''}` : ''}
+    </div>${comp ? this.mapping(comp) : ''}`;
+  },
+  mapping(comp) {
+    const tasks = this.taskUser === this.userKey() ? this.tasks : [], assigned = tasks.filter(t => t.competency_id === comp.id);
+    return `<details style="font-size:.85rem;margin:0 0 14px"><summary>English Practice · ${assigned.length} zugeordnete Vokabeltests</summary>
+      ${this.taskError ? `<p>${esc(this.taskError)} <button class="chip" onclick="EnglishPractice.loadTasks(true)">Erneut laden</button></p>` : assigned.length ? `<ul>${assigned.map(t => `<li>${esc(t.title)}</li>`).join('')}</ul>` : '<p>Dieser Kompetenz ist bisher kein Vokabeltest zugeordnet.</p>'}
+      ${canManageRoster() && tasks.length ? `<label for="ep-map-task">Test dieser Kompetenz zuordnen (gilt für künftige Versuche)</label><select id="ep-map-task"><option value="">Vokabeltest auswählen …</option>${tasks.map(t => `<option value="${esc(t.task_key)}">${esc(t.title)}</option>`).join('')}</select><button class="chip" onclick="EnglishPractice.mapTask()">Dieser Kompetenz zuordnen</button>` : ''}</details>`;
+  },
+  async mapTask() {
+    const key = document.getElementById('ep-map-task')?.value, comp = Store.competencies.find(c => c.id === State.competency);
+    if (!key || !comp || !canManageRoster()) return;
+    try {
+      const r = await Auth.cloudClient.rpc('kompass_english_map_task', {p_grade:Number(State.year),p_task_key:key,p_competency_id:comp.id});
+      if (r.error) throw r.error;
+      await this.loadTasks(true); toast('Test dieser Kompetenz zugeordnet.');
+    } catch (e) { alert('Zuordnung nicht gespeichert: ' + (e.message || e)); }
+  },
+  evidence(record) {
+    const entries = record?.practiceResults || [];
+    if (!entries.length) return '';
+    const latest = entries[entries.length - 1], score = latest.score || {};
+    return `<details style="font-size:.8rem;margin-top:5px"><summary>English Practice · ${Number(score.points)}/${Number(score.max)} P. · ${esc(latest.date)} · ${entries.length} Versuch${entries.length === 1 ? '' : 'e'}</summary>${entries.slice().reverse().map(e => `<div class="mini" style="margin:5px 0">${esc(e.date)} · ${esc(e.topic)} · ${Number(e.score?.points)}/${Number(e.score?.max)} P. (${Number(e.score?.percent)} %)</div>`).join('')}</details>`;
+  },
+  access(p) {
+    if (!this.userKey() || !canManageRoster()) return '';
+    return `<details style="display:inline-block;margin:8px;font-size:.85rem"><summary>English Practice · Zugang</summary><button class="chip" onclick="EnglishPractice.printCodes('${esc(p.id)}')">QR + PIN drucken</button><button class="chip" onclick="EnglishPractice.printCodes('${esc(p.id)}',false,true)">Zugang erneuern</button><button class="chip" onclick="EnglishPractice.revoke('${esc(p.id)}')">Zugang sperren</button></details>`;
   },
   async revoke(pupilId) {
-    if (!canManageRoster() || !confirm('Diesen Übungscode sperren? Die vorhandenen Testergebnisse bleiben erhalten.')) return;
+    if (!canManageRoster() || !confirm('Diesen Übungszugang sperren? Vorhandene Kompetenzergebnisse bleiben erhalten.')) return;
     try {
       const r = await Auth.cloudClient.rpc('kompass_english_revoke_code', {p_grade:Number(State.year),p_pupil_id:pupilId});
       if (r.error) throw r.error;
-      toast('Übungscode gesperrt.');
-    } catch (e) { alert('Code konnte nicht gesperrt werden: ' + (e.message || e)); }
+      toast('Übungszugang gesperrt.');
+    } catch (e) { alert('Zugang konnte nicht gesperrt werden: ' + (e.message || e)); }
   },
-  async printCodes(pupilId = null) {
+  async printCodes(pupilId = null, all = false, rotate = false) {
     if (!canManageRoster() || !this.userKey()) return;
-    const pupils = pupilId ? (Store.pupils || []).filter(p => p.id === pupilId) : filteredPupils();
-    if (!pupils.length) return toast('Bitte zuerst Kinder auswählen.');
-    if (!confirm(`Für ${pupils.length} Kind(er) neue persönliche Codes erstellen? Bereits verteilte Codes dieser Kinder werden dadurch ungültig. Bitte die neue Druckansicht sichern oder ausdrucken.`)) return;
-    // Open synchronously so iPad popup blocking does not discard the print window.
+    const pupils = pupilId ? (Store.pupils || []).filter(p => p.id === pupilId) : this.forGrade(all);
+    if (!pupils.length) return toast('Für diese Auswahl sind keine Kinder vorhanden.');
+    if (rotate && !confirm('Einen neuen QR-Code und eine neue PIN erstellen? Der bisherige Zugang dieses Kindes wird ungültig.')) return;
     const w = window.open('', '_blank');
     if (!w) return alert('Bitte Pop-ups für KOMPASS erlauben und erneut versuchen.');
     w.opener = null;
-    w.document.write('<!doctype html><html lang="de"><head><meta charset="utf-8"><title>English Practice · persönliche QR-Codes</title><style>body{font:15px system-ui;margin:24px;color:#222} .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.code{border:1px solid #bbb;padding:14px;text-align:center;break-inside:avoid}.code svg{width:150px;height:150px;max-width:100%}.code p{font-size:12px}.code a{color:#9b142a}button{font:inherit;padding:10px} @media print{.actions{display:none}body{margin:0}.code{page-break-inside:avoid}}</style></head><body><div class="actions"><h1>English Practice</h1><p>Persönliche QR-Codes · bitte ins Lerntagebuch kleben und nicht weitergeben.</p><button onclick="window.print()">Drucken / als PDF sichern</button></div><p id="status">Codes werden erstellt … Bitte das Fenster offen lassen.</p><div class="cards" id="cards"></div></body></html>');
+    w.document.write('<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>English Practice · QR + PIN</title><style>*{box-sizing:border-box}body{font:15px system-ui;margin:20px;color:#222}h1{font-size:24px}.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.code{border:1px solid #bbb;padding:12px;text-align:center;break-inside:avoid;overflow-wrap:anywhere}.code svg{width:145px;height:145px;max-width:100%}.code p{font-size:12px;margin:8px 0}.pin{font-size:22px;font-weight:700;letter-spacing:3px;margin:8px 0}.code a{color:#9b142a;font-size:12px}button{font:inherit;padding:10px;border:0;border-radius:8px}@media(max-width:700px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:440px){.cards{grid-template-columns:1fr}}@media print{@page{size:A4;margin:12mm}.actions{display:none}body{margin:0}.cards{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.code{page-break-inside:avoid}}</style></head><body><div class="actions"><h1>English Practice · QR + PIN</h1><p>Persönliche Zugangskarten fürs Lerntagebuch. Vorhandene Zugänge werden erneut gedruckt und bleiben gültig.</p><button onclick="window.print()">Drucken / als PDF sichern</button></div><p id="status" role="status">Zugänge werden für die gesamte Auswahl geladen …</p><div class="cards" id="cards"></div></body></html>');
     w.document.close();
-    const grade = Number(State.year), user = this.userKey();
-    let count = 0;
+    const user = this.userKey();
     try {
+      const r = await Auth.cloudClient.rpc('kompass_english_batch_access', {p_grade:Number(State.year),p_pupil_ids:pupils.map(p => String(p.id)),p_rotate:rotate});
+      if (r.error) throw r.error;
+      if (w.closed || this.userKey() !== user) return;
+      const codes = new Map((r.data || []).map(c => [c.pupil_id,c]));
       for (const p of pupils) {
-        if (w.closed || this.userKey() !== user) throw new Error('Abgebrochen.');
-        const r = await Auth.cloudClient.rpc('kompass_english_issue_code', {p_grade:grade,p_pupil_id:p.id});
-        if (r.error) throw r.error;
-        const url = 'https://julianeschoene-ops.github.io/Schedule/#code=' + r.data;
+        const c = codes.get(String(p.id));
+        if (!c || !/^[a-f0-9]{64}$/.test(c.token) || !/^[0-9]{6}$/.test(c.pin)) throw new Error('Ein Zugang wurde nicht vollständig geliefert.');
+        const url = 'https://julianeschoene-ops.github.io/Schedule/#code=' + c.token;
         const qr = qrcode(0, 'M'); qr.addData(url); qr.make();
         const card = w.document.createElement('section'); card.className = 'code';
-        card.innerHTML = `<b>${esc(p.first)} ${esc(p.last)}</b><p>${esc(p.className)} · English Practice</p>${qr.createSvgTag(4, 16)}<p>Scannen · Namen prüfen · üben</p><a href="${esc(url)}">Persönlichen Übungslink öffnen</a><p>Beenden: „End practice & reset“</p>`;
-        w.document.getElementById('cards').appendChild(card); count++;
+        card.innerHTML = `<b>${esc(p.first)} ${esc(p.last)}</b><p>${esc(p.className)} · English Practice</p>${qr.createSvgTag(4,16)}<p>Deine persönliche PIN</p><div class="pin">${esc(c.pin)}</div><p>1. Scannen · 2. PIN eingeben · 3. Üben</p><a href="${esc(url)}">Übungslink öffnen</a><p>Zum Schluss: End practice & reset</p>`;
+        w.document.getElementById('cards').appendChild(card);
       }
-      w.document.getElementById('status').textContent = count + ' Codes erstellt. Jetzt drucken oder als PDF sichern.';
+      w.document.getElementById('status').textContent = pupils.length + ' Zugangskarten mit QR-Code und PIN. Jetzt drucken oder als PDF sichern.';
     } catch (e) {
-      if (!w.closed) w.document.getElementById('status').textContent = `${count} Codes erstellt. Weitere Codes konnten nicht erstellt werden: ${e.message || e}. Bereits erstellte Codes bitte sichern.`;
+      if (!w.closed) w.document.getElementById('status').textContent = 'Zugänge konnten nicht geladen werden: ' + (e.message || e);
     }
   }
 };
-// No browser-wide result cache: a shared iPad must not retain another teacher's results.
-setInterval(() => {
-  if (document.visibilityState === 'visible' && Auth.isLoggedIn() &&
-      ((State.view === 'core' && State.subject === 'Englisch') || (State.view === 'students' && State.pupil)))
-    EnglishPractice.refresh();
-}, 15000);
