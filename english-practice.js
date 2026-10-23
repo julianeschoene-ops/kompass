@@ -7,7 +7,7 @@ const EnglishPractice = {
     if (!user || this.taskBusy || (!force && this.taskUser === user)) return;
     this.taskBusy = true;
     try {
-      const r = await Auth.cloudClient.from('kompass_english_tasks').select('task_key,title,unit,competency_id').eq('is_assessment',true).order('title');
+      const r = await Auth.cloudClient.from('kompass_english_tasks').select('task_key,title,unit,competency_id,assessment_config').eq('is_assessment',true).order('title');
       if (r.error) throw r.error;
       if (this.userKey() !== user) return;
       this.tasks = r.data || []; this.taskUser = user; this.taskError = '';
@@ -27,6 +27,12 @@ const EnglishPractice = {
       ${canManageRoster() ? `<button class="chip dark" onclick="EnglishPractice.printCodes(null,true)">QR + PIN · ganzer Jahrgang (${all.length})</button>
       ${State.team !== 'alle' ? `<button class="chip" onclick="EnglishPractice.printCodes()">QR + PIN · ${esc(State.team)} (${selected.length})</button>` : ''}` : ''}
     </div>${comp ? this.mapping(comp) : ''}${this.calendarTools()}`;
+  },
+  taskPreview(t) {
+    const a=t.assessment_config;if(!a)return '';
+    if(a.kind==='teacher')return `<details><summary>Aufgabe & Bewertungskriterien · Lehrkraftvorschau</summary>${a.stimulus?`<blockquote>${esc(a.stimulus)}</blockquote>`:''}<p>${esc(a.prompt)}</p><ul>${(a.criteria||[]).map(c=>`<li>${esc(c)}</li>`).join('')}</ul><p>Ergebnis über die normale Kompetenzbewertung erfassen. Kein automatischer Punktwert.</p></details>`;
+    if(Array.isArray(a.questions))return `<details><summary>Aufgaben & Lösungen · Lehrkraftvorschau</summary><p>${esc(a.instructions)}</p><p>Diese Vorschau ist nur in KOMPASS für Lehrkräfte verfügbar. Sie erzeugt keine Testergebnisse.</p>${a.questions.map((q,n)=>`<div class="mini"><b>Aufgabe ${n+1}${a.kind==='listening'?' · Hörtext':''}</b><blockquote>${esc(q.text)}</blockquote><p>${esc(q.q)}</p><ol>${q.options.map(o=>`<li>${esc(o)}</li>`).join('')}</ol><p><b>Lösung:</b> ${esc(q.options[q.answer])}</p></div>`).join('')}</details>`;
+    return '';
   },
   calendarTools() {
     if (!Auth.isAdmin?.()) return '';
@@ -55,9 +61,9 @@ const EnglishPractice = {
   },
   mapping(comp) {
     const tasks = this.taskUser === this.userKey() ? this.tasks : [], assigned = tasks.filter(t => t.competency_id === comp.id);
-    return `<details style="font-size:.85rem;margin:0 0 14px"><summary>English Practice · ${assigned.length} zugeordnete Vokabeltests</summary>
-      ${this.taskError ? `<p>${esc(this.taskError)} <button class="chip" onclick="EnglishPractice.loadTasks(true)">Erneut laden</button></p>` : assigned.length ? `<ul>${assigned.map(t => `<li>${esc(t.title)}</li>`).join('')}</ul>` : '<p>Dieser Kompetenz ist bisher kein digitaler LWL-Test zugeordnet.</p>'}
-      ${canManageRoster() && tasks.length ? `<label for="ep-map-task">Test dieser Kompetenz zuordnen (gilt für künftige Versuche)</label><select id="ep-map-task"><option value="">Vokabeltest auswählen …</option>${tasks.map(t => `<option value="${esc(t.task_key)}">${esc(t.title)}</option>`).join('')}</select><button class="chip" onclick="EnglishPractice.mapTask()">Dieser Kompetenz zuordnen</button>` : ''}</details>`;
+    return `<details style="font-size:.85rem;margin:0 0 14px"><summary>English Practice · ${assigned.length} zugeordnete Tests</summary>
+      ${this.taskError ? `<p>${esc(this.taskError)} <button class="chip" onclick="EnglishPractice.loadTasks(true)">Erneut laden</button></p>` : assigned.length ? `<ul>${assigned.map(t => `<li>${esc(t.title)}${this.taskPreview(t)}</li>`).join('')}</ul>` : '<p>Dieser Kompetenz ist bisher kein digitaler LWL-Test zugeordnet.</p>'}
+      ${canManageRoster() && tasks.length ? `<label for="ep-map-task">Test dieser Kompetenz zuordnen (gilt für künftige Versuche)</label><select id="ep-map-task"><option value="">Test auswählen …</option>${tasks.map(t => `<option value="${esc(t.task_key)}">${esc(t.title)}</option>`).join('')}</select><button class="chip" onclick="EnglishPractice.mapTask()">Dieser Kompetenz zuordnen</button>` : ''}</details>`;
   },
   async mapTask() {
     const key = document.getElementById('ep-map-task')?.value, comp = Store.competencies.find(c => c.id === State.competency);

@@ -52,3 +52,9 @@ test('school closure controls are restricted to admins and preserve a restore ac
  c.Auth.cloudClient.from=()=>({select(){return this},eq(){return this},order:async()=>({data:[{id:'closure-1',starts_on:'2027-02-08',ends_on:'2027-02-12',label:'Fastnacht',active:false}]})});
  await c.ep.loadClosures();assert.match(target.innerHTML,/Wieder aktivieren/);assert.match(target.innerHTML,/Fastnacht/);
 });
+
+test('teacher preview shows answers and criteria without submitting a learner result',()=>{
+ const c=setup();const html=c.ep.taskPreview({assessment_config:{kind:'reading',instructions:'Lies den Text.',questions:[{text:'<text>',q:'Worum geht es?',options:['A','B'],answer:1}]}});
+ assert.match(html,/Lehrkraftvorschau/);assert.match(html,/Lösung:<\/b> B/);assert.match(html,/&lt;text&gt;/);assert.ok(!html.includes('finishTest'));
+ const oral=c.ep.taskPreview({assessment_config:{kind:'teacher',prompt:'Describe a route.',criteria:['Understandable directions']}});assert.match(oral,/normale Kompetenzbewertung/);assert.match(oral,/Understandable directions/);
+});

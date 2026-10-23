@@ -147,3 +147,44 @@ prüft Tagesgrenzen, Feriengrenzen, Feiertage, Sommer-/Winterzeit, Schul-Sperrta
 Deaktivieren/Wiederherstellen, Rechte und Kompetenzzuordnung in einer vollständig
 zurückgerollten Transaktion. Browser-/Clienttests prüfen unter anderem Direktlinks,
 Anmeldung, Katalogausblendung und das Schließen ohne Nutzung der Geräteuhr.
+
+## Ergänzende Unit-4-Kompetenzchecks
+
+Die expliziten Vokabeltests bleiben erhalten. Ergänzend zu diesen LWL-Teststellen
+wurden neue Kompetenzchecks passend zur Unit-4-LWL erstellt. Sie sind ausdrücklich
+keine Kopien unbekannter Buch- oder IServ-Prüfungen. Alle fünf vorhandenen
+Unit-4-Rasterkompetenzen haben damit passende Aufgaben:
+
+| Kompetenz | Aufgabe | Erfassung |
+| --- | --- | --- |
+| `eng5_5` · Orts-/Zeitangaben, Wortschatz | Vocabulary Tests 1 und 2 | Automatische Punkteübertragung |
+| `eng5_16` · Kurze Gespräche verstehen | Vier kurze Hördialoge mit Verständnisfragen | Automatische Punkteübertragung |
+| `eng5_23` · Worum geht es in einem kurzen Text? | Vier kurze Texte, jeweils Hauptaussage auswählen | Automatische Punkteübertragung |
+| `eng5_30` · Einen Weg beschreiben | Wegbeschreibung im Gespräch mit der Lehrkraft | Normale KOMPASS-Kompetenzbewertung durch die Lehrkraft |
+| `eng5_41` · Informationen verständlich machen | Museumshinweis für einen deutschsprachigen Bruder sinngemäß erklären | Normale KOMPASS-Kompetenzbewertung durch die Lehrkraft |
+
+Offene Leistungen zeigen Aufgabe und Kriterien; weder das Kind noch ein
+automatischer Client darf dafür einen Punktwert an den Ergebnis-Endpunkt senden.
+Bei Lese- und Hörchecks wird der Bereich als eigener Teilnachweis im Verlauf
+benannt. Bereits vorhandene Lehrkraftbewertungen werden weiterhin geschützt.
+G/M/E wird nicht aus einem kurzen Check abgeleitet. Die neuen Kurzchecks prüfen
+jeweils einen Ausschnitt und sind kein umfassender standardisierter Lernnachweis.
+
+Hörtexte werden mit der vorhandenen englischen Geräte-Sprachausgabe abgespielt.
+Die Kinder sehen keine Transkripte und können jeden Dialog höchstens zweimal
+anhören. Antworten werden erst nach vollständigem Abspielen möglich. Ein
+Audiotest vor Beginn hilft beim Prüfen von Stimme, Lautstärke und Kopfhörern;
+ohne unterstützte Sprachausgabe lässt sich der Hörcheck nicht starten. Es werden
+keine Sprachaufnahmen von Kindern angefertigt.
+
+Lehrkräfte können die ergänzenden Aufgaben einschließlich Lösungen und Kriterien
+in **Kernfächer → Englisch → passende Kompetenz → zugeordnete Tests** jederzeit
+als **Lehrkraftvorschau** lesen. Die Vorschau schreibt keine Ergebnisse und öffnet
+den Schüler-Testbereich nicht. So ist die fachliche Prüfung auch in Ferien möglich.
+
+Migration: `migrations/english_practice_unit4_competency_checks.sql` nach
+`english_practice_school_calendar.sql`. Regressionen in
+`tests/english-practice-unit4.sql` prüfen die getrennten Kompetenznachweise,
+Lehrkraftvorrang, Wiederholschutz und das Abweisen erfundener mündlicher Punkte.
+Die Musteraufgaben für die Clientregression stehen im Schedule-Repository unter
+`tests/fixtures/unit4-checks.json`.
