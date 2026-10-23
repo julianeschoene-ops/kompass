@@ -188,3 +188,28 @@ Migration: `migrations/english_practice_unit4_competency_checks.sql` nach
 Lehrkraftvorrang, Wiederholschutz und das Abweisen erfundener mündlicher Punkte.
 Die Musteraufgaben für die Clientregression stehen im Schedule-Repository unter
 `tests/fixtures/unit4-checks.json`.
+
+## Befristeter Wochenendzugang für Testkind
+
+Für das bestehende synthetische Kind `ep_demo_juliane_2026` ist der persönliche
+Zugang ab Aktivierung bis **26.10.2026, 00:00 Europe/Berlin** freigeschaltet,
+also einschließlich Sonntag, 25.10., bis 23:59 Uhr. Die Ausnahme steht im
+serverseitigen Zugang, nicht im QR-Link oder in einer Geräteuhr-Einstellung.
+Sie greift nur, solange der konkrete Datensatz aktiv und im Schülerbestand
+explizit `isDemo: true` ist. Sie gilt weder für andere Demo-IDs noch für echte Kinder.
+PIN und Namensbestätigung bleiben erforderlich. Es werden keine echten Zugänge
+freigeschaltet und keine Ferientermine geändert.
+
+`kompass_english_access_window` liefert nach PIN-Prüfung entweder die reguläre
+Schulfreigabe oder die befristete persönliche Demo-Freigabe. Katalog und
+Ergebnisübertragung verwenden dieselbe private Prüfung. Ablaufdatum und Serverzeit
+werden auch in der Demoansicht verwendet. Ab Ende der Freigabe ist ohne weitere
+Änderung wieder ausschließlich der normale Schulkalender wirksam. Ein bereits
+abgespeicherter Versuch darf weiterhin ohne doppelten Eintrag bestätigt werden.
+Die Ergebnisse von bewussten Nutzertests gehören zum Testkind und sind in dessen
+normalen Kompetenzdatensätzen sichtbar.
+
+Migration: `migrations/english_practice_demo_weekend.sql`. Regression:
+`tests/english-practice-demo-weekend.sql`, vollständig zurückgerollt, prüft QR/PIN,
+Katalog, echte serverseitige Einreichung, Wiederholschutz, Ablaufzeit und die
+Abgrenzung gegenüber Nicht-Demo-Kindern. Zugangsdaten stehen nicht im Repository.
