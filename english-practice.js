@@ -7,7 +7,7 @@ const EnglishPractice = {
     if (!user || this.taskBusy || (!force && this.taskUser === user)) return;
     this.taskBusy = true;
     try {
-      const r = await Auth.cloudClient.from('kompass_english_tasks').select('task_key,title,unit,competency_id').order('title');
+      const r = await Auth.cloudClient.from('kompass_english_tasks').select('task_key,title,unit,competency_id').eq('is_assessment',true).order('title');
       if (r.error) throw r.error;
       if (this.userKey() !== user) return;
       this.tasks = r.data || []; this.taskUser = user; this.taskError = '';

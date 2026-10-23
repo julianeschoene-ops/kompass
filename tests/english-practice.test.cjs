@@ -40,7 +40,7 @@ test('batch printing sends one request for every selected learner and includes P
 });
 test('task metadata from a previous account is discarded',async()=>{
   const c=setup();let resolve;
-  c.Auth.cloudClient.from=()=>({select(){return this},order(){return new Promise(r=>resolve=r)}});
+  c.Auth.cloudClient.from=()=>({select(){return this},eq(field,value){assert.equal(field,'is_assessment');assert.equal(value,true);return this},order(){return new Promise(r=>resolve=r)}});
   const p=c.ep.loadTasks();c.setUser('teacher2');resolve({data:[{task_key:'old'}]});await p;
   assert.equal(c.ep.taskUser,null);assert.equal(c.ep.tasks.length,0);
 });

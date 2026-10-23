@@ -10,7 +10,7 @@ Die Karten sind mobil lesbar und zum Drucken als A4-Bogen eingerichtet.
 
 Das Kind scannt den persönlichen QR-Code, gibt seine sechsstellige PIN ein
 und bestätigt den angezeigten Vornamen. Danach werden abgeschlossene Tests
-unter **Test yourself** automatisch übertragen. Der QR-Code allein genügt
+unter **Tests laut Lernwegeliste** automatisch übertragen. **Selbstcheck · Übung** ist jederzeit verfügbar und erzeugt keinen Kompetenznachweis. Der QR-Code allein genügt
 weder zur Namensabfrage noch zum Einsenden eines Ergebnisses.
 
 Im Schülerprofil gibt es nur ein kleines eingeklapptes Menü **English Practice ·
@@ -20,17 +20,25 @@ Karte mit PIN erzeugt werden. Vorhandene Testergebnisse bleiben erhalten.
 
 ## Ergebnisse in der normalen Kompetenz
 
-Jede vorhandene Vokabelliste ist serverseitig einer vorhandenen Englischkompetenz
-zugeordnet. Die Zuordnung folgt dem Unterrichtsinhalt, nicht dem Jahrgang des Kindes:
-Orange Line 1 nutzt aktuell den vorhandenen Kompetenzkatalog aus Stufe 5 auch für
-Lernende der Stufe 6.
+Nur ausdrücklich auf der Lernwegeliste markierte und digital verfügbare Tests dürfen
+Kompetenznachweise erzeugen. Normale Vokabellisten und Selbstchecks sind Übungen.
+Die serverseitige Freigabe (`is_assessment`) und die vollständige Aufgabenanzahl
+werden zusätzlich zur PIN und Serverzeit geprüft.
 
-| Vokabellisten | Vorhandene Kompetenz |
-| --- | --- |
-| Unit 1, Listen 1–5 | Wörter aus Unterricht und Schule (`eng5_1`) |
-| Unit 2, Listen 5–9 | Wörter zu Familie und Zuhause (`eng5_2`) |
-| Unit 3, Listen 10–14 | Wörter zu Freizeit und Alltag (`eng5_4`) |
-| Unit 4, Listen 15–19 | Orts- und Zeitangaben (`eng5_5`) |
+| Digitaler LWL-Test | Bereich | Vorhandene Kompetenz |
+| --- | --- | --- |
+| Unit 4, Vocabulary Test 1 | Station 1 / 2a, Liste 16, shop – now, alle 23 Wörter | Orts- und Zeitangaben (`eng5_5`) |
+| Unit 4, Vocabulary Test 2 | Station 2 / 3a, Liste 17, way – by (bike), alle 50 Wörter | Orts- und Zeitangaben (`eng5_5`) |
+
+Quelle: `LWL4_Year_5_Orange_Line_SuS.pdf`. Die digitalen Abfragen nutzen die
+bestehenden Vokabeldaten, Deutsch → Englisch, ohne Lösungen während des Tests.
+Sie sind keine Kopie unbekannter IServ-Testfragen. Die übrigen expliziten
+Teststationen aus LWL 1–3 und 5 sind sichtbar, verweisen aber auf Lehrkraft / IServ,
+solange die Originalaufgaben bzw. eine bestätigte digitale Fassung fehlen.
+QR-Selbstchecks und „Time to practice“ zählen nicht als bewertete LWL-Tests.
+
+Orange Line 1 nutzt den vorhandenen Kompetenzkatalog aus Stufe 5 auch für
+Lernende der Stufe 6. Die Zuordnung kann durch die Lehrkraft geändert werden.
 
 Ein abgeschlossener Test schreibt Punkte, Prozentwert, Datum, Thema, Ampelstatus
 und den Versuch direkt in den regulären Kompetenzdatensatz beim richtigen Kind.
@@ -89,3 +97,13 @@ außerhalb des Zeitfensters und liegengebliebene Versuche von vorherigen Tagen
 werden abgewiesen. Eine verlorene Bestätigung für ein bereits gespeichertes
 Ergebnis kann weiterhin ohne doppelten Eintrag nachgeholt werden.
 Migration: `migrations/english_practice_test_window.sql`.
+
+## Korrektur der bisherigen Selbstcheck-Übertragung
+
+Migration `migrations/english_practice_lwl_assessments.sql` ergänzt die explizite
+Freigabe und deaktiviert alte per-Liste-Zuordnungen für neue Einreichungen.
+Historische Zeilen werden nicht gelöscht. Der alte v2-Endpunkt gibt eine
+verständliche Aktualisierungsaufforderung zurück und speichert grundsätzlich nichts.
+Beim Laden werden alte ausstehende Übungsergebnisse nicht als Tests übernommen.
+Clientfehler (4xx) werden als abgelehnt angezeigt; nur Verbindungsprobleme werden
+mit unveränderter Versuchs-ID erneut gesendet. Zeitgrenzen bleiben serverseitig.
