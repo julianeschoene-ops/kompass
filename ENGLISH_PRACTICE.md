@@ -77,3 +77,15 @@ Prüfungen: `node --test tests/english-practice.test.cjs` sowie im Schedule-Repo
 prüft Sammelerstellung, unverändertes Nachdrucken, PIN-Prüfung, Sperre nach Fehlversuchen,
 Deaktivierung der alten Endpunkte, Kompetenzzuordnung unabhängig vom Schülerjahrgang,
 Duplikatschutz, Zuordnung zum richtigen Kind und den Erhalt von Lehrkraftbewertungen.
+
+## Testzeit und Geräteuhr
+
+Tests können täglich von **08:00 bis vor 12:30 Uhr (Europe/Berlin)** gestartet
+und neu eingereicht werden. Der Server prüft seine eigene Uhr; Datum, Uhrzeit
+und Zeitzone des iPads ändern diese Entscheidung nicht. Sommer- und Winterzeit
+werden automatisch berücksichtigt. Übungsmodi sind jederzeit verfügbar.
+Die aktuelle Freigabe wird vor dem Start vom Server abgefragt. Neue Ergebnisse
+außerhalb des Zeitfensters und liegengebliebene Versuche von vorherigen Tagen
+werden abgewiesen. Eine verlorene Bestätigung für ein bereits gespeichertes
+Ergebnis kann weiterhin ohne doppelten Eintrag nachgeholt werden.
+Migration: `migrations/english_practice_test_window.sql`.
