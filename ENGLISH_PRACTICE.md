@@ -10,7 +10,7 @@ Die Karten sind mobil lesbar und zum Drucken als A4-Bogen eingerichtet.
 
 Das Kind scannt den persönlichen QR-Code, gibt seine sechsstellige PIN ein
 und bestätigt den angezeigten Vornamen. Danach werden abgeschlossene Tests
-unter **Tests laut Lernwegeliste** automatisch übertragen. **Selbstcheck · Übung** ist jederzeit verfügbar und erzeugt keinen Kompetenznachweis. Der QR-Code allein genügt
+im getrennten **Testbereich · Englisch** automatisch übertragen. **Selbstcheck · Übung** ist jederzeit verfügbar und erzeugt keinen Kompetenznachweis. Der QR-Code allein genügt
 weder zur Namensabfrage noch zum Einsenden eines Ergebnisses.
 
 Im Schülerprofil gibt es nur ein kleines eingeklapptes Menü **English Practice ·
@@ -32,9 +32,8 @@ werden zusätzlich zur PIN und Serverzeit geprüft.
 
 Quelle: `LWL4_Year_5_Orange_Line_SuS.pdf`. Die digitalen Abfragen nutzen die
 bestehenden Vokabeldaten, Deutsch → Englisch, ohne Lösungen während des Tests.
-Sie sind keine Kopie unbekannter IServ-Testfragen. Die übrigen expliziten
-Teststationen aus LWL 1–3 und 5 sind sichtbar, verweisen aber auf Lehrkraft / IServ,
-solange die Originalaufgaben bzw. eine bestätigte digitale Fassung fehlen.
+Sie sind keine Kopie unbekannter IServ-Testfragen. Teststationen ohne digitale Originalaufgaben bzw. bestätigte digitale Fassung
+erscheinen nicht im Testbereich. Es gibt dort ausschließlich freigegebene Tests.
 QR-Selbstchecks und „Time to practice“ zählen nicht als bewertete LWL-Tests.
 
 Orange Line 1 nutzt den vorhandenen Kompetenzkatalog aus Stufe 5 auch für
@@ -88,7 +87,7 @@ Duplikatschutz, Zuordnung zum richtigen Kind und den Erhalt von Lehrkraftbewertu
 
 ## Testzeit und Geräteuhr
 
-Tests können täglich von **08:00 bis vor 12:30 Uhr (Europe/Berlin)** gestartet
+Tests können an **Schultagen von Montag bis Freitag, 08:00 bis vor 12:30 Uhr (Europe/Berlin)** gestartet
 und neu eingereicht werden. Der Server prüft seine eigene Uhr; Datum, Uhrzeit
 und Zeitzone des iPads ändern diese Entscheidung nicht. Sommer- und Winterzeit
 werden automatisch berücksichtigt. Übungsmodi sind jederzeit verfügbar.
@@ -107,3 +106,44 @@ verständliche Aktualisierungsaufforderung zurück und speichert grundsätzlich 
 Beim Laden werden alte ausstehende Übungsergebnisse nicht als Tests übernommen.
 Clientfehler (4xx) werden als abgelehnt angezeigt; nur Verbindungsprobleme werden
 mit unveränderter Versuchs-ID erneut gesendet. Zeitgrenzen bleiben serverseitig.
+
+## Geschlossener Testbereich und Ferienkalender
+
+Die Übungsseite bietet nur einen Einstieg **Testbereich · Englisch**. Weder die
+Lernwegseiten noch ein direkter Testlink zeigen vor der Freigabe Testkarten oder
+Aufgaben. Die Kinder benötigen bestätigten persönlichen QR-Code und PIN.
+`kompass_english_test_catalog` liefert nur während des serverseitig erlaubten
+Zeitfensters Tests mit gültiger bestehender Kernfachkompetenz Englisch. Die Karten
+zeigen Kompetenztext, Kompetenzbereich und den Umfang **Wortschatz-Teilnachweis**.
+Vokabelpunkte bestätigen keine Hör-, Lese-, Sprech- oder Sprachmittlungskompetenz.
+Bestehende Lehrkraftbewertungen bleiben erhalten.
+
+Die BW-Schulferien sind vom Schuljahr 2026/27 bis einschließlich Sommerferien
+2030 gemäß https://km.baden-wuerttemberg.de/de/service/ferien eingetragen.
+Gesetzliche Feiertage sowie Gründonnerstag und Reformationsfest werden nach
+https://im.baden-wuerttemberg.de/de/service/feiertage gesperrt. Ein eigener,
+serverseitiger Kalender gilt vom 14.09.2026 bis 08.09.2030; außerhalb der geprüften
+Abdeckung bleibt der Testbereich bis zur Kalenderaktualisierung geschlossen.
+Die gesetzlichen beweglichen Feiertage wurden aus dem gregorianischen Osterdatum
+berechnet. Bewegliche Ferientage der jeweiligen Schule werden nicht geraten.
+
+Unter **Kernfächer → Englisch → English Practice · Testzeiten & schulfreie Tage**
+können Admins zusätzliche schulweite Sperrzeiträume ergänzen, deaktivieren und
+wieder aktivieren. Die Änderungen sind durch Admin-RPCs geschützt; normale
+Lehrkräfte und Kinder können sie nicht verändern. Es gibt keine direkte
+Tabellenschreibberechtigung. Die schulischen Sperrzeiten sind bei einer separaten
+Datenbanksicherung zu berücksichtigen.
+
+Die Freigabe gilt für Zugang, Aufgabenanzeige, Teststart und Einsenden. Um 12:30
+schließt die geöffnete Testansicht anhand der vom Server gelieferten Restzeit.
+Eine zusätzliche Serverabfrage alle 30 Sekunden und beim Wiederöffnen des Tabs
+berücksichtigt neu eingetragene Sperrtage. Die Geräteuhr bestimmt keine Freigabe.
+Die Datenbank weist verspätete Ergebnisse weiterhin ab. Ein bereits gespeicherter
+Versuch kann nach Ende der Testzeit ohne doppelten Eintrag bestätigt werden.
+
+Migration: `migrations/english_practice_school_calendar.sql` nach allen bisherigen
+English-Practice-Migrationen. Regressionen: `tests/english-practice-calendar.sql`
+prüft Tagesgrenzen, Feriengrenzen, Feiertage, Sommer-/Winterzeit, Schul-Sperrtage,
+Deaktivieren/Wiederherstellen, Rechte und Kompetenzzuordnung in einer vollständig
+zurückgerollten Transaktion. Browser-/Clienttests prüfen unter anderem Direktlinks,
+Anmeldung, Katalogausblendung und das Schließen ohne Nutzung der Geräteuhr.

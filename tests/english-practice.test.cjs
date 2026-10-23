@@ -44,3 +44,11 @@ test('task metadata from a previous account is discarded',async()=>{
   const p=c.ep.loadTasks();c.setUser('teacher2');resolve({data:[{task_key:'old'}]});await p;
   assert.equal(c.ep.taskUser,null);assert.equal(c.ep.tasks.length,0);
 });
+
+test('school closure controls are restricted to admins and preserve a restore action',async()=>{
+ const c=setup();assert.equal(c.ep.calendarTools(),'');c.Auth.isAdmin=()=>true;
+ assert.match(c.ep.calendarTools(),/Testzeiten & schulfreie Tage/);assert.match(c.ep.calendarTools(),/ganze Schule/);
+ const target={innerHTML:''};c.document.getElementById=()=>target;
+ c.Auth.cloudClient.from=()=>({select(){return this},eq(){return this},order:async()=>({data:[{id:'closure-1',starts_on:'2027-02-08',ends_on:'2027-02-12',label:'Fastnacht',active:false}]})});
+ await c.ep.loadClosures();assert.match(target.innerHTML,/Wieder aktivieren/);assert.match(target.innerHTML,/Fastnacht/);
+});

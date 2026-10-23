@@ -1,6 +1,6 @@
 /* Results are stored in normal competency records by the database. */
 const EnglishPractice = {
-  tasks: [], taskUser: null, taskBusy: false, taskError: '',
+  schoolClosures: [], calendarError: '', tasks: [], taskUser: null, taskBusy: false, taskError: '',
   userKey() { return Auth.session?.mode === 'cloud' && !Auth.isLernatelier() ? Auth.currentUser()?.id : null; },
   async loadTasks(force = false) {
     const user = this.userKey();
@@ -26,12 +26,37 @@ const EnglishPractice = {
     return `<div class="toolbar" style="margin-bottom:12px;flex-wrap:wrap"><button class="chip" onclick="reloadTeacherCloudData()">↻ Ergebnisse aktualisieren</button>
       ${canManageRoster() ? `<button class="chip dark" onclick="EnglishPractice.printCodes(null,true)">QR + PIN · ganzer Jahrgang (${all.length})</button>
       ${State.team !== 'alle' ? `<button class="chip" onclick="EnglishPractice.printCodes()">QR + PIN · ${esc(State.team)} (${selected.length})</button>` : ''}` : ''}
-    </div>${comp ? this.mapping(comp) : ''}`;
+    </div>${comp ? this.mapping(comp) : ''}${this.calendarTools()}`;
+  },
+  calendarTools() {
+    if (!Auth.isAdmin?.()) return '';
+    return `<details style="font-size:.85rem;margin:0 0 14px" ontoggle="if(this.open)EnglishPractice.loadClosures()"><summary>English Practice · Testzeiten & schulfreie Tage</summary>
+    <p>Montag–Freitag, 8:00–12:30 Uhr (Europe/Berlin). BW-Ferien und gesetzliche Feiertage sind bis einschließlich Sommerferien 2030 hinterlegt. Bewegliche Ferientage und schulinterne Schließtage bitte hier ergänzen. Sperrtage gelten für die ganze Schule.</p>
+    <form onsubmit="event.preventDefault();EnglishPractice.addClosure()"><label>Von <input id="ep-closure-start" type="date" required></label> <label>Bis <input id="ep-closure-end" type="date" required></label> <label>Bezeichnung <input id="ep-closure-label" maxlength="120" required placeholder="z. B. beweglicher Ferientag"></label> <button class="chip" type="submit">Sperrzeit hinzufügen</button></form><div id="ep-closure-list" role="status">Schulische Sperrzeiten laden …</div></details>`;
+  },
+  async loadClosures() {
+    const user=this.userKey();if(!user||!Auth.isAdmin?.())return;
+    try {const r=await Auth.cloudClient.from('kompass_english_closures').select('id,starts_on,ends_on,label,active').eq('scope','school').order('starts_on');
+      if(r.error)throw r.error;if(this.userKey()!==user)return;this.schoolClosures=r.data||[];this.calendarError='';
+    } catch (_) {if(this.userKey()!==user)return;this.calendarError='Schulische Sperrzeiten konnten nicht geladen werden.';}
+    const el=document.getElementById('ep-closure-list');if(!el)return;
+    el.innerHTML=this.calendarError?esc(this.calendarError):this.schoolClosures.map(c=>`<p>${esc(c.starts_on)} – ${esc(c.ends_on)} · ${esc(c.label)} ${c.active?'':'(deaktiviert)'} <button class="chip" onclick="EnglishPractice.toggleClosure('${esc(c.id)}',${!c.active})">${c.active?'Deaktivieren':'Wieder aktivieren'}</button></p>`).join('')||'<p>Noch keine zusätzlichen schulischen Sperrzeiten hinterlegt.</p>';
+  },
+  async addClosure() {
+    if(!Auth.isAdmin?.())return;const p_start=document.getElementById('ep-closure-start')?.value,p_end=document.getElementById('ep-closure-end')?.value,p_label=document.getElementById('ep-closure-label')?.value.trim();
+    if(!p_start||!p_end||p_end<p_start||!p_label){alert('Bitte Zeitraum und Bezeichnung prüfen.');return}
+    try{const r=await Auth.cloudClient.rpc('kompass_english_add_closure',{p_start,p_end,p_label});if(r.error)throw r.error;await this.loadClosures();toast('Schulische Testsperre gespeichert.');}
+    catch(e){alert('Testsperre nicht gespeichert: '+(e.message||e));}
+  },
+  async toggleClosure(id,active) {
+    if(!Auth.isAdmin?.())return;
+    try{const r=await Auth.cloudClient.rpc('kompass_english_set_closure_active',{p_id:id,p_active:active});if(r.error)throw r.error;await this.loadClosures();toast(active?'Testsperre aktiviert.':'Testsperre deaktiviert.');}
+    catch(e){alert('Testsperre nicht geändert: '+(e.message||e));}
   },
   mapping(comp) {
     const tasks = this.taskUser === this.userKey() ? this.tasks : [], assigned = tasks.filter(t => t.competency_id === comp.id);
     return `<details style="font-size:.85rem;margin:0 0 14px"><summary>English Practice · ${assigned.length} zugeordnete Vokabeltests</summary>
-      ${this.taskError ? `<p>${esc(this.taskError)} <button class="chip" onclick="EnglishPractice.loadTasks(true)">Erneut laden</button></p>` : assigned.length ? `<ul>${assigned.map(t => `<li>${esc(t.title)}</li>`).join('')}</ul>` : '<p>Dieser Kompetenz ist bisher kein Vokabeltest zugeordnet.</p>'}
+      ${this.taskError ? `<p>${esc(this.taskError)} <button class="chip" onclick="EnglishPractice.loadTasks(true)">Erneut laden</button></p>` : assigned.length ? `<ul>${assigned.map(t => `<li>${esc(t.title)}</li>`).join('')}</ul>` : '<p>Dieser Kompetenz ist bisher kein digitaler LWL-Test zugeordnet.</p>'}
       ${canManageRoster() && tasks.length ? `<label for="ep-map-task">Test dieser Kompetenz zuordnen (gilt für künftige Versuche)</label><select id="ep-map-task"><option value="">Vokabeltest auswählen …</option>${tasks.map(t => `<option value="${esc(t.task_key)}">${esc(t.title)}</option>`).join('')}</select><button class="chip" onclick="EnglishPractice.mapTask()">Dieser Kompetenz zuordnen</button>` : ''}</details>`;
   },
   async mapTask() {
@@ -47,7 +72,7 @@ const EnglishPractice = {
     const entries = record?.practiceResults || [];
     if (!entries.length) return '';
     const latest = entries[entries.length - 1], score = latest.score || {};
-    return `<details style="font-size:.8rem;margin-top:5px"><summary>English Practice · ${Number(score.points)}/${Number(score.max)} P. · ${esc(latest.date)} · ${entries.length} Versuch${entries.length === 1 ? '' : 'e'}</summary>${entries.slice().reverse().map(e => `<div class="mini" style="margin:5px 0">${esc(e.date)} · ${esc(e.topic)} · ${Number(e.score?.points)}/${Number(e.score?.max)} P. (${Number(e.score?.percent)} %)</div>`).join('')}</details>`;
+    return `<details style="font-size:.8rem;margin-top:5px"><summary>English Practice · Teilnachweis · ${Number(score.points)}/${Number(score.max)} P. · ${esc(latest.date)} · ${entries.length} Versuch${entries.length === 1 ? '' : 'e'}</summary>${entries.slice().reverse().map(e => `<div class="mini" style="margin:5px 0">${esc(e.date)} · ${esc(e.topic)} · ${Number(e.score?.points)}/${Number(e.score?.max)} P. (${Number(e.score?.percent)} %)</div>`).join('')}</details>`;
   },
   access(p) {
     if (!this.userKey() || !canManageRoster()) return '';
