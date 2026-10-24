@@ -4,8 +4,8 @@ DECLARE tok text;pin text;t record;r jsonb;v jsonb;answers jsonb;rec jsonb;tier 
 BEGIN
 SELECT print_token,print_pin INTO STRICT tok,pin FROM kompass_english_links WHERE grade=6 AND pupil_id='ep_demo_juliane_2026' AND active;
 UPDATE kompass_english_links SET test_override_until=clock_timestamp()+interval '1 hour' WHERE grade=6 AND pupil_id='ep_demo_juliane_2026';
-IF (SELECT count(*) FROM jsonb_array_elements(kompass_english_test_catalog(tok,pin)->'tests') x WHERE (x->>'unit')::int=5)<>4 THEN RAISE EXCEPTION 'Catalog must show four Unit 5 tests';END IF;
-FOR t IN SELECT * FROM kompass_english_tasks WHERE unit=5 AND is_assessment LOOP
+IF (SELECT count(*) FROM jsonb_array_elements(kompass_english_test_catalog(tok,pin)->'tests') x WHERE (x->>'unit')::int=5 AND x->>'kind'='vocabulary')<>4 THEN RAISE EXCEPTION 'Catalog must show four Unit 5 tests';END IF;
+FOR t IN SELECT * FROM kompass_english_tasks WHERE unit=5 AND is_assessment AND assessment_config->>'kind'='vocabulary' LOOP
  FOREACH tier IN ARRAY ARRAY['G','M','E'] LOOP
  UPDATE kompass_grade_state SET payload=jsonb_set(payload,'{records}',(payload->'records')-(t.competency_id||'|ep_demo_juliane_2026')) WHERE grade=6;
  r:=kompass_english_start_common_vocab(tok,pin,t.task_key);
