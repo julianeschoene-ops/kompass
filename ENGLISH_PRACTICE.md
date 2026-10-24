@@ -224,9 +224,9 @@ werden; unbeantwortete Aufgaben bleiben ohne Punkte.
 
 | Testteil | Aufgaben | Fachliche Anforderung | Punkte |
 | --- | --- | --- | --- |
-| Basis G | 15 gemischte Vokabelübersetzungen Deutsch ↔ Englisch | Gelernte Wörter verstehen und wiedergeben | 30 |
-| M/E | 5 englische Wortbeschreibungen, passenden Begriff aus der Liste finden | Wortbedeutungen über eine englische Beschreibung erschließen | 10 |
-| E | 3 vollständige Sätze ins Englische übersetzen | Wörter in einem vollständigen sprachlichen Zusammenhang übertragen | 12 |
+| Basis G | 15 gemischte Vokabelübersetzungen Deutsch ↔ Englisch | Gelernte Wörter verstehen und wiedergeben | 15 |
+| M/E | 5 englische Wortbeschreibungen, passenden Begriff aus der Liste finden | Wortbedeutungen über eine englische Beschreibung erschließen | 5 |
+| E | 3 vollständige Sätze ins Englische übersetzen | Wörter in einem vollständigen sprachlichen Zusammenhang übertragen | 6 |
 
 Damit bestehen 23 Aufgaben mit insgesamt höchstens 20 verschiedenen Vokabelzielen.
 Die 3 Satzaufgaben verwenden Wörter aus dem Basisteil. Es werden nicht 23 neue
@@ -248,9 +248,9 @@ Die ursprünglichen Grenzen der Kompetenz (`scoreConfig`) bleiben unverändert.
 Aktuell sind dies rot bis 24 %, gelb bis 74 %, grün darüber.
 
 Die Erfüllung auf dem ermittelten Niveau nutzt die dazugehörigen Testteile:
-G = Basis (30 P.), M = Basis und Bedeutungen (40 P.), E = alle Teile (52 P.).
-Beispiel: Basis 30/30, Bedeutungen und Sätze offen ergibt **G grün**, zusätzlich
-werden **30/52 Gesamtpunkte** dokumentiert. Es gibt keine Regel, nach der erst jeder
+G = Basis (15 P.), M = Basis und Bedeutungen (20 P.), E = alle Teile (26 P.).
+Beispiel: Basis 15/15, Bedeutungen und Sätze offen ergibt **G grün**, zusätzlich
+werden **15/26 Gesamtpunkte** dokumentiert. Es gibt keine Regel, nach der erst jeder
 niedrigere Teil grün sein müsste, um höhere fachliche Tiefe zu zeigen. Die Punkte der
 zugehörigen Testteile beeinflussen aber den Erfüllungsgrad des Nachweises.
 
@@ -258,7 +258,7 @@ Die Schüleransicht zeigt Niveau, Ampel, Gesamtpunkte und die einzelnen Teilwert
 KOMPASS speichert das ermittelte Niveau in `record.level`, die Ampel in `current`,
 die zum Erfüllungsniveau gehörenden Punkte in `score` sowie Gesamt- und Teilpunkte
 in `assessmentSummary` und im Nachweisverlauf. Die Matrix zeigt beides ausdrücklich
-getrennt, damit z. B. 30/52 Gesamtpunkte nicht mit 100 % Erfüllung auf G verwechselt
+getrennt, damit z. B. 15/26 Gesamtpunkte nicht mit 100 % Erfüllung auf G verwechselt
 werden. Manuelle Lehrkraftbewertungen werden durch neue automatische Nachweise
 weiterhin nicht ungefragt überschrieben; der neue Nachweis bleibt mit seiner
 automatischen Einstufung im Verlauf erhalten.
@@ -309,3 +309,26 @@ von G/M/E sowie deren Speicherung mit Punkten/Ampel und die nachträgliche
 Lehrkraftprüfung. Ältere SQL-Tests dokumentieren ihre jeweils damaligen Formate.
 Browserlogik: `Schedule/tests/answer-check.test.cjs` und
 `Schedule/tests/kompass-link.test.cjs`.
+
+## Schüleroberfläche und Ergebnisarchiv (24.10.2026)
+
+Die Startseite hat eine Einführung und drei kurze Ziele: Üben, Testbereich,
+Meine Tests. Testanweisungen beschränken sich auf die Aufgaben. Sprechen und
+Sprachmittlung mit Lehrkraft werden im Schülerkatalog nicht mehr angeboten.
+
+Neue Vokabelversuche haben 26 Punkte: 15 Basiswörter, 5 Bedeutungen je 1 Punkt,
+3 Sätze je 2 Punkte. Ein kleiner sicher erkannter Worttippfehler bleibt richtig
+(1 Punkt mit Korrekturhinweis), ein Satz mit kleinem Tippfehler erhält 1/2.
+Alte Versuche behalten ihre ursprüngliche Skala und werden nicht umbewertet.
+Niveauentscheidung und vorhandene Prozentgrenzen bleiben gleich.
+
+`kompass_english_my_results` prüft aktiven persönlichen Token + PIN und liefert
+ausschließlich eigene Ergebnisse. Liste: 50 je Seite mit Zeitstempelcursor.
+Details: eigene abgegebene Antworten/Feedback, keine vollständigen privaten
+Aufgabenpools oder Lösungsschlüssel. Ergebnisse können auch außerhalb der
+Testzeit gelesen werden; Start/Abgabe bleiben zeitlich geschützt. Der Browser
+hält das Archiv nur im Speicher, löscht es beim Abmelden und verwirft verspätete
+Antworten nach einem Identitätswechsel.
+
+Ein expliziter Schalter öffnet die Auswertung. Ältere Versuche ohne gespeicherte
+Einzelantworten zeigen einen Hinweis, die Gesamtpunkte bleiben abrufbar.

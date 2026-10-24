@@ -10,14 +10,14 @@ BEGIN
   -- Clear only the synthetic child's fixture record inside this rolled-back transaction.
   UPDATE public.kompass_grade_state SET payload=jsonb_set(payload,'{records}',coalesce(payload->'records','{}')-'eng5_5|ep_demo_juliane_2026') WHERE grade=6;
   r:=public.kompass_english_start_common_vocab(tok,pin,'vocab:lwl-u4-test-1');
-  IF jsonb_array_length(r->'items')<>23 OR (r->>'max_points')::integer<>52 THEN RAISE EXCEPTION 'Common structure invalid';END IF;
+  IF jsonb_array_length(r->'items')<>23 OR (r->>'max_points')::integer<>26 THEN RAISE EXCEPTION 'Common structure invalid';END IF;
   IF (SELECT count(*) FROM jsonb_array_elements(r->'items') q WHERE q->>'level'='G')<>15 OR (SELECT count(*) FROM jsonb_array_elements(r->'items') q WHERE q->>'level'='M')<>5 OR (SELECT count(*) FROM jsonb_array_elements(r->'items') q WHERE q->>'level'='E')<>3 THEN RAISE EXCEPTION '15/5/3 split invalid';END IF;
   IF (SELECT count(*) FROM jsonb_array_elements(r->'items') q WHERE q->>'kind'='en-de') NOT BETWEEN 7 AND 8 OR (SELECT count(*) FROM jsonb_array_elements(r->'items') q WHERE q->>'kind'='de-en') NOT BETWEEN 7 AND 8 THEN RAISE EXCEPTION 'Both baseline translation directions required';END IF;
   IF (SELECT count(DISTINCT q->>'word_id') FROM jsonb_array_elements(r->'items') q)>20 OR EXISTS(SELECT 1 FROM jsonb_array_elements(r->'items') q WHERE q?'accepted' OR q?'word') THEN RAISE EXCEPTION 'Too many targets or answer key leak';END IF;
   SELECT jsonb_agg(jsonb_build_object('word_id',q->>'word_id','given',CASE WHEN q->>'level'='G' OR level_case IN ('M','E') AND q->>'level'='M' OR level_case='E' AND q->>'level'='E' THEN (SELECT f FROM public.kompass_english_answer_forms(q->'accepted',q->>'kind'<>'sentence') f LIMIT 1) ELSE '' END,'level','E','points',999)) INTO answers
   FROM public.kompass_english_vocab_attempts a CROSS JOIN LATERAL jsonb_array_elements(a.items) q WHERE a.id=(r->>'id')::uuid;
   v:=public.kompass_english_submit_vocab(tok,pin,(r->>'id')::uuid,answers);
-  expected_points:=CASE level_case WHEN 'G' THEN 30 WHEN 'M' THEN 40 ELSE 52 END;
+  expected_points:=CASE level_case WHEN 'G' THEN 15 WHEN 'M' THEN 20 ELSE 26 END;
   IF v#>>'{outcome,level}'<>level_case OR v#>>'{outcome,status}'<>'green' OR (v->>'points')::integer<>expected_points THEN RAISE EXCEPTION 'Wrong derived % outcome: %',level_case,v;END IF;
   SELECT payload#>'{records,eng5_5|ep_demo_juliane_2026}' INTO rec FROM public.kompass_grade_state WHERE grade=6;
   IF rec->>'level'<>level_case OR rec->>'current'<>'green' OR rec#>>'{score,percent}'<>'100' OR (rec#>>'{assessmentSummary,totalScore,points}')::integer<>expected_points THEN RAISE EXCEPTION 'Kompass did not store level, points and relative status: %',rec;END IF;
@@ -32,7 +32,7 @@ BEGIN
  SELECT payload#>'{records,eng5_5|ep_demo_juliane_2026}' INTO rec FROM public.kompass_grade_state WHERE grade=6;
  IF rec->>'level'<>'M' OR rec->>'current'<>'green' THEN RAISE EXCEPTION 'Confirmed M was not stored automatically';END IF;
  SELECT id INTO rid FROM public.kompass_english_results WHERE attempt_id=(r2->>'id')::uuid;
- PERFORM public.kompass_english_review_depth_vocab(rid,30,10,12,'All sentence variants checked.');
+ PERFORM public.kompass_english_review_depth_vocab(rid,15,5,6,'All sentence variants checked.');
  v:=public.kompass_english_submit_vocab(tok,pin,(r2->>'id')::uuid,answers);
  IF v#>>'{outcome,level}'<>'E' OR v#>>'{outcome,status}'<>'green' OR (v->>'needs_review')::boolean THEN RAISE EXCEPTION 'Review/retry failed';END IF;
  SELECT payload#>'{records,eng5_5|ep_demo_juliane_2026}' INTO rec FROM public.kompass_grade_state WHERE grade=6;
