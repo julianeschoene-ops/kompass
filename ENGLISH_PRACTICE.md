@@ -332,3 +332,22 @@ Antworten nach einem Identitätswechsel.
 
 Ein expliziter Schalter öffnet die Auswertung. Ältere Versuche ohne gespeicherte
 Einzelantworten zeigen einen Hinweis, die Gesamtpunkte bleiben abrufbar.
+
+## Testunterbrechungen
+
+Während eines laufenden Tests erkennen `visibilitychange` und Fenster-`blur`
+eine mögliche App-/Tab-Unterbrechung. Ein Overlay pausiert die Bedienung; Eingaben
+bleiben im Formular erhalten. Zurückkehren allein setzt nicht fort: Das Kind
+klickt „Test fortsetzen“, die Serverfreigabe wird erneut geprüft.
+Doppelte Ereignisse derselben Pause zählen einmal. Üben/Ergebnisansichten sind
+ausgenommen. Ein unterbrochenes Hörgespräch kann erneut vollständig gehört
+werden, ohne einen zusätzlichen vollständigen Hörversuch zu verbrauchen.
+
+Nach bestätigter Abgabe wird die Anzahl mit dem persönlichen Token/PIN am eigenen
+Ergebnis gespeichert. `kompass_english_report_interruptions` nimmt nur eine
+begrenzte, nicht sinkende Anzahl an; erneutes Senden zählt nicht doppelt.
+Die Metadaten werden am zugehörigen KOMPASS-Nachweis angezeigt. Punkte, Niveau,
+Ampel und manuelle Bewertungen werden nicht geändert. Browsermeldungen sind
+kein Schummelnachweis; insbesondere Fensterfokus kann aus anderen Gründen wechseln.
+Es werden keine Suchanfragen, anderen Webseiten oder App-Namen erfasst. Diese
+Browserfunktion ist keine technische Sperre gegen externe Hilfsmittel.
