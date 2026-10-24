@@ -68,7 +68,8 @@ function studentProfile(){
  if(showPupilEdit)content+=pupilEditForm(p);
  if(profileSection==='overview')content+=renderProfileTiles(p,entries,acts,b);
  const core=profileCoreEntries(p);
- const workshop=entries.filter(([key])=>Store.competencies.find(c=>c.id===key.split('|')[0])?.sprint);
+ const workshopYear=Number(p.year||String(p.className||'').charAt(0));
+ const workshop=Store.competencies.filter(c=>c.type==='workshop'&&Number(c.year)===workshopYear&&(!c.phase||c.phase!=='lab'||(Store.workshopPaths[`${p.id}|${workshopYear}|${c.sprint}`]?.lab===c.lab))).map(c=>[c.id+'|'+p.id,Store.records[c.id+'|'+p.id]||{}]);
  content+='<section id="profileContent" class="profileContent" tabindex="-1">';
  if(profileSection!=='overview')content+=renderProfileNavigation();
  if(profileSection==='core')content+=renderProfileCore(p,core);
