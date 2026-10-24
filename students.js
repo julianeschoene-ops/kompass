@@ -92,7 +92,19 @@ function renderProfileTiles(p,entries,acts,b){
  ];
  return `<div class="section">Schülerprofil</div><nav class="profileAreas" aria-label="Profilbereiche">${tiles.map(([id,icon,title,desc,summary,color])=>`<button type="button" class="profileArea ${color} ${profileSection===id?'isActive':''}" aria-pressed="${profileSection===id}" aria-controls="profileContent" onclick="openProfileSection('${id}')"><span class="profileAreaIcon" aria-hidden="true">${icon}</span><b>${title}</b><span>${desc}</span><small>${esc(summary)}</small><span class="profileAreaOpen">${profileSection===id?'Geöffnet':'Öffnen →'}</span></button>`).join('')}</nav>`;
 }
-function renderProfileWorkshop(p){const history=Store.sprintHistory[p.id]||[];return '<h2>Werkstatt</h2>'+ (history.length?'<div class="card"><h3>Sprintzuordnungen</h3>'+history.slice().reverse().map(x=>`<div class="history"><b>${esc(x.name)}</b><br>${esc(x.title)} · Wunsch ${esc(x.priority)}</div>`).join('')+'</div>':'');}
+function renderProfileWorkshop(p){
+ const history=Store.sprintHistory[p.id]||[];
+ const year=Number(p.year||String(p.className||'').charAt(0));
+ const sprints=(Store.sprints||[]).filter(s=>Number(s.year)===year).sort((a,b)=>a.number-b.number);
+ const cards=sprints.map(s=>{
+  const key=`${p.id}|${year}|${s.number}`,path=(Store.workshopPaths||{})[key]||{};
+  const match=history.find(h=>Number(h.sprint||h.number)===Number(s.number));
+  const lab=path.lab||match?.title||match?.lab||'';
+  if(!lab&&!match)return '';
+  return `<div class="history"><b>Sprint ${s.number}${s.name&&s.name!=='Sprint '+s.number?' · '+esc(s.name):''}</b><br>${lab?'Zuteilung: '+esc(lab):'Noch keine Zuteilung'}${match?.priority?' · Wunsch '+esc(match.priority):''}</div>`;
+ }).filter(Boolean);
+ return '<h2>Werkstatt</h2>'+(cards.length?'<div class="card"><h3>Sprintzuordnungen</h3>'+cards.join('')+'</div>':'<div class="card empty">Noch keine Sprintzuteilung gespeichert.</div>');
+}
 function renderProfileOffers(p,acts){
  const clubs=Store.clubHistory[p.id]||[],groups=new Map();
  for(const item of acts){const a=item.activity,name=a.type==='Kreativband'?creativeStatsGroupName(a.name):a.name,key=a.type+'|'+name; if(!groups.has(key))groups.set(key,{name,type:a.type,items:[]});groups.get(key).items.push(item);}
