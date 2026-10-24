@@ -1,5 +1,6 @@
 /* Results are stored in normal competency records by the database. */
 const EnglishPractice = {
+  symbols:{fox:['🦊','Fuchs'],panda:['🐼','Panda'],frog:['🐸','Frosch'],lion:['🦁','Löwe'],penguin:['🐧','Pinguin'],turtle:['🐢','Schildkröte'],dolphin:['🐬','Delfin'],butterfly:['🦋','Schmetterling'],bee:['🐝','Biene'],owl:['🦉','Eule'],rabbit:['🐰','Hase'],cat:['🐱','Katze'],dog:['🐶','Hund'],koala:['🐨','Koala'],octopus:['🐙','Oktopus'],unicorn:['🦄','Einhorn']},
   schoolClosures: [], calendarError: '', tasks: [], taskUser: null, taskBusy: false, taskError: '',
   userKey() { return Auth.session?.mode === 'cloud' && !Auth.isLernatelier() ? Auth.currentUser()?.id : null; },
   async loadTasks(force = false) {
@@ -24,8 +25,8 @@ const EnglishPractice = {
     if (this.taskUser !== this.userKey() && !this.taskBusy) setTimeout(() => this.loadTasks(), 0);
     const all = this.forGrade(true), selected = this.forGrade();
     return `<div class="toolbar" style="margin-bottom:12px;flex-wrap:wrap"><button class="chip" onclick="reloadTeacherCloudData()">↻ Ergebnisse aktualisieren</button>
-      ${canManageRoster() ? `<button class="chip dark" onclick="EnglishPractice.printCodes(null,true)">QR + PIN · ganzer Jahrgang (${all.length})</button>
-      ${State.team !== 'alle' ? `<button class="chip" onclick="EnglishPractice.printCodes()">QR + PIN · ${esc(State.team)} (${selected.length})</button>` : ''}` : ''}
+      ${canManageRoster() ? `<button class="chip dark" onclick="EnglishPractice.printCodes(null,true)">Code + Symbol · ganzer Jahrgang (${all.length})</button>
+      ${State.team !== 'alle' ? `<button class="chip" onclick="EnglishPractice.printCodes()">Code + Symbol · ${esc(State.team)} (${selected.length})</button>` : ''}` : ''}
     </div>${comp ? this.mapping(comp) : ''}${this.calendarTools()}`;
   },
   taskPreview(t) {
@@ -104,7 +105,7 @@ const EnglishPractice = {
   },
   access(p) {
     if (!this.userKey() || !canManageRoster()) return '';
-    return `<details style="display:inline-block;margin:8px;font-size:.85rem"><summary>English Practice · Zugang</summary><button class="chip" onclick="EnglishPractice.printCodes('${esc(p.id)}')">QR + PIN drucken</button><button class="chip" onclick="EnglishPractice.printCodes('${esc(p.id)}',false,true)">Zugang erneuern</button><button class="chip" onclick="EnglishPractice.revoke('${esc(p.id)}')">Zugang sperren</button></details>`;
+    return `<details style="display:inline-block;margin:8px;font-size:.85rem"><summary>English Practice · Zugang</summary><button class="chip" onclick="EnglishPractice.printCodes('${esc(p.id)}')">Code + Symbol drucken</button><button class="chip" onclick="EnglishPractice.printCodes('${esc(p.id)}',false,true)">Zugang erneuern</button><button class="chip" onclick="EnglishPractice.revoke('${esc(p.id)}')">Zugang sperren</button></details>`;
   },
   async revoke(pupilId) {
     if (!canManageRoster() || !confirm('Diesen Übungszugang sperren? Vorhandene Kompetenzergebnisse bleiben erhalten.')) return;
@@ -118,28 +119,27 @@ const EnglishPractice = {
     if (!canManageRoster() || !this.userKey()) return;
     const pupils = pupilId ? (Store.pupils || []).filter(p => p.id === pupilId) : this.forGrade(all);
     if (!pupils.length) return toast('Für diese Auswahl sind keine Kinder vorhanden.');
-    if (rotate && !confirm('Einen neuen QR-Code und eine neue PIN erstellen? Der bisherige Zugang dieses Kindes wird ungültig.')) return;
+    if (rotate && !confirm('Einen neuen Code mit Symbol erstellen? Der bisherige Zugang dieses Kindes wird ungültig.')) return;
     const w = window.open('', '_blank');
     if (!w) return alert('Bitte Pop-ups für KOMPASS erlauben und erneut versuchen.');
     w.opener = null;
-    w.document.write('<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>English Practice · QR + PIN</title><style>*{box-sizing:border-box}body{font:15px system-ui;margin:20px;color:#222}h1{font-size:24px}.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.code{border:1px solid #bbb;padding:12px;text-align:center;break-inside:avoid;overflow-wrap:anywhere}.code svg{width:145px;height:145px;max-width:100%}.code p{font-size:12px;margin:8px 0}.pin{font-size:22px;font-weight:700;letter-spacing:3px;margin:8px 0}.code a{color:#9b142a;font-size:12px}button{font:inherit;padding:10px;border:0;border-radius:8px}@media(max-width:700px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:440px){.cards{grid-template-columns:1fr}}@media print{@page{size:A4;margin:12mm}.actions{display:none}body{margin:0}.cards{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.code{page-break-inside:avoid}}</style></head><body><div class="actions"><h1>English Practice · QR + PIN</h1><p>Persönliche Zugangskarten fürs Lerntagebuch. Vorhandene Zugänge werden erneut gedruckt und bleiben gültig.</p><button onclick="window.print()">Drucken / als PDF sichern</button></div><p id="status" role="status">Zugänge werden für die gesamte Auswahl geladen …</p><div class="cards" id="cards"></div></body></html>');
+    w.document.write('<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>English Practice · Code + Symbol</title><style>*{box-sizing:border-box}body{font:15px system-ui;margin:20px;color:#222}h1{font-size:24px}.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.code{border:1px solid #bbb;padding:12px;text-align:center;break-inside:avoid;overflow-wrap:anywhere}.code svg{width:145px;height:145px;max-width:100%}.code p{font-size:12px;margin:8px 0}.pin{font-size:22px;font-weight:700;letter-spacing:3px;margin:8px 0}.code a{color:#9b142a;font-size:12px}button{font:inherit;padding:10px;border:0;border-radius:8px}@media(max-width:700px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:440px){.cards{grid-template-columns:1fr}}@media print{@page{size:A4;margin:12mm}.actions{display:none}body{margin:0}.cards{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.code{page-break-inside:avoid}}</style></head><body><div class="actions"><h1>English Practice · Code + Symbol</h1><p>Alle öffnen dieselbe Seite: julianeschoene-ops.github.io/Schedule/ · Persönliche Codes und Symbole fürs Lerntagebuch. Vorhandene Zugänge bleiben beim erneuten Drucken gültig.</p><button onclick="window.print()">Drucken / als PDF sichern</button></div><p id="status" role="status">Zugänge werden für die gesamte Auswahl geladen …</p><div class="cards" id="cards"></div></body></html>');
     w.document.close();
     const user = this.userKey();
     try {
-      const r = await Auth.cloudClient.rpc('kompass_english_batch_access', {p_grade:Number(State.year),p_pupil_ids:pupils.map(p => String(p.id)),p_rotate:rotate});
+      const r = await Auth.cloudClient.rpc('kompass_english_batch_logins', {p_grade:Number(State.year),p_pupil_ids:pupils.map(p => String(p.id)),p_rotate:rotate});
       if (r.error) throw r.error;
       if (w.closed || this.userKey() !== user) return;
       const codes = new Map((r.data || []).map(c => [c.pupil_id,c]));
       for (const p of pupils) {
         const c = codes.get(String(p.id));
-        if (!c || !/^[a-f0-9]{64}$/.test(c.token) || !/^[0-9]{6}$/.test(c.pin)) throw new Error('Ein Zugang wurde nicht vollständig geliefert.');
-        const url = 'https://julianeschoene-ops.github.io/Schedule/#code=' + c.token;
-        const qr = qrcode(0, 'M'); qr.addData(url); qr.make();
+        if (!c || !/^[0-9]{4}$/.test(c.code) || !this.symbols[c.symbol]) throw new Error('Ein Zugang wurde nicht vollständig geliefert.');
+        const url = 'https://julianeschoene-ops.github.io/Schedule/';
         const card = w.document.createElement('section'); card.className = 'code';
-        card.innerHTML = `<b>${esc(p.first)} ${esc(p.last)}</b><p>${esc(p.className)} · English Practice</p>${qr.createSvgTag(4,16)}<p>Deine persönliche PIN</p><div class="pin">${esc(c.pin)}</div><p>1. Scannen · 2. PIN eingeben · 3. Üben</p><a href="${esc(url)}">Übungslink öffnen</a><p>Zum Schluss: End practice & reset</p>`;
+        card.innerHTML = `<b>${esc(p.first)} ${esc(p.last)}</b><p>${esc(p.className)} · English Practice</p><p>Dein Code</p><div class="pin">${esc(c.code)}</div><div style="font-size:42px">${this.symbols[c.symbol][0]}</div><p>Dein Symbol: ${this.symbols[c.symbol][1]}</p><p>Code eingeben · Symbol wählen · Namen bestätigen</p><a href="${esc(url)}">Übungslink öffnen</a><p>Zum Schluss: Abmelden</p>`;
         w.document.getElementById('cards').appendChild(card);
       }
-      w.document.getElementById('status').textContent = pupils.length + ' Zugangskarten mit QR-Code und PIN. Jetzt drucken oder als PDF sichern.';
+      w.document.getElementById('status').textContent = pupils.length + ' Zugangskarten mit Code und Symbol. Jetzt drucken oder als PDF sichern.';
     } catch (e) {
       if (!w.closed) w.document.getElementById('status').textContent = 'Zugänge konnten nicht geladen werden: ' + (e.message || e);
     }

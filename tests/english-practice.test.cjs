@@ -25,18 +25,18 @@ test('competency evidence is compact, expandable and escaped',()=>{
   const html=c.ep.evidence({practiceResults:[{date:'23.10.2026',topic:'<img src=x>',score:{points:0,max:10,percent:0}}]});
   assert.ok(html.startsWith('<details'));assert.ok(html.includes('0/10 P.'));assert.ok(html.includes('&lt;img'));assert.ok(!html.includes('<section'));
 });
-test('batch printing sends one request for every selected learner and includes PINs',async()=>{
+test('batch printing provides code and symbol for the whole selection without personal QR codes',async()=>{
   const c=setup(),calls=[],cards=[];
   const doc={write(){},close(){},createElement:()=>({}),getElementById:id=>id==='cards'?{appendChild:x=>cards.push(x)}:{textContent:''}};
   c.window.open=()=>({document:doc,closed:false});
-  c.qrcode=()=>({addData(){},make(){},createSvgTag:()=>'<svg></svg>'});
+  c.qrcode=()=>{throw Error('Personal QR generation was removed')};
   c.Auth.cloudClient.rpc=async(name,payload)=>{
-    calls.push({name,payload});return {data:payload.p_pupil_ids.map(pupil_id=>({pupil_id,token:'a'.repeat(64),pin:'123456'}))};
+    calls.push({name,payload});return {data:payload.p_pupil_ids.map(pupil_id=>({pupil_id,code:'4837',symbol:'fox'}))};
   };
   await c.ep.printCodes(null,true);
-  assert.equal(calls.length,1);assert.equal(calls[0].name,'kompass_english_batch_access');
+  assert.equal(calls.length,1);assert.equal(calls[0].name,'kompass_english_batch_logins');
   assert.deepEqual(Array.from(calls[0].payload.p_pupil_ids),['p1','p2']);assert.equal(calls[0].payload.p_rotate,false);
-  assert.equal(cards.length,2);assert.ok(cards[0].innerHTML.includes('123456'));
+  assert.equal(cards.length,2);assert.ok(cards[0].innerHTML.includes('4837')&&cards[0].innerHTML.includes('🦊')&&!cards[0].innerHTML.includes('#code=')&&!cards[0].innerHTML.includes('<svg'));
 });
 test('task metadata from a previous account is discarded',async()=>{
   const c=setup();let resolve;

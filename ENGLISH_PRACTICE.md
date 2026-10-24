@@ -362,3 +362,33 @@ Historische bereits gespeicherte Unterbrechungsvermerke aus der früheren Regel
 werden nicht nachträglich umbewertet. Browsermeldungen sind kein Nachweis,
 welche Seite/App geöffnet wurde. Es werden keine Suchanfragen oder App-Namen
 erfasst. Diese Browserfunktion ist keine technische Sperre gegen Hilfsmittel.
+
+## Aktuelle Anmeldung: kurzer Code + Symbol
+
+Alle Kinder öffnen dieselbe English-Practice-Seite. Bereits eingeklebte QR-Codes
+bleiben verwendbar: Auch alte persönliche `#code=`-Links öffnen nun die neue
+Anmeldemaske; der alte Token wird aus der Adresszeile entfernt. Kinder geben
+ihren vierstelligen Code ein, wählen ihr zufällig zugeteiltes Symbol und
+bestätigen anschließend nur ihren eigenen Vornamen. Es gibt keine öffentliche
+Namensliste und keine zusätzliche PIN-Eingabe. Üben bleibt ohne Anmeldung möglich.
+
+KOMPASS bietet „Code + Symbol · ganzer Jahrgang“ und die Team-Auswahl sowie eine
+kleine Verwaltung am einzelnen Kind (drucken, ersetzen, sperren). Die Druckkarten
+enthalten keine persönlichen QR-Codes/Links mehr. Erneutes Drucken behält Code
+und Symbol bei, ausdrückliches Ersetzen macht den alten Zugang ungültig.
+
+`kompass_english_batch_logins` ist nur für zur Zugangsverwaltung berechtigte
+Lehrkräfte verfügbar und prüft jedes Kind gegen den aktiven Jahrgangsbestand.
+Die private Tabelle enthält keine Leserechte für anonyme oder angemeldete
+Clients; RLS ist aktiv. Vierstellige Codes sind schulweit eindeutig und Symbole
+werden vom Server zugeteilt. Drei Fehlversuche sperren den betreffenden Code
+für fünf Minuten; ein zusätzlicher globaler Minutenbegrenzer bremst unbekannte
+Codeversuche. Fehler verraten keinen Namen und keine internen Zugangsdaten.
+
+Nur nach gültigem Code + Symbol liefert der Server die bestehende interne
+Verbindung für Testzeiten, Testabgabe und Ergebnisarchiv. Die Zuordnung zum
+Kind und alle bisherigen Nachweise bleiben gleich. Symbol und interne PIN
+werden nicht im Browserspeicher gespeichert. Nach Neuladen ist das Symbol
+erneut nötig; nach Abmelden wird auch der Code aus dem Browser entfernt.
+Alte ausstehende Abgaben werden erst nach erfolgreicher Anmeldung und nur für
+die passende interne Kind-Verbindung wiederhergestellt.
