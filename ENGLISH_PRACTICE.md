@@ -27,8 +27,8 @@ werden zusätzlich zur PIN und Serverzeit geprüft.
 
 | Digitaler LWL-Test | Bereich | Vorhandene Kompetenz |
 | --- | --- | --- |
-| Unit 4, Vocabulary Test 1 | Station 1 / 2a, Liste 16, shop – now, höchstens 20 Aufgaben pro Versuch | Orts- und Zeitangaben (`eng5_5`) |
-| Unit 4, Vocabulary Test 2 | Station 2 / 3a, Liste 17, way – by (bike), höchstens 20 Aufgaben pro Versuch | Orts- und Zeitangaben (`eng5_5`) |
+| Unit 4, Vocabulary Test 1 | Station 1 / 2a, Liste 16, shop – now, höchstens 20 Vokabelziele pro Versuch | Orts- und Zeitangaben (`eng5_5`) |
+| Unit 4, Vocabulary Test 2 | Station 2 / 3a, Liste 17, way – by (bike), höchstens 20 Vokabelziele pro Versuch | Orts- und Zeitangaben (`eng5_5`) |
 
 Quelle: `LWL4_Year_5_Orange_Line_SuS.pdf`. Die digitalen Abfragen nutzen die
 bestehenden Vokabeldaten, Deutsch → Englisch, ohne Lösungen während des Tests.
@@ -47,7 +47,7 @@ Es gibt keinen eigenen großen Ergebnisbereich im Schülerprofil mehr.
 Solange keine Lehrkraftbewertung vorliegt, zeigt die Kompetenz den aktuellen
 Selbsttest mit der bestehenden Prozent-Ampel der Kompetenz. Bereits vorhandene
 Lehrkraftbewertungen werden nicht überschrieben; neue Selbsttests ergänzen den
-Verlauf als Nachweise. Ein Niveau G/M/E wird nicht aus Vokabelpunkten abgeleitet.
+Verlauf als Nachweise. Beim gemeinsamen Nachweis wird G/M/E aus der nachgewiesenen fachlichen Tiefe der Aufgabenbereiche ermittelt; die Erfüllung nutzt die vorhandenen Prozentregeln.
 
 Admin oder Stufenleitung können unter der ausgewählten Kompetenz die kleine
 Zeile **English Practice · zugeordnete Vokabeltests** öffnen und die Zuordnung
@@ -214,70 +214,98 @@ Migration: `migrations/english_practice_demo_weekend.sql`. Regression:
 Katalog, echte serverseitige Einreichung, Wiederholschutz, Ablaufzeit und die
 Abgrenzung gegenüber Nicht-Demo-Kindern. Zugangsdaten stehen nicht im Repository.
 
-## Differenzierte Vokabel-Lernnachweise (24.10.2026)
+## Gemeinsamer Vokabel-Lernnachweis nach fachlicher Tiefe (24.10.2026)
 
-Der Zugang **Zum Testbereich** liegt vor der Startseitenillustration als große,
-ruhige Auswahl neben bzw. mobil unter **Üben**. Auch der Einstieg im Lernweg ist
-breit und gut antippbar. Freigaben, Ferienkalender und der persönliche Testkind-
-Zugang bleiben bestehen.
+Es gibt keine Niveauwahl durch das Kind vor dem Start. Alle erhalten denselben
+Aufbau; die Aufgaben sind mit G, M/E oder E gekennzeichnet und alle Bereiche sind
+zugänglich. Die Bereichsschaltflächen sind reine Navigation. Sie bestimmen kein
+Kompetenzniveau. Aufgaben können ausgelassen und vor der Abgabe erneut aufgerufen
+werden; unbeantwortete Aufgaben bleiben ohne Punkte.
 
-Der hier umgesetzte erste schulische Aufbau ist ein differenzierter Vorschlag,
-kein behaupteter landesweit verbindlicher GMS-Teststandard:
+| Testteil | Aufgaben | Fachliche Anforderung | Punkte |
+| --- | --- | --- | --- |
+| Basis G | 15 gemischte Vokabelübersetzungen Deutsch ↔ Englisch | Gelernte Wörter verstehen und wiedergeben | 30 |
+| M/E | 5 englische Wortbeschreibungen, passenden Begriff aus der Liste finden | Wortbedeutungen über eine englische Beschreibung erschließen | 10 |
+| E | 3 vollständige Sätze ins Englische übersetzen | Wörter in einem vollständigen sprachlichen Zusammenhang übertragen | 12 |
 
-| Vereinbartes Testniveau | Aufgaben | Maximalpunkte |
-| --- | --- | --- |
-| G | 10 Englisch → Deutsch und 10 Deutsch → Englisch | 40 |
-| M | 20 Deutsch → Englisch | 40 |
-| E | 15 Deutsch → Englisch und 5 Satzübersetzungen aus einem Aufgabenpool | 50 |
+Damit bestehen 23 Aufgaben mit insgesamt höchstens 20 verschiedenen Vokabelzielen.
+Die 3 Satzaufgaben verwenden Wörter aus dem Basisteil. Es werden nicht 23 neue
+Vokabeln geprüft. Die Auswahl rotiert weiterhin pro Kind und Test: bisher nicht
+verwendete Wörter werden bevorzugt. Bei kurzen Listen sind Überschneidungen zwischen
+Versuchen unvermeidlich. Die alte Startfunktion mit freier G/M/E-Wahl ist für
+Schüler- und Lehrkraftclients deaktiviert; bereits ausgestellte frühere Versuche
+bleiben als solche nachvollziehbar.
 
-Es werden höchstens 20 verschiedene Vokabelziele gewählt; die E-Sätze ersetzen
-fünf isolierte Wortaufgaben. Der Server stellt für jeden Versuch eine eigene
-Aufgabenauswahl aus. Bei Wiederholungen werden zuvor nicht verwendete Wörter
-bevorzugt. Bei einer Liste mit 23 Wörtern müssen sich zwei 20er-Auswahlen in
-mindestens 17 Wörtern überschneiden; es wird keine vollständig neue Liste
-versprochen. Die Auswahl läuft pro Kind und Test auch nach Gerätewechsel weiter.
-Ein ausgewähltes G/M/E-Testniveau ist kein automatisch zuerkanntes Kompetenzniveau.
+### Niveau und Erfüllung
 
-Wörter: 2 Punkte bei richtiger Antwort, 1 Punkt bei einem kleinen Tippfehler,
-sonst 0. Kurze Wörter, Richtungsangaben und echte andere Wörter werden nicht
-pauschal unscharf gleichgesetzt. Artikel am Wortanfang, Infinitiv-to, hinterlegte
-Alternativen, einige gebräuchliche Synonyme sowie britische/amerikanische
-Schreibungen sind berücksichtigt. Artikel in ganzen Sätzen und grammatisch
-wichtige Wortformen werden nicht einfach entfernt.
+Das Niveau des Nachweises entsteht aus der nachgewiesenen **fachlichen Tiefe**,
+nicht aus der vorherigen Wahl eines Testformats oder einer hohen Prozentzahl in
+leichten Aufgaben allein. Der Server wertet die Aufgabengruppen getrennt aus und
+nimmt die höchste Tiefe, die nach den vorhandenen Kompetenz-Prozentgrenzen sicher
+nachgewiesen ist. Ist keine Tiefe sicher erreicht, wird die höchste teilweise
+nachgewiesene Tiefe ausgewiesen. Bei fehlenden Nachweisen wird kein G/M/E erfunden.
+Die ursprünglichen Grenzen der Kompetenz (`scoreConfig`) bleiben unverändert.
+Aktuell sind dies rot bis 24 %, gelb bis 74 %, grün darüber.
 
-Sätze: 4 Punkte für hinterlegte sinngleiche Varianten, 3 bei genau einem kleinen
-unbedenklichen Tippfehler. Andere nicht leere Varianten werden zur Lehrkraftprüfung
-zurückgestellt, nicht endgültig als falsch bewertet. Unbeantwortete Aufgaben geben
-0 Punkte. Die verschiedenen Satzvarianten sind bewusst begrenzt; eine zuverlässige
-vollständige automatische Bewertung aller freien Übersetzungen wird nicht behauptet.
+Die Erfüllung auf dem ermittelten Niveau nutzt die dazugehörigen Testteile:
+G = Basis (30 P.), M = Basis und Bedeutungen (40 P.), E = alle Teile (52 P.).
+Beispiel: Basis 30/30, Bedeutungen und Sätze offen ergibt **G grün**, zusätzlich
+werden **30/52 Gesamtpunkte** dokumentiert. Es gibt keine Regel, nach der erst jeder
+niedrigere Teil grün sein müsste, um höhere fachliche Tiefe zu zeigen. Die Punkte der
+zugehörigen Testteile beeinflussen aber den Erfüllungsgrad des Nachweises.
 
-Der Server bewertet die Testantworten anhand privater Referenzen. Vor der Abgabe
-liefert der Start-Endpunkt weder richtige Antworten noch das englische Zielwort.
-Der Client sendet ausschließlich die eingegebenen Antworten mit der ausgestellten
-Versuchs-ID. Behauptete Clientpunkte werden ignoriert. Musterantworten und die
-Einzelauswertung werden erst nach der Abgabe für den eigenen Versuch ausgegeben.
-Die gemeinsame Browserprüfung `answer-check.js` ist für sofortiges Übungsfeedback;
-sie entscheidet nicht über die neuen gespeicherten Testpunkte.
+Die Schüleransicht zeigt Niveau, Ampel, Gesamtpunkte und die einzelnen Teilwerte.
+KOMPASS speichert das ermittelte Niveau in `record.level`, die Ampel in `current`,
+die zum Erfüllungsniveau gehörenden Punkte in `score` sowie Gesamt- und Teilpunkte
+in `assessmentSummary` und im Nachweisverlauf. Die Matrix zeigt beides ausdrücklich
+getrennt, damit z. B. 30/52 Gesamtpunkte nicht mit 100 % Erfüllung auf G verwechselt
+werden. Manuelle Lehrkraftbewertungen werden durch neue automatische Nachweise
+weiterhin nicht ungefragt überschrieben; der neue Nachweis bleibt mit seiner
+automatischen Einstufung im Verlauf erhalten.
 
-KOMPASS zeigt gewähltes Testniveau, einzelne Antworten, automatisch vergebene Punkte
-und die offenen Satzprüfungen. Solange eine Satzprüfung offen ist, verändert der
-Versuch nicht automatisch die aktuelle Kompetenzbewertung. Unter **Einzelantworten
-& Punkte → Punkte nach Prüfung übernehmen** kann eine berechtigte Lehrkraft die
-Gesamtpunktzahl und eine Anmerkung erfassen. Dies schreibt eine nachvollziehbare
-Lehrkraftbewertung und löst die offene Prüfung. Das bestehende Kompetenzniveau
-wird dabei nicht automatisch aus der gewählten Testversion übernommen. Wiederholte
-Übertragung desselben Versuchs überschreibt keine anschließende Lehrkraftprüfung.
+### Bewertung, Varianten und Prüfung
 
-Neue Tabellen/Felder: `kompass_english_vocab_attempts`, `vocabulary_bank` in den
-Testdefinitionen, `assessment_level` / `assessment_detail` in den Ergebnissen.
-Die Versuchstabelle ist nicht direkt für anonyme oder angemeldete Clients lesbar.
-Private Referenzdaten kommen nur nach den bestehenden Lehrkraftregeln bzw. nach
-Abgabe des eigenen Versuchs in die jeweiligen Ansichten. Versuchsauswahl und
-Rohantworten brauchen die separate Datenbanksicherung; übertragene Nachweise
-bleiben zusätzlich im regulären Kompetenzdatensatz enthalten.
+Wörter und Wortbedeutungen geben 2 Punkte für eine richtige Antwort bzw. 1 Punkt
+für einen kleinen Tippfehler. Artikelvarianten, Infinitiv-to, hinterlegte Alternativen,
+bestimmte gebräuchliche Synonyme und britische/amerikanische Schreibungen werden
+berücksichtigt. Kurze Wörter, Richtungsangaben und echte andere Wörter werden nicht
+pauschal unscharf gleichgesetzt. Sätze geben 4 Punkte für hinterlegte sinngleiche
+Varianten und 3 Punkte bei genau einem kleinen unbedenklichen Tippfehler. Andere
+nicht leere Satzvarianten bleiben zur Lehrkraftprüfung offen; sie werden nicht als
+endgültig falsch ausgegeben.
 
-Migrationen nach den bisherigen: `english_practice_vocab_lnw.sql`,
+Ein bereits sicher nachgewiesenes niedrigeres Niveau kann automatisch dokumentiert
+werden, während eine höhere Tiefe noch in Prüfung ist. Eine offene Prüfung führt
+nicht zum ungeprüften Herabsetzen eines bereits sicher dokumentierten höheren
+Niveaus. Die bisherigen Rückmeldungen und Lehrkrafturteile bleiben nachvollziehbar.
+
+Unter **Einzelantworten & Punkte → Punkte nach Prüfung übernehmen** werden für den
+gemeinsamen Nachweis die geprüften Punkte für Basis, Bedeutungen und Sätze getrennt
+eingegeben. Der Server berechnet daraus Niveau und Ampel erneut, dokumentiert die
+prüfende Lehrkraft und hält die automatische Vorbewertung fest. Ein späterer Retry
+des ursprünglichen Schüler-Uploads überschreibt keine Lehrkraftprüfung.
+
+### Technischer Aufbau und Prüfungen
+
+Der Server stellt die zufällige Aufgabenfolge aus und liefert vor der Abgabe keine
+Referenzantworten. Der Client sendet nur Antworten mit Versuchs-ID. Behauptete
+Clientpunkte oder Niveauangaben beeinflussen die Bewertung nicht. Die vorhandene
+private Antwortprüfung entscheidet über die Testpunkte; Browser-Fehlertoleranz ist
+nur für sofortiges Übungsfeedback. Musterantworten und Einzelauswertung gibt es
+für das Kind erst nach Abgabe des eigenen Versuchs. Die Referenzdaten, Auswahl und
+Rohantworten benötigen eine separate Datenbanksicherung; übertragene Nachweise
+sind zusätzlich in den normalen Kompetenzdaten enthalten.
+
+Zusätzliche Migrationen in Reihenfolge: `english_practice_vocab_lnw.sql`,
 `english_practice_vocab_review.sql`, `english_practice_vocab_review_ack.sql`,
-`english_practice_vocab_variants.sql`. Datenbankregression:
-`tests/english-practice-vocab-lnw.sql` (vollständig ROLLBACK); Browserlogik:
-`Schedule/tests/answer-check.test.cjs` und `Schedule/tests/kompass-link.test.cjs`.
+`english_practice_vocab_variants.sql`, `english_practice_common_depth.sql`,
+`english_practice_common_depth_fixes.sql`. Die früheren Dateien bilden frühere
+Serverstände ab; maßgeblich ist der vollständige Migrationsstand.
+
+Regressionen: `tests/english-practice-common-depth.sql` prüft innerhalb eines
+vollständig zurückgerollten Tests den Aufbau 15/5/3, beide Übersetzungsrichtungen,
+maximal 20 Wortziele, verdeckte Lösungen, zufällige Wiederholungen, die Ermittlung
+von G/M/E sowie deren Speicherung mit Punkten/Ampel und die nachträgliche
+Lehrkraftprüfung. Ältere SQL-Tests dokumentieren ihre jeweils damaligen Formate.
+Browserlogik: `Schedule/tests/answer-check.test.cjs` und
+`Schedule/tests/kompass-link.test.cjs`.

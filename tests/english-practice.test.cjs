@@ -58,3 +58,9 @@ test('teacher preview shows answers and criteria without submitting a learner re
  assert.match(html,/Lehrkraftvorschau/);assert.match(html,/Lösung:<\/b> B/);assert.match(html,/&lt;text&gt;/);assert.ok(!html.includes('finishTest'));
  const oral=c.ep.taskPreview({assessment_config:{kind:'teacher',prompt:'Describe a route.',criteria:['Understandable directions']}});assert.match(oral,/normale Kompetenzbewertung/);assert.match(oral,/Understandable directions/);
 });
+
+test('common evidence separates total points from level-relative fulfillment',()=>{
+ const c=setup(),outcome={policy:'common_depth_v1',level:'G',status:'green',totalScore:{points:30,max:52},attainmentScore:{points:30,max:30,percent:100},byLevel:{G:{points:30,max:30},M:{points:0,max:10},E:{points:0,max:12}}};
+ const html=c.ep.scoreDisplay({score:outcome.attainmentScore,assessmentSummary:outcome});assert.match(html,/Gesamt: 30\/52/);assert.match(html,/Niveau G: 30\/30/);assert.match(html,/100%/);
+ const detail=c.ep.depthBreakdown(outcome);assert.match(detail,/Niveau G/);assert.match(detail,/M\/E Bedeutungen: 0\/10/);
+});
