@@ -333,21 +333,32 @@ Antworten nach einem Identitätswechsel.
 Ein expliziter Schalter öffnet die Auswertung. Ältere Versuche ohne gespeicherte
 Einzelantworten zeigen einen Hinweis, die Gesamtpunkte bleiben abrufbar.
 
-## Testunterbrechungen
+## Testunterbrechungen – aktuelle Abzugsregel
 
 Während eines laufenden Tests erkennen `visibilitychange` und Fenster-`blur`
 eine mögliche App-/Tab-Unterbrechung. Ein Overlay pausiert die Bedienung; Eingaben
-bleiben im Formular erhalten. Zurückkehren allein setzt nicht fort: Das Kind
-klickt „Test fortsetzen“, die Serverfreigabe wird erneut geprüft.
-Doppelte Ereignisse derselben Pause zählen einmal. Üben/Ergebnisansichten sind
-ausgenommen. Ein unterbrochenes Hörgespräch kann erneut vollständig gehört
-werden, ohne einen zusätzlichen vollständigen Hörversuch zu verbrauchen.
+bleiben erhalten. Das Kind setzt nach Rückkehr ausdrücklich fort, wobei die
+Serverfreigabe erneut geprüft wird. Doppelte Ereignisse derselben Pause zählen
+einmal. Üben und Ergebnisansichten sind ausgenommen. Ein unterbrochenes
+Hörgespräch kann erneut vollständig gehört werden.
 
-Nach bestätigter Abgabe wird die Anzahl mit dem persönlichen Token/PIN am eigenen
-Ergebnis gespeichert. `kompass_english_report_interruptions` nimmt nur eine
-begrenzte, nicht sinkende Anzahl an; erneutes Senden zählt nicht doppelt.
-Die Metadaten werden am zugehörigen KOMPASS-Nachweis angezeigt. Punkte, Niveau,
-Ampel und manuelle Bewertungen werden nicht geändert. Browsermeldungen sind
-kein Schummelnachweis; insbesondere Fensterfokus kann aus anderen Gründen wechseln.
-Es werden keine Suchanfragen, anderen Webseiten oder App-Namen erfasst. Diese
-Browserfunktion ist keine technische Sperre gegen externe Hilfsmittel.
+Die erste Unterbrechung warnt ohne Abzug. Ab der zweiten Unterbrechung kostet
+jede weitere einen Punkt: Abzug = max(0, Anzahl−1). Die Punktzahl fällt höchstens
+auf 0. Startanweisung und Pausenhinweis erklären die Regel vor bzw. während des
+Tests. Gesamtpunkte vor Abzug, Anzahl der Wechsel und Abzug werden getrennt
+angezeigt, einschließlich im eigenen Ergebnisarchiv und in KOMPASS.
+
+Die atomaren Abgaberouten `submit_vocab_v2` und `submit_result_v4` speichern
+Test und Abzug gemeinsam. Das Ergebnis behält die ursprünglichen Teilpunkte
+und das aus fachlicher Tiefe ermittelte Niveau. Gesamtpunkte und die Erfüllung
+auf diesem Niveau werden um den Abzug reduziert; die bestehenden Prozentgrenzen
+bestimmen die Ampel neu. Ein kleinerer Gesamtpunktwert allein ändert nicht die
+nachgewiesene fachliche Tiefe. Manuelle bestehende Kompetenzurteile bleiben
+geschützt, der konkrete Testnachweis zeigt den Abzug.
+
+Erneutes Senden zieht nicht erneut ab. Eine spätere Satzprüfung verwendet die
+neu geprüften fachlichen Punkte und wendet denselben Abzug genau einmal an.
+Historische bereits gespeicherte Unterbrechungsvermerke aus der früheren Regel
+werden nicht nachträglich umbewertet. Browsermeldungen sind kein Nachweis,
+welche Seite/App geöffnet wurde. Es werden keine Suchanfragen oder App-Namen
+erfasst. Diese Browserfunktion ist keine technische Sperre gegen Hilfsmittel.
