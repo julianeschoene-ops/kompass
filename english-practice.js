@@ -7,7 +7,7 @@ const EnglishPractice = {
     if (!user || this.taskBusy || (!force && this.taskUser === user)) return;
     this.taskBusy = true;
     try {
-      const r = await Auth.cloudClient.from('kompass_english_tasks').select('task_key,title,unit,competency_id,assessment_config').eq('is_assessment',true).order('title');
+      const r = await Auth.cloudClient.from('kompass_english_tasks').select('task_key,title,unit,competency_id,assessment_config,vocabulary_bank').eq('is_assessment',true).order('title');
       if (r.error) throw r.error;
       if (this.userKey() !== user) return;
       this.tasks = r.data || []; this.taskUser = user; this.taskError = '';
@@ -30,6 +30,7 @@ const EnglishPractice = {
   },
   taskPreview(t) {
     const a=t.assessment_config;if(!a)return '';
+    if(a.differentiated&&t.vocabulary_bank)return `<details><summary>Lernnachweis G/M/E · Aufbau & Satzvarianten</summary><p>G: 10 Englisch–Deutsch und 10 Deutsch–Englisch. M: 20 Deutsch–Englisch. E: 15 Wörter und 5 Sätze. Je Versuch neue, serverseitige Auswahl. Wort: 2 P., kleiner Tippfehler: 1 P. Satz: 4 P., kleiner Tippfehler: 3 P. Andere Satzvarianten werden zur Prüfung zurückgestellt.</p>${(t.vocabulary_bank.sentences||[]).map(q=>`<div class="mini"><b>${esc(q.prompt)}</b><p>${(q.accepted||[]).map(v=>esc(v)).join('<br>')}</p></div>`).join('')}</details>`;
     if(a.kind==='teacher')return `<details><summary>Aufgabe & Bewertungskriterien · Lehrkraftvorschau</summary>${a.stimulus?`<blockquote>${esc(a.stimulus)}</blockquote>`:''}<p>${esc(a.prompt)}</p><ul>${(a.criteria||[]).map(c=>`<li>${esc(c)}</li>`).join('')}</ul><p>Ergebnis über die normale Kompetenzbewertung erfassen. Kein automatischer Punktwert.</p></details>`;
     if(Array.isArray(a.questions))return `<details><summary>Aufgaben & Lösungen · Lehrkraftvorschau</summary><p>${esc(a.instructions)}</p><p>Diese Vorschau ist nur in KOMPASS für Lehrkräfte verfügbar. Sie erzeugt keine Testergebnisse.</p>${a.questions.map((q,n)=>`<div class="mini"><b>Aufgabe ${n+1}${a.kind==='listening'?' · Hörtext':''}</b><blockquote>${esc(q.text)}</blockquote><p>${esc(q.q)}</p><ol>${q.options.map(o=>`<li>${esc(o)}</li>`).join('')}</ol><p><b>Lösung:</b> ${esc(q.options[q.answer])}</p></div>`).join('')}</details>`;
     return '';
@@ -75,10 +76,16 @@ const EnglishPractice = {
     } catch (e) { alert('Zuordnung nicht gespeichert: ' + (e.message || e)); }
   },
   evidence(record) {
-    const entries = record?.practiceResults || [];
-    if (!entries.length) return '';
-    const latest = entries[entries.length - 1], score = latest.score || {};
-    return `<details style="font-size:.8rem;margin-top:5px"><summary>English Practice · Teilnachweis · ${Number(score.points)}/${Number(score.max)} P. · ${esc(latest.date)} · ${entries.length} Versuch${entries.length === 1 ? '' : 'e'}</summary>${entries.slice().reverse().map(e => `<div class="mini" style="margin:5px 0">${esc(e.date)} · ${esc(e.topic)} · ${Number(e.score?.points)}/${Number(e.score?.max)} P. (${Number(e.score?.percent)} %)</div>`).join('')}</details>`;
+    const entries=record?.practiceResults||[];if(!entries.length)return '';const latest=entries[entries.length-1],score=latest.score||{};
+    return `<details style="font-size:.8rem;margin-top:5px"><summary>English Practice · Teilnachweis · ${latest.needsReview?'vorläufig · ':''}${Number(score.points)}/${Number(score.max)} P. · ${esc(latest.date)} · ${entries.length} Versuch${entries.length===1?'':'e'}</summary>${entries.slice().reverse().map(e=>`<div class="mini" style="margin:8px 0">${esc(e.date)} · ${esc(e.topic)}${e.testLevel?' · Testniveau '+esc(e.testLevel):''} · ${Number(e.score?.points)}/${Number(e.score?.max)} P. (${Number(e.score?.percent)} %) ${e.needsReview?'<b>· Satzprüfung offen</b>':e.reviewed?'· durch Lehrkraft geprüft':''}${e.assessmentDetail?this.answerDetails(e):''}</div>`).join('')}</details>`;
+  },
+  answerDetails(e) {
+    const d=e.assessmentDetail,answers=d.answers||[],items=d.items||[];
+    return `<details><summary>Einzelantworten & Punkte</summary>${answers.map((a,n)=>`<div style="border-bottom:1px solid #ddd;padding:8px 0"><b>${n+1}. ${esc(items[n]?.prompt||'')}</b><p>Antwort: ${esc(a.given||'—')} · ${a.points}/${items[n]?.max_points||2} P. · ${esc(({correct:'Richtig',spelling:'Kleiner Tippfehler',incorrect:'Nicht richtig',review:e.reviewed?'Von Lehrkraft geprüft; Gesamtpunktzahl maßgeblich':'Satzvariante prüfen'})[a.kind]||'')}</p><p>Beispiel: ${esc(items[n]?.accepted?.[0]||'')}</p></div>`).join('')}${e.needsReview&&this.userKey()?`<button class="chip" data-result="${esc(e.id)}" data-max="${Number(e.score.max)}" onclick="EnglishPractice.reviewVocab(this.dataset.result,Number(this.dataset.max))">Punkte nach Prüfung übernehmen</button><p>Die aktuelle Kompetenzbewertung bleibt bis zur Prüfung unverändert.</p>`:''}${e.reviewed?`<p>Geprüft von ${esc(e.reviewedBy||'Lehrkraft')}: ${esc(e.reviewNote||'')}</p>`:''}</details>`;
+  },
+  async reviewVocab(id,max) {
+    if(!this.userKey())return;const value=prompt('Gesamtpunktzahl nach Prüfung (0–'+max+'):');if(value===null)return;const points=Number(value);if(!value.trim()||!Number.isInteger(points)||points<0||points>max){alert('Bitte eine ganze Punktzahl zwischen 0 und '+max+' eingeben.');return}const note=prompt('Anmerkung zur Prüfung (optional):')||'';
+    try{const r=await Auth.cloudClient.rpc('kompass_english_review_vocab',{p_id:id,p_points:points,p_note:note});if(r.error)throw r.error;await reloadTeacherCloudData();toast('Geprüfte Punkte in der Kompetenz gespeichert.');}catch(e){alert('Bewertung nicht gespeichert: '+(e.message||e));}
   },
   access(p) {
     if (!this.userKey() || !canManageRoster()) return '';

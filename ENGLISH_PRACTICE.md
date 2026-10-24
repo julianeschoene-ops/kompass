@@ -22,13 +22,13 @@ Karte mit PIN erzeugt werden. Vorhandene Testergebnisse bleiben erhalten.
 
 Nur ausdrücklich auf der Lernwegeliste markierte und digital verfügbare Tests dürfen
 Kompetenznachweise erzeugen. Normale Vokabellisten und Selbstchecks sind Übungen.
-Die serverseitige Freigabe (`is_assessment`) und die vollständige Aufgabenanzahl
+Die serverseitige Freigabe (`is_assessment`) und die zum ausgestellten Versuch gehörende Aufgabenanzahl
 werden zusätzlich zur PIN und Serverzeit geprüft.
 
 | Digitaler LWL-Test | Bereich | Vorhandene Kompetenz |
 | --- | --- | --- |
-| Unit 4, Vocabulary Test 1 | Station 1 / 2a, Liste 16, shop – now, alle 23 Wörter | Orts- und Zeitangaben (`eng5_5`) |
-| Unit 4, Vocabulary Test 2 | Station 2 / 3a, Liste 17, way – by (bike), alle 50 Wörter | Orts- und Zeitangaben (`eng5_5`) |
+| Unit 4, Vocabulary Test 1 | Station 1 / 2a, Liste 16, shop – now, höchstens 20 Aufgaben pro Versuch | Orts- und Zeitangaben (`eng5_5`) |
+| Unit 4, Vocabulary Test 2 | Station 2 / 3a, Liste 17, way – by (bike), höchstens 20 Aufgaben pro Versuch | Orts- und Zeitangaben (`eng5_5`) |
 
 Quelle: `LWL4_Year_5_Orange_Line_SuS.pdf`. Die digitalen Abfragen nutzen die
 bestehenden Vokabeldaten, Deutsch → Englisch, ohne Lösungen während des Tests.
@@ -213,3 +213,71 @@ Migration: `migrations/english_practice_demo_weekend.sql`. Regression:
 `tests/english-practice-demo-weekend.sql`, vollständig zurückgerollt, prüft QR/PIN,
 Katalog, echte serverseitige Einreichung, Wiederholschutz, Ablaufzeit und die
 Abgrenzung gegenüber Nicht-Demo-Kindern. Zugangsdaten stehen nicht im Repository.
+
+## Differenzierte Vokabel-Lernnachweise (24.10.2026)
+
+Der Zugang **Zum Testbereich** liegt vor der Startseitenillustration als große,
+ruhige Auswahl neben bzw. mobil unter **Üben**. Auch der Einstieg im Lernweg ist
+breit und gut antippbar. Freigaben, Ferienkalender und der persönliche Testkind-
+Zugang bleiben bestehen.
+
+Der hier umgesetzte erste schulische Aufbau ist ein differenzierter Vorschlag,
+kein behaupteter landesweit verbindlicher GMS-Teststandard:
+
+| Vereinbartes Testniveau | Aufgaben | Maximalpunkte |
+| --- | --- | --- |
+| G | 10 Englisch → Deutsch und 10 Deutsch → Englisch | 40 |
+| M | 20 Deutsch → Englisch | 40 |
+| E | 15 Deutsch → Englisch und 5 Satzübersetzungen aus einem Aufgabenpool | 50 |
+
+Es werden höchstens 20 verschiedene Vokabelziele gewählt; die E-Sätze ersetzen
+fünf isolierte Wortaufgaben. Der Server stellt für jeden Versuch eine eigene
+Aufgabenauswahl aus. Bei Wiederholungen werden zuvor nicht verwendete Wörter
+bevorzugt. Bei einer Liste mit 23 Wörtern müssen sich zwei 20er-Auswahlen in
+mindestens 17 Wörtern überschneiden; es wird keine vollständig neue Liste
+versprochen. Die Auswahl läuft pro Kind und Test auch nach Gerätewechsel weiter.
+Ein ausgewähltes G/M/E-Testniveau ist kein automatisch zuerkanntes Kompetenzniveau.
+
+Wörter: 2 Punkte bei richtiger Antwort, 1 Punkt bei einem kleinen Tippfehler,
+sonst 0. Kurze Wörter, Richtungsangaben und echte andere Wörter werden nicht
+pauschal unscharf gleichgesetzt. Artikel am Wortanfang, Infinitiv-to, hinterlegte
+Alternativen, einige gebräuchliche Synonyme sowie britische/amerikanische
+Schreibungen sind berücksichtigt. Artikel in ganzen Sätzen und grammatisch
+wichtige Wortformen werden nicht einfach entfernt.
+
+Sätze: 4 Punkte für hinterlegte sinngleiche Varianten, 3 bei genau einem kleinen
+unbedenklichen Tippfehler. Andere nicht leere Varianten werden zur Lehrkraftprüfung
+zurückgestellt, nicht endgültig als falsch bewertet. Unbeantwortete Aufgaben geben
+0 Punkte. Die verschiedenen Satzvarianten sind bewusst begrenzt; eine zuverlässige
+vollständige automatische Bewertung aller freien Übersetzungen wird nicht behauptet.
+
+Der Server bewertet die Testantworten anhand privater Referenzen. Vor der Abgabe
+liefert der Start-Endpunkt weder richtige Antworten noch das englische Zielwort.
+Der Client sendet ausschließlich die eingegebenen Antworten mit der ausgestellten
+Versuchs-ID. Behauptete Clientpunkte werden ignoriert. Musterantworten und die
+Einzelauswertung werden erst nach der Abgabe für den eigenen Versuch ausgegeben.
+Die gemeinsame Browserprüfung `answer-check.js` ist für sofortiges Übungsfeedback;
+sie entscheidet nicht über die neuen gespeicherten Testpunkte.
+
+KOMPASS zeigt gewähltes Testniveau, einzelne Antworten, automatisch vergebene Punkte
+und die offenen Satzprüfungen. Solange eine Satzprüfung offen ist, verändert der
+Versuch nicht automatisch die aktuelle Kompetenzbewertung. Unter **Einzelantworten
+& Punkte → Punkte nach Prüfung übernehmen** kann eine berechtigte Lehrkraft die
+Gesamtpunktzahl und eine Anmerkung erfassen. Dies schreibt eine nachvollziehbare
+Lehrkraftbewertung und löst die offene Prüfung. Das bestehende Kompetenzniveau
+wird dabei nicht automatisch aus der gewählten Testversion übernommen. Wiederholte
+Übertragung desselben Versuchs überschreibt keine anschließende Lehrkraftprüfung.
+
+Neue Tabellen/Felder: `kompass_english_vocab_attempts`, `vocabulary_bank` in den
+Testdefinitionen, `assessment_level` / `assessment_detail` in den Ergebnissen.
+Die Versuchstabelle ist nicht direkt für anonyme oder angemeldete Clients lesbar.
+Private Referenzdaten kommen nur nach den bestehenden Lehrkraftregeln bzw. nach
+Abgabe des eigenen Versuchs in die jeweiligen Ansichten. Versuchsauswahl und
+Rohantworten brauchen die separate Datenbanksicherung; übertragene Nachweise
+bleiben zusätzlich im regulären Kompetenzdatensatz enthalten.
+
+Migrationen nach den bisherigen: `english_practice_vocab_lnw.sql`,
+`english_practice_vocab_review.sql`, `english_practice_vocab_review_ack.sql`,
+`english_practice_vocab_variants.sql`. Datenbankregression:
+`tests/english-practice-vocab-lnw.sql` (vollständig ROLLBACK); Browserlogik:
+`Schedule/tests/answer-check.test.cjs` und `Schedule/tests/kompass-link.test.cjs`.
