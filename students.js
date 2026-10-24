@@ -99,7 +99,9 @@ function renderProfileWorkshop(p){
  const cards=sprints.map(s=>{
   const key=`${p.id}|${year}|${s.number}`,path=(Store.workshopPaths||{})[key]||{};
   const match=history.find(h=>Number(h.sprint||h.number)===Number(s.number));
-  const lab=path.lab||match?.title||match?.lab||'';
+  const assigned=(Store.assignments||[]).filter(a=>a.type==='Sprint'&&Number(a.year)===year).filter(a=>Number(a.sprint||a.sprintNumber||1)===Number(s.number)).slice().reverse().find(a=>Object.entries(a.groups||{}).some(([offer,ids])=>offer!=='Nicht zugeteilt'&&(ids||[]).some(id=>String(id)===String(p.id))));
+  const assignedLab=assigned?Object.entries(assigned.groups||{}).find(([offer,ids])=>offer!=='Nicht zugeteilt'&&(ids||[]).some(id=>String(id)===String(p.id)))?.[0]:'';
+  const lab=assignedLab||path.lab||match?.title||match?.lab||'';
   if(!lab&&!match)return '';
   return `<div class="history"><b>Sprint ${s.number}${s.name&&s.name!=='Sprint '+s.number?' · '+esc(s.name):''}</b><br>${lab?'Zuteilung: '+esc(lab):'Noch keine Zuteilung'}${match?.priority?' · Wunsch '+esc(match.priority):''}</div>`;
  }).filter(Boolean);
