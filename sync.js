@@ -245,6 +245,20 @@ const Sync={
           if(!current.data){const inserted=await Auth.cloudClient.from('kompass_grade_state').insert({grade,payload:localPayload,updated_at:new Date().toISOString()}).select('grade');error=inserted.error;done=!error;if(done)persistedPayload=localPayload;break;}
           const remotePayload=current.data.payload||{};
           const merged=this.mergeConcurrent(base,localPayload,remotePayload),stamp=new Date().toISOString();
+          // A stale/empty browser cache must never erase saved allocation rounds.
+          // Explicit edits to a saved assignment remain possible, but deletion of
+          // whole assignments is not inferred from a missing local copy.
+          const savedAssignments=Array.isArray(remotePayload.assignments)?remotePayload.assignments:[];
+          const mergedAssignments=Array.isArray(merged.assignments)?merged.assignments:[];
+          const mergedIds=new Set(mergedAssignments.map(a=>String(a.id)));
+          for(const a of savedAssignments)if(!mergedIds.has(String(a.id))){mergedAssignments.push(clone(a));mergedIds.add(String(a.id));}
+          merged.assignments=mergedAssignments;
+          // Keep cloud workshop allocations if the local browser lacks them.
+          merged.workshopPaths={...(remotePayload.workshopPaths||{}),...(merged.workshopPaths||{})};
+          for(const [key,path] of Object.entries(remotePayload.workshopPaths||{})){
+            if(!merged.workshopPaths[key]?.lab&&path?.lab)merged.workshopPaths[key]=clone(path);
+          }
+
           // Never let stale devices erase cloud rosters or previously recorded visits.
           if(!Array.isArray(merged.pupils)||merged.pupils.length<(remotePayload.pupils||[]).length||!Auth.canLead(grade))merged.pupils=clone(remotePayload.pupils||[]);
           const remoteVisits=remotePayload.dailyCreativeVisits||{},localVisits=localPayload.dailyCreativeVisits||{},baseVisits=base.dailyCreativeVisits||{};
