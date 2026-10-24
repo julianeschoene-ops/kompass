@@ -67,7 +67,7 @@ function studentProfile(){
  content+='</div>';
  if(showPupilEdit)content+=pupilEditForm(p);
  if(profileSection==='overview')content+=renderProfileTiles(p,entries,acts,b);
- const core=Store.competencies.filter(c=>c.type==='core'&&Number(c.year)===Number(p.year||String(p.className).charAt(0))).map(c=>[c.id+'|'+p.id,Store.records[c.id+'|'+p.id]||{}]);
+ const core=profileCoreEntries(p);
  const workshop=entries.filter(([key])=>Store.competencies.find(c=>c.id===key.split('|')[0])?.sprint);
  content+='<section id="profileContent" class="profileContent" tabindex="-1">';
  if(profileSection!=='overview')content+=renderProfileNavigation();
@@ -108,6 +108,15 @@ function renderProfileOffers(p,acts){
 function renderWorkshopPath(p){const sprints=Store.sprints.filter(s=>s.year===Number(String(p.className).charAt(0))).sort((a,b)=>a.number-b.number);return`<div class="section">Werkstattweg</div><div class="pathGrid">${sprints.map(s=>{const project=Store.projectTemplates.find(x=>x.id===s.projectId),key=`${p.id}|${s.year}|${s.number}`,path=Store.workshopPaths[key]||{};return`<div class="pathCard"><b>Sprint ${s.number}: ${esc(s.name)}</b><div class="mini">${project?esc(project.name):'Thema noch nicht gewählt'}</div><label>Vertiefung</label><select onchange="saveWorkshopPath('${key}',this.value)"><option value="">noch nicht gewählt</option>${(project?.labs||[]).map(l=>`<option ${path.lab===l?'selected':''}>${esc(l)}</option>`).join('')}</select><label>Notiz</label><input value="${esc(path.note||'')}" onchange="saveWorkshopPathNote('${key}',this.value)" placeholder="optional"></div>`}).join('')}</div>`;}
 function saveWorkshopPath(key,lab){Store.workshopPaths[key]=Store.workshopPaths[key]||{};Store.workshopPaths[key].lab=lab;Store.save();toast();}
 function saveWorkshopPathNote(key,note){Store.workshopPaths[key]=Store.workshopPaths[key]||{};Store.workshopPaths[key].note=note;Store.save();}
+function profileCoreEntries(p){
+ const grade=Number(p.year||String(p.className).charAt(0));
+ return Store.competencies.filter(c=>{
+  if(c.type==='workshop'||c.sprint)return false;
+  const key=c.id+'|'+p.id;
+  // Existing pupil evidence remains visible even when curriculum and class years differ.
+  return Object.prototype.hasOwnProperty.call(Store.records,key)||(c.type==='core'&&Number(c.year)===grade);
+ }).map(c=>[c.id+'|'+p.id,Store.records[c.id+'|'+p.id]||{}]);
+}
 function renderProfileNavigation(){return `<nav class="profileCompactNav" aria-label="Profilbereiche"><button class="chip" onclick="openProfileSection('overview')">← Profilübersicht</button>${[['core','Kernfächer'],['workshop','Werkstatt'],['offers','Angebote'],['development','Coaching'],['practice','English Practice'],['leb','LEB']].map(([id,label])=>`<button class="chip ${profileSection===id?'dark':''}" aria-pressed="${profileSection===id}" onclick="openProfileSection('${id}')">${label}</button>`).join('')}</nav>`;}
 function renderProfileCore(p,entries){
  const subjects=[...new Set(['Deutsch','Mathematik','Englisch',...entries.map(([key])=>Store.competencies.find(c=>c.id===key.split('|')[0])?.subject).filter(Boolean)])];
