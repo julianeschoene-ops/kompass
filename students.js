@@ -73,7 +73,7 @@ function studentProfile(){
  if(profileSection!=='overview')content+=renderProfileNavigation();
  if(profileSection==='core')content+=renderProfileCore(p,core);
  else if(profileSection==='practice')content+='<h2>English Practice · Übungsübersicht</h2><p class="mini">Übungen, Übungspunkte und selbst gemeldete Kontrollen. Testergebnisse stehen bei den Kompetenzen unter Kernfächer → Englisch.</p>'+(EnglishPractice.practiceReport(p)||'<div class="card empty">Noch keine Übungsberichte übermittelt.</div>')+EnglishPractice.access(p);
- else if(profileSection==='workshop')content+=renderProfileWorkshop(p)+renderWorkshopPath(p)+(workshop.length?renderGroupedCompetencies(workshop):'');
+ else if(profileSection==='workshop')content+=renderWorkshopPath(p)+(workshop.length?renderGroupedCompetencies(workshop):'');
  else if(profileSection==='offers')content+=renderProfileOffers(p,acts);
  else if(profileSection==='development')content+=`<h2>Coaching & Entwicklung</h2><div class="card"><h3>Arbeits- & Sozialverhalten</h3><p>${Number(b.teamStars)||0} volle TeamStar-Karten</p>${(b.observations||[]).map(x=>`<p>${esc(x)}</p>`).join('')||'<p class="mini">Noch keine Beobachtungen.</p>'}${b.note?`<h3>Notiz</h3><p class="profileNote">${esc(b.note)}</p>`:''}<button class="chip" onclick="State.view='behaviour';behaviourPupil='${p.id}';resetBehaviourDraft();render()">Beobachtungen bearbeiten</button><div class="section">Verlauf</div>${behaviourHistoryHtml(b.history)}</div>`;
  else if(profileSection==='leb')content+=`<h2>Lernentwicklungsbericht</h2><div class="card"><p>${Store.lebDrafts[p.id]?'Ein gespeicherter Entwurf liegt vor.':'Noch kein Entwurf gespeichert.'}</p><button class="chip dark" onclick="State.view='leb';lebMode='schueler';State.pupil='${p.id}';render()">LEB öffnen</button></div>`;
@@ -119,7 +119,21 @@ function renderProfileOffers(p,acts){
  }).join('');
  return '<h2>Angebote & Teilnahmen</h2>'+ (clubs.length?'<details class="card"><summary>Clubzuordnungen</summary>'+clubs.slice().reverse().map(x=>`<div class="history"><b>${esc(x.name)}</b><br>${esc(x.title)} · Wunsch ${esc(x.priority)}</div>`).join('')+'</details>':'')+(cards||'<div class="card empty">Noch keine Teilnahmen erfasst.</div>');
 }
-function renderWorkshopPath(p){const sprints=Store.sprints.filter(s=>s.year===Number(String(p.className).charAt(0))).sort((a,b)=>a.number-b.number);return`<div class="section">Werkstattweg</div><div class="pathGrid">${sprints.map(s=>{const project=Store.projectTemplates.find(x=>x.id===s.projectId),key=`${p.id}|${s.year}|${s.number}`,path=Store.workshopPaths[key]||{};return`<div class="pathCard"><b>Sprint ${s.number}: ${esc(s.name)}</b><div class="mini">${project?esc(project.name):'Thema noch nicht gewählt'}</div><label>Vertiefung</label><select onchange="saveWorkshopPath('${key}',this.value)"><option value="">noch nicht gewählt</option>${(project?.labs||[]).map(l=>`<option ${path.lab===l?'selected':''}>${esc(l)}</option>`).join('')}</select><label>Notiz</label><input value="${esc(path.note||'')}" onchange="saveWorkshopPathNote('${key}',this.value)" placeholder="optional"></div>`}).join('')}</div>`;}
+function renderWorkshopPath(p){
+ const year=Number(p.year||String(p.className||'').charAt(0));
+ const sprints=(Store.sprints||[]).filter(s=>Number(s.year)===year).sort((a,b)=>Number(a.number)-Number(b.number));
+ return `<div class="section">Werkstattweg</div><div class="pathGrid">${sprints.map(s=>{
+  const project=(Store.projectTemplates||[]).find(x=>String(x.id)===String(s.projectId));
+  const key=`${p.id}|${s.year}|${s.number}`,path=(Store.workshopPaths||{})[key]||{};
+  const assigned=(Store.assignments||[]).filter(a=>a.type==='Sprint'&&Number(a.year)===year&&Number(a.sprint||a.sprintNumber||1)===Number(s.number)).slice().reverse().find(a=>Object.entries(a.groups||{}).some(([lab,ids])=>lab!=='Nicht zugeteilt'&&Array.isArray(ids)&&ids.some(id=>String(id)===String(p.id))));
+  const assignedLab=assigned?Object.entries(assigned.groups||{}).find(([lab,ids])=>lab!=='Nicht zugeteilt'&&Array.isArray(ids)&&ids.some(id=>String(id)===String(p.id)))?.[0]:'';
+  // Explicit saved choices take precedence; assignment history is only a fallback.
+  const lab=path.lab!==undefined?path.lab:(assignedLab||'');
+  const title=project?.name||s.name||(assigned?.title||'').replace(/^Sprint\\s*\\d+\\s*[–-]\\s*/,'')||'Thema noch nicht gewählt';
+  const labs=[...new Set([...(project?.labs||[]),...Object.keys(assigned?.groups||{}).filter(x=>x!=='Nicht zugeteilt'),lab].filter(Boolean))];
+  return `<div class="pathCard"><b>Sprint ${esc(s.number)}: ${esc(s.name||title)}</b><div class="mini">Thema: ${esc(title)}</div><label>Vertiefung</label><select onchange="saveWorkshopPath('${key}',this.value)"><option value="" ${!lab?'selected':''}>noch nicht gewählt</option>${labs.map(l=>`<option value="${esc(l)}" ${lab===l?'selected':''}>${esc(l)}</option>`).join('')}</select><label>Notiz</label><input value="${esc(path.note||'')}" onchange="saveWorkshopPathNote('${key}',this.value)" placeholder="optional"></div>`;
+ }).join('')}</div>`;
+}
 function saveWorkshopPath(key,lab){Store.workshopPaths[key]=Store.workshopPaths[key]||{};Store.workshopPaths[key].lab=lab;Store.save();toast();}
 function saveWorkshopPathNote(key,note){Store.workshopPaths[key]=Store.workshopPaths[key]||{};Store.workshopPaths[key].note=note;Store.save();}
 function profileCoreEntries(p){
