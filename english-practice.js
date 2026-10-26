@@ -142,7 +142,7 @@ const EnglishPractice = {
         if (!c || !/^[0-9]{4}$/.test(c.code) || !this.symbols[c.symbol]) throw new Error('Ein Zugang wurde nicht vollständig geliefert.');
         const url = 'https://julianeschoene-ops.github.io/Schedule/';
         const card = w.document.createElement('section'); card.className = 'code';
-        card.innerHTML = `<b>${esc(p.first)} ${esc(p.last)}</b><p>${esc(p.className)} · English Practice</p><p>Dein Code</p><div class="pin">${esc(c.code)}</div><div style="font-size:42px">${this.symbols[c.symbol][0]}</div><p>Dein Symbol: ${this.symbols[c.symbol][1]}</p><p>Code eingeben · Symbol wählen · Namen bestätigen</p><a href="${esc(url)}">Übungslink öffnen</a><p>Zum Schluss: Abmelden</p>`;
+        card.innerHTML = `<b>${esc(p.first)} ${esc(p.last)}</b><p>${esc(p.className)} · English Practice</p><p>Dein Code</p><div class="pin">${esc(c.code)}</div><div style="font-size:42px">${this.symbols[c.symbol][0]}</div><p>Dein Symbol: ${this.symbols[c.symbol][1]}</p><p>Code eingeben · Symbol wählen · Namen bestätigen</p><p>Zum Schluss: Abmelden</p>`;
         page.appendChild(card);
       }
       w.document.getElementById('status').textContent = pupils.length + ' Zugangskarten mit Code und Symbol. Jetzt drucken oder als PDF sichern.';
