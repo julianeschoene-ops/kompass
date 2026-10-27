@@ -47,6 +47,30 @@ const Sync={
     }
     return clone(local);
   },
+  // Preserve referenced competencies and block destructive shared-state uploads.
+  referencedCompetencyIds(){const ids=new Set();for(const record of Object.values(Store.records||{})){}for(const key of Object.keys(Store.records||{}))ids.add(String(key).split('|')[0]);return ids;},
+  async safeSharedPush(now){
+    const current=await Auth.cloudClient.from('kompass_shared_state').select('payload,updated_at').eq('id','school').maybeSingle();
+    if(current.error)throw current.error;
+    const remote=current.data?.payload||{},local=this.sharedPayload();
+    const oldComps=Array.isArray(remote.competencies)?remote.competencies:[];
+    const newComps=Array.isArray(local.competencies)?local.competencies:[];
+    const ids=new Set(newComps.map(x=>String(x.id)));
+    const recovered=oldComps.filter(x=>!ids.has(String(x.id)));
+    // Never infer deletion from an incomplete browser cache.
+    local.competencies=[...newComps,...recovered.map(clone)];
+    const oldProjects=Array.isArray(remote.projectTemplates)?remote.projectTemplates:[];
+    const projectIds=new Set((local.projectTemplates||[]).map(x=>String(x.id)));
+    local.projectTemplates=[...(local.projectTemplates||[]),...oldProjects.filter(x=>!projectIds.has(String(x.id))).map(clone)];
+    const stamp=new Date().toISOString();
+    const saved=await Auth.cloudClient.from('kompass_shared_state').upsert({id:'school',payload:local,updated_at:stamp},{onConflict:'id'}).select('payload');
+    if(saved.error)throw saved.error;
+    const verified=saved.data?.[0]?.payload?.competencies||[];
+    if(local.competencies.some(x=>!verified.some(y=>String(y.id)===String(x.id))))throw new Error('Kompetenz-Sicherung konnte nicht bestätigt werden.');
+    // Retain all remote definitions in the local state, preventing next sync from hiding them.
+    Store.data.competencies=clone(local.competencies);
+    Store.saveLocalOnly();
+  },
   // Isolated LA data read: never request general grade_state for shared LA accounts.
   // Returns a reduced roster only; does not overwrite the existing pupil database.
   async pullLernatelierRoster(grade){
@@ -332,7 +356,7 @@ const Sync={
         }
         if(!done){error=error||new Error('Gleichzeitige Änderung konnte nach drei Versuchen nicht zusammengeführt werden.');failures.push({part:'grade',grade,error});console.warn('Cloud grade sync',grade,error);}else{this.baseGrades[grade]=clone(persistedPayload||localPayload);saved++;}
       }
-      if(Auth.isAdmin()){const {error}=await Auth.cloudClient.from('kompass_shared_state').upsert({id:'school',payload:this.sharedPayload(),updated_at:now});if(error){failures.push({part:'shared',error});console.warn('Cloud shared sync',error);}else saved++;}
+      if(Auth.isAdmin()){try{await this.safeSharedPush(now);saved++;}catch(error){failures.push({part:'shared',error});console.warn('Cloud shared sync',error);}}
       await this.pushAudit();
       if(failures.length){
         this.dirty=true;
