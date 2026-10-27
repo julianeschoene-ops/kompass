@@ -170,24 +170,26 @@ function profileCoreEntries(p){
  }).map(c=>[c.id+'|'+p.id,Store.records[c.id+'|'+p.id]||{}]);
 }
 function renderProfileNavigation(){return `<nav class="profileCompactNav" aria-label="Profilbereiche"><button class="chip" onclick="openProfileSection('overview')">← Profilübersicht</button>${[['core','Kernfächer'],['workshop','Werkstatt'],['offers','Angebote'],['development','Coaching'],['practice','English Practice'],['leb','LEB']].map(([id,label])=>`<button class="chip ${profileSection===id?'dark':''}" aria-pressed="${profileSection===id}" onclick="openProfileSection('${id}')">${label}</button>`).join('')}</nav>`;}
-function profileEnglishTeamstar(p){
+function profileSubjectTeamstar(p,subject){
+ const code={Englisch:'en',Deutsch:'de',Mathematik:'ma'}[subject];if(!code)return '';
  const grade=Number(p.year||String(p.className||'').charAt(0));
- const comps=(Store.competencies||[]).filter(c=>c.subject==='Englisch'&&(Number(c.year)===grade||Number(c.year)===grade-1));
+ const comps=(Store.competencies||[]).filter(c=>c.subject===subject&&(Number(c.year)===grade||Number(c.year)===grade-1));
  const values=comps.map(c=>Store.records?.[c.id+'|'+p.id]?.current).filter(v=>['green','yellow','red'].includes(v));
  const green=values.filter(v=>v==='green').length;
- const awarded=Array.isArray(p.laStars)&&p.laStars.includes('en');
+ const awarded=Array.isArray(p.laStars)&&p.laStars.includes(code);
  const eligible=values.length>=3&&green/values.length>=.75;
  const allowed=Auth.isAdmin()||Auth.canLead(grade);
- return '<div class="card"><h3>⭐ TeamStar Englisch</h3><p>'+(awarded?'Bereits vergeben und im Lernatelier sichtbar.':eligible?'Vorschlag: '+green+' von '+values.length+' bewerteten Kompetenzen grün.':'Noch kein Vorschlag · '+green+' von '+values.length+' bewerteten Kompetenzen grün.')+'</p>'+
- (allowed&&!awarded&&eligible?'<button class="chip dark" onclick="profileAwardEnglishStar('+esc(JSON.stringify(p.id))+')">TeamStar Englisch vergeben und ins Lernatelier übernehmen</button>':'')+
+ return '<div class="card"><h3>⭐ TeamStar '+esc(subject)+'</h3><p>'+(awarded?'Bereits vergeben und im Lernatelier sichtbar.':eligible?'Vorschlag: '+green+' von '+values.length+' bewerteten Kompetenzen grün.':'Noch kein Vorschlag · '+green+' von '+values.length+' bewerteten Kompetenzen grün.')+'</p>'+
+ (allowed&&!awarded&&eligible?'<button class="chip dark" onclick="profileAwardSubjectStar('+esc(JSON.stringify(p.id))+','+esc(JSON.stringify(subject))+')">TeamStar '+esc(subject)+' vergeben und ins Lernatelier übernehmen</button>':'')+
  '<p class="mini">Vorschlag ab mindestens 3 Bewertungen und 75 % Grün. Die Vergabe erfolgt ausschließlich durch eine Lehrkraft.</p></div>';
 }
-function profileAwardEnglishStar(id){
+function profileAwardSubjectStar(id,subject){
+ const code={Englisch:'en',Deutsch:'de',Mathematik:'ma'}[subject];if(!code)return;
  const p=(Store.pupils||[]).find(x=>String(x.id)===String(id));if(!p)return;
  const grade=Number(p.year||String(p.className||'').charAt(0));
  if(!(Auth.isAdmin()||Auth.canLead(grade)))return;
  const stars=Array.isArray(p.laStars)?p.laStars:[];
- if(!stars.includes('en')){p.laStars=[...stars,'en'];Store.save('TeamStar Englisch vergeben',{pupilId:p.id,subject:'en'});}
+ if(!stars.includes(code)){p.laStars=[...stars,code];Store.save('TeamStar '+esc(subject)+' vergeben',{pupilId:p.id,subject:code});}
  render();
 }
 function renderProfileCore(p,entries){
@@ -211,7 +213,7 @@ function renderProfileCore(p,entries){
    (evaluated.length?'<h4>Bewertete Kompetenzen</h4>'+renderGroupedCompetencies(evaluated):'<p class="mini">Noch keine Bewertungen</p>')+
    (open.length?'<details><summary>'+open.length+' noch offene Kompetenzen anzeigen</summary>'+renderGroupedCompetencies(open)+'</details>':'')+'</details>';
  }).join(''):renderGroupedCompetencies(assessedRows)+(selected.length>graded?'<details class="card"><summary>'+(selected.length-graded)+' offene Kompetenzen anzeigen</summary>'+renderGroupedCompetencies(selected.filter(([,r])=>!['green','yellow','red'].includes(r.current)))+'</details>':'');
- return (profileSubject==='Englisch'?profileEnglishTeamstar(p):'')+'<h2>Kernfächer · Kompetenzraster</h2>'+ `<div class="profileSubjectNav" aria-label="Fach auswählen">${subjects.map(subject=>`<button class="chip ${subject===profileSubject?'dark':''}" aria-pressed="${subject===profileSubject}" onclick="selectProfileSubject(${esc(JSON.stringify(subject))})">${esc(subject)}</button>`).join('')}</div>`+summary+byYear;
+ return (profileSubject==='Englisch'?profileSubjectTeamstar(p,profileSubject):'')+'<h2>Kernfächer · Kompetenzraster</h2>'+ `<div class="profileSubjectNav" aria-label="Fach auswählen">${subjects.map(subject=>`<button class="chip ${subject===profileSubject?'dark':''}" aria-pressed="${subject===profileSubject}" onclick="selectProfileSubject(${esc(JSON.stringify(subject))})">${esc(subject)}</button>`).join('')}</div>`+summary+byYear;
 }
 function renderGroupedCompetencies(entries){
  const groups={};entries.forEach(([key,r])=>{const c=Store.competencies.find(x=>x.id===key.split('|')[0]);if(!c)return;(groups[c.subject]||(groups[c.subject]=[])).push({c,r});});
