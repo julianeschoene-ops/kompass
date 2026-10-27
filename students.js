@@ -69,7 +69,7 @@ function studentProfile(){
  if(profileSection==='overview')content+=renderProfileTiles(p,entries,acts,b);
  const core=profileCoreEntries(p);
  const workshopYear=Number(p.year||String(p.className||'').charAt(0));
- const workshop=Store.competencies.filter(c=>c.type==='workshop'&&Number(c.year)===workshopYear&&(!c.phase||c.phase!=='lab'||(Store.workshopPaths[`${p.id}|${workshopYear}|${c.sprint}`]?.lab===c.lab))).map(c=>[c.id+'|'+p.id,Store.records[c.id+'|'+p.id]||{}]);
+ const workshop=Store.competencies.filter(c=>c.type==='workshop'&&Number(c.year)===workshopYear&&(!c.phase||c.phase!=='lab'||(Store.workshopPaths[`${p.id}|${workshopYear}|${c.sprint}`]?.lab===c.lab)||!!Store.records[c.id+'|'+p.id])).map(c=>[c.id+'|'+p.id,Store.records[c.id+'|'+p.id]||{}]);
  content+='<section id="profileContent" class="profileContent" tabindex="-1">';
  if(profileSection!=='overview')content+=renderProfileNavigation();
  if(profileSection==='core')content+=renderProfileCore(p,core);
