@@ -30,6 +30,190 @@ const ENGLISH_5 = [
 ];
 function english5Competencies(){return ENGLISH_5.map((x,i)=>({id:'eng5_'+i,type:'core',year:5,sprint:null,subject:'Englisch',category:x[0],area:x[0],unit:x[1],level:'G/M/E',text:x[2],includeInLeb:true,order:(i+1)*10,maxPoints:null,scoreConfig:{...DEFAULT_SCORE_CONFIG},note:''}));}
 
+const MATHEMATIK_5 = [
+ [
+  "Zahlen und Daten",
+  "K1",
+  "Ich kann Zahlen auf dem Zahlenstrahl ablesen und eintragen."
+ ],
+ [
+  "Zahlen und Daten",
+  "K2",
+  "Ich kann Zahlen aus einer Stellenwerttafel ablesen und darin eintragen."
+ ],
+ [
+  "Zahlen und Daten",
+  "K3",
+  "Ich kann Zahlen vergleichen und ordnen."
+ ],
+ [
+  "Zahlen und Daten",
+  "K4",
+  "Ich kann Minimum und Maximum finden sowie die Spannweite berechnen."
+ ],
+ [
+  "Zahlen und Daten",
+  "K5",
+  "Ich kann Zahlen aus einem Diagramm ablesen."
+ ],
+ [
+  "Zahlen und Daten",
+  "K6",
+  "Ich kann Daten in Diagrammen darstellen."
+ ],
+ [
+  "Zahlen und Daten",
+  "K7",
+  "Ich kann Zahlen runden."
+ ],
+ [
+  "Natürliche Zahlen addieren und subtrahieren",
+  "K1",
+  "Ich kann im Kopf addieren und subtrahieren und mit den Fachbegriffen bei der Addition und Subtraktion umgehen."
+ ],
+ [
+  "Natürliche Zahlen addieren und subtrahieren",
+  "K2",
+  "Ich kann das Ergebnis einer Aufgabe überschlagen."
+ ],
+ [
+  "Natürliche Zahlen addieren und subtrahieren",
+  "K3",
+  "Ich kann die Lösung einer Aufgabe mit einer Probe (Umkehraufgabe) kontrollieren."
+ ],
+ [
+  "Natürliche Zahlen addieren und subtrahieren",
+  "K4",
+  "Ich kann vorteilhaft rechnen."
+ ],
+ [
+  "Natürliche Zahlen addieren und subtrahieren",
+  "K5",
+  "Ich kann die Klammerregeln anwenden."
+ ],
+ [
+  "Natürliche Zahlen addieren und subtrahieren",
+  "K6",
+  "Ich kann schriftlich addieren."
+ ],
+ [
+  "Natürliche Zahlen addieren und subtrahieren",
+  "K7",
+  "Ich kann schriftlich subtrahieren."
+ ],
+ [
+  "Mit Größen rechnen",
+  "K1",
+  "Ich kann Euro und Cent umrechnen."
+ ],
+ [
+  "Mit Größen rechnen",
+  "K2",
+  "Ich kann mit Geld rechnen."
+ ],
+ [
+  "Mit Größen rechnen",
+  "K3",
+  "Ich kann Gewichte in andere Einheiten umrechnen."
+ ],
+ [
+  "Mit Größen rechnen",
+  "K4",
+  "Ich kann mit Gewichten rechnen."
+ ],
+ [
+  "Mit Größen rechnen",
+  "K5",
+  "Ich kann Längen in andere Einheiten umrechnen."
+ ],
+ [
+  "Mit Größen rechnen",
+  "K6",
+  "Ich kann mit Längen rechnen."
+ ],
+ [
+  "Mit Größen rechnen",
+  "K7",
+  "Ich kann Zeiten in andere Einheiten umrechnen."
+ ],
+ [
+  "Mit Größen rechnen",
+  "K8",
+  "Ich kann mit Zeiten rechnen."
+ ],
+ [
+  "Geometrische Figuren",
+  "K1",
+  "Ich kann Strecken mit vorgegebener Länge, Halbgeraden und Geraden zeichnen."
+ ],
+ [
+  "Geometrische Figuren",
+  "K2",
+  "Ich kann zueinander parallele und zueinander senkrechte Linien erkennen und zeichnen."
+ ],
+ [
+  "Geometrische Figuren",
+  "K3",
+  "Ich kann den Abstand eines Punkts zu einer Geraden messen."
+ ],
+ [
+  "Geometrische Figuren",
+  "K4",
+  "Ich kann die Koordinaten von Punkten im Koordinatensystem ablesen und Punkte mit vorgegebenen Koordinaten einzeichnen."
+ ],
+ [
+  "Geometrische Figuren",
+  "K5",
+  "Ich kann achsensymmetrische Figuren erkennen und die Symmetrieachse finden."
+ ],
+ [
+  "Geometrische Figuren",
+  "K6",
+  "Ich kann Figuren an einer Achse spiegeln."
+ ],
+ [
+  "Geometrische Figuren",
+  "K7",
+  "Ich kann punktsymmetrische Figuren erkennen und den Symmetriepunkt finden."
+ ],
+ [
+  "Geometrische Figuren",
+  "K8",
+  "Ich kann Figuren an einem Punkt spiegeln."
+ ],
+ [
+  "Natürliche Zahlen multiplizieren und dividieren",
+  "K1",
+  "Ich kann im Kopf multiplizieren und dividieren. Ich kann mit Fachbegriffen der Multiplikation und Division umgehen."
+ ],
+ [
+  "Natürliche Zahlen multiplizieren und dividieren",
+  "K2",
+  "Ich kann das Vertauschungsgesetz (Kommutativgesetz) und das Verbindungsgesetz (Assoziativgesetz) bei der Multiplikation anwenden."
+ ],
+ [
+  "Natürliche Zahlen multiplizieren und dividieren",
+  "K3",
+  "Ich kann beim Rechnen die Vorrangregel „Klammern zuerst“ und „Punkt vor Strich“ beachten."
+ ],
+ [
+  "Natürliche Zahlen multiplizieren und dividieren",
+  "K4",
+  "Ich kann das Verteilungsgesetz (Distributivgesetz) zum Ausklammern und zum Ausmultiplizieren nutzen."
+ ],
+ [
+  "Natürliche Zahlen multiplizieren und dividieren",
+  "K5",
+  "Ich kann schriftlich multiplizieren."
+ ],
+ [
+  "Natürliche Zahlen multiplizieren und dividieren",
+  "K6",
+  "Ich kann schriftlich dividieren."
+ ]
+];
+function mathematik5Competencies(){return MATHEMATIK_5.map((x,i)=>({id:'mat5_'+i,type:'core',year:5,sprint:null,subject:'Mathematik',category:x[0],area:x[0],unit:x[1],level:'G/M/E',text:x[2],includeInLeb:true,order:(i+1)*10,maxPoints:null,scoreConfig:{...DEFAULT_SCORE_CONFIG},note:''}));}
+
 const DEUTSCH_7 = [
  ['Lesen / Literatur verstehen','LT1','Sachtext erschließen'],
  ['Lesen / Literatur verstehen','LT1','(Sach-)Text untersuchen (Merkmale Sachtext – literarischer Text)'],
@@ -125,7 +309,7 @@ const SEED = {
  version:'8.3.4', subjects:[...WORKSHOP_SUBJECTS], coreSubjects:[...CORE_SUBJECTS], projectTemplates:PROJECT_TEMPLATES, creativeRooms:CREATIVE_ROOMS,
  sprints:[1,2,3,4,5].flatMap(n=>[5,6,7].map(y=>({id:`s${y}_${n}`,year:y,number:n,name:n===1?'Gemeinsam starten':`Sprint ${n}`,projectId:n===1?'project_school':'',startDate:'',endDate:''}))),
  pupils:[],
- competencies:[...english5Competencies(),...deutsch7Competencies(),...mathematik7Competencies(),
+ competencies:[...english5Competencies(),...mathematik5Competencies(),...deutsch7Competencies(),...mathematik7Competencies(),
  {id:'w_school_geo',type:'workshop',year:5,sprint:1,projectId:'project_school',phase:'base',lab:'GeoLab',subject:'Geographie',category:'Orientierung',area:'Orientierung',level:'G/M/E',text:'Ich kann Lagepläne und Karten nutzen, um mich sicher zu orientieren.',includeInLeb:true,order:10,maxPoints:null,scoreConfig:{...DEFAULT_SCORE_CONFIG},note:''},
  {id:'w_school_media',type:'workshop',year:5,sprint:1,projectId:'project_school',phase:'base',lab:'MediaLab',subject:'Informatik & Medienbildung',category:'Digitale Werkzeuge',area:'Digitale Werkzeuge',level:'G/M/E',text:'Ich kann digitale Werkzeuge zur Recherche, Dokumentation und Präsentation verantwortungsvoll nutzen.',includeInLeb:true,order:20,maxPoints:null,scoreConfig:{...DEFAULT_SCORE_CONFIG},note:''},
  {id:'w_school_history',type:'workshop',year:5,sprint:1,projectId:'project_school',phase:'base',lab:'HistoryLab',subject:'Geschichte',category:'Quellen',area:'Quellen',level:'G/M/E',text:'Ich kann Informationen aus einfachen historischen Quellen gewinnen und dokumentieren.',includeInLeb:true,order:30,maxPoints:null,scoreConfig:{...DEFAULT_SCORE_CONFIG},note:''},
