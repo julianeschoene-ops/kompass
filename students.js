@@ -172,8 +172,14 @@ function renderProfileNavigation(){return `<nav class="profileCompactNav" aria-l
 function renderProfileCore(p,entries){
  const subjects=[...new Set(['Deutsch','Mathematik','Englisch',...entries.map(([key])=>Store.competencies.find(c=>c.id===key.split('|')[0])?.subject).filter(Boolean)])];
  if(!subjects.includes(profileSubject))profileSubject='Englisch';
- const selected=entries.filter(([key])=>Store.competencies.find(c=>c.id===key.split('|')[0])?.subject===profileSubject);
- return '<h2>Kernfächer · Kompetenzraster</h2>'+`<div class="profileSubjectNav" aria-label="Fach auswählen">${subjects.map((subject,i)=>`<button class="chip ${subject===profileSubject?'dark':''}" aria-pressed="${subject===profileSubject}" onclick="selectProfileSubject(${esc(JSON.stringify(subject))})">${esc(subject)}</button>`).join('')}</div>`+renderGroupedCompetencies(selected);
+ const grade=Number(p.year||String(p.className||'').charAt(0));
+ const selected=profileSubject==='Englisch'
+  ?Store.competencies.filter(c=>c.subject==='Englisch'&&c.type!=='workshop'&&!c.sprint&&Number(c.year)>=5&&Number(c.year)<=Math.max(8,grade)).map(c=>[c.id+'|'+p.id,Store.records[c.id+'|'+p.id]||{}])
+  :entries.filter(([key])=>Store.competencies.find(c=>c.id===key.split('|')[0])?.subject===profileSubject);
+ const assessed=selected.filter(([,r])=>['green','yellow','red'].includes(r.current)).length;
+ const achieved=selected.filter(([,r])=>r.current==='green').length;
+ const progress=profileSubject==='Englisch'?'<div class="card"><h3>Englisch · Kompetenzfortschritt</h3><p><strong>'+achieved+' von '+selected.length+' Kompetenzen erreicht</strong> · '+assessed+' bewertet · '+(selected.length-assessed)+' offen</p><p class="mini">Alle hinterlegten Englisch-Kompetenzen der Jahrgänge 5–8, auch noch nicht bewertete. Die Gesamtzahl wächst, sobald weitere Jahrgangsraster angelegt werden.</p></div>':'';
+ return '<h2>Kernfächer · Kompetenzraster</h2>'+ `<div class="profileSubjectNav" aria-label="Fach auswählen">${subjects.map(subject=>`<button class="chip ${subject===profileSubject?'dark':''}" aria-pressed="${subject===profileSubject}" onclick="selectProfileSubject(${esc(JSON.stringify(subject))})">${esc(subject)}</button>`).join('')}</div>`+progress+renderGroupedCompetencies(selected);
 }
 function renderGroupedCompetencies(entries){
  const groups={};entries.forEach(([key,r])=>{const c=Store.competencies.find(x=>x.id===key.split('|')[0]);if(!c)return;(groups[c.subject]||(groups[c.subject]=[])).push({c,r});});
