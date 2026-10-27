@@ -196,14 +196,12 @@ function renderProfileCore(p,entries){
  const subjects=[...new Set(['Deutsch','Mathematik','Englisch',...entries.map(([key])=>Store.competencies.find(c=>c.id===key.split('|')[0])?.subject).filter(Boolean)])];
  if(!subjects.includes(profileSubject))profileSubject='Englisch';
  const grade=Number(p.year||String(p.className||'').charAt(0));
- const selected=profileSubject==='Englisch'
-  ?Store.competencies.filter(c=>c.subject==='Englisch'&&c.type!=='workshop'&&!c.sprint&&Number(c.year)>=5&&Number(c.year)<=Math.max(8,grade)).map(c=>[c.id+'|'+p.id,Store.records[c.id+'|'+p.id]||{}])
-  :entries.filter(([key])=>Store.competencies.find(c=>c.id===key.split('|')[0])?.subject===profileSubject);
+ const selected=Store.competencies.filter(c=>c.subject===profileSubject&&c.type!=='workshop'&&!c.sprint&&Number(c.year)>=5&&Number(c.year)<=Math.max(8,grade)).map(c=>[c.id+'|'+p.id,Store.records[c.id+'|'+p.id]||{}]);
  const assessedRows=selected.filter(([,r])=>['green','yellow','red'].includes(r.current));
  const achieved=assessedRows.filter(([,r])=>r.current==='green').length;
  const graded=assessedRows.length;
  const summary='<div class="card"><h3>'+esc(profileSubject)+' · Lernstand</h3><p><strong>'+achieved+' erreicht</strong> · '+(graded-achieved)+' in Arbeit · '+graded+' bewertet</p><p class="mini">Zuerst siehst du vorhandene Bewertungen. Noch offene Kompetenzen sind separat eingeklappt.</p></div>';
- const byYear=profileSubject==='Englisch'?[5,6,7,8].map(year=>{
+ const byYear=[5,6,7,8].map(year=>{
   const rows=selected.filter(([key])=>Number(Store.competencies.find(c=>c.id===key.split('|')[0])?.year)===year);
   if(!rows.length)return '';
   const done=rows.filter(([,r])=>r.current==='green').length;
@@ -212,8 +210,8 @@ function renderProfileCore(p,entries){
   return '<details class="card" '+(year===grade?'open':'')+'><summary><strong>Stufe '+year+'</strong> · '+evaluated.length+' bewertet · '+done+' erreicht</summary>'+
    (evaluated.length?'<h4>Bewertete Kompetenzen</h4>'+renderGroupedCompetencies(evaluated):'<p class="mini">Noch keine Bewertungen</p>')+
    (open.length?'<details><summary>'+open.length+' noch offene Kompetenzen anzeigen</summary>'+renderGroupedCompetencies(open)+'</details>':'')+'</details>';
- }).join(''):renderGroupedCompetencies(assessedRows)+(selected.length>graded?'<details class="card"><summary>'+(selected.length-graded)+' offene Kompetenzen anzeigen</summary>'+renderGroupedCompetencies(selected.filter(([,r])=>!['green','yellow','red'].includes(r.current)))+'</details>':'');
- return (profileSubject==='Englisch'?profileSubjectTeamstar(p,profileSubject):'')+'<h2>Kernfächer · Kompetenzraster</h2>'+ `<div class="profileSubjectNav" aria-label="Fach auswählen">${subjects.map(subject=>`<button class="chip ${subject===profileSubject?'dark':''}" aria-pressed="${subject===profileSubject}" onclick="selectProfileSubject(${esc(JSON.stringify(subject))})">${esc(subject)}</button>`).join('')}</div>`+summary+byYear;
+ }).join('');
+ return profileSubjectTeamstar(p,profileSubject)+'<h2>Kernfächer · Kompetenzraster</h2>'+ `<div class="profileSubjectNav" aria-label="Fach auswählen">${subjects.map(subject=>`<button class="chip ${subject===profileSubject?'dark':''}" aria-pressed="${subject===profileSubject}" onclick="selectProfileSubject(${esc(JSON.stringify(subject))})">${esc(subject)}</button>`).join('')}</div>`+summary+byYear;
 }
 function renderGroupedCompetencies(entries){
  const groups={};entries.forEach(([key,r])=>{const c=Store.competencies.find(x=>x.id===key.split('|')[0]);if(!c)return;(groups[c.subject]||(groups[c.subject]=[])).push({c,r});});
