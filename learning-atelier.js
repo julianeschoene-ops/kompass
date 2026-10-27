@@ -690,6 +690,15 @@ const laNoiseMeter={stream:null,context:null,analyser:null,buffer:null,frame:0,a
 function laNoiseMeterKey(){return 'kompass_noise_threshold_v2_'+laGrade+'_'+laSelectedRoom;}
 function laNoiseMeterThreshold(){try{return Math.max(1,Math.min(90,Number(localStorage.getItem(laNoiseMeterKey()))||8));}catch(e){return 8;}}
 
+const laNoiseCloud={events:[],loaded:false,busy:false,lastFetch:0,pending:new Set()};
+function laNoiseDayKey(d){return new Date(d).toLocaleDateString('sv-SE',{timeZone:'Europe/Berlin'});}
+function laNoiseWeekStart(d){const date=new Date(d),parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit'}).format(date);const day=new Date(parts+'T12:00:00Z');day.setUTCDate(day.getUTCDate()-((day.getUTCDay()+6)%7));return day.toISOString().slice(0,10);}
+function laNoiseCloudTotals(grade,room){const today=laNoiseDayKey(new Date()),week=laNoiseWeekStart(new Date());const events=laNoiseCloud.events.filter(x=>Number(x.grade)===Number(grade)&&x.room===room);const count=(type,pred)=>events.filter(x=>x.event_type===type&&pred(x)).reduce((n,x)=>n+Number(x.points||0),0);const earned=count('point',x=>true),spent=count('reward',x=>true);return {day:count('point',x=>laNoiseDayKey(x.occurred_at)===today),week:count('point',x=>laNoiseWeekStart(x.occurred_at)===week),earned,spent,available:Math.max(0,earned-spent)};}
+async function laNoiseCloudRefresh(force=false){if(!Auth.cloudClient||!Auth.session||laNoiseCloud.busy)return;if(!force&&Date.now()-laNoiseCloud.lastFetch<12000)return;laNoiseCloud.busy=true;try{const {data,error}=await Auth.cloudClient.from('kompass_noise_events').select('id,grade,room,event_type,points,occurred_at,note').order('occurred_at',{ascending:false}).limit(3000);if(error)throw error;laNoiseCloud.events=data||[];laNoiseCloud.loaded=true;laNoiseCloud.lastFetch=Date.now();laNoiseCloudPaint();}catch(e){console.warn('Lärmampel Cloud',e);}finally{laNoiseCloud.busy=false;}}
+async function laNoiseCloudPoint(grade,room){if(!Auth.cloudClient||!Auth.session)return;const id=crypto.randomUUID();if(laNoiseCloud.pending.has(grade+'|'+room))return;laNoiseCloud.pending.add(grade+'|'+room);try{const {error}=await Auth.cloudClient.from('kompass_noise_events').insert({id,grade,room,event_type:'point',points:1});if(error)throw error;await laNoiseCloudRefresh(true);}catch(e){console.warn('Lärmpunkt konnte nicht zentral gespeichert werden',e);toast('Lärmpunkt nicht in der Cloud gespeichert',4500);}finally{laNoiseCloud.pending.delete(grade+'|'+room);}}
+async function laNoiseRedeem(grade,room){if(Auth.isLernatelier()||!Auth.isAdmin())return;const t=laNoiseCloudTotals(grade,room);if(!t.available)return;const amount=Number(prompt('Wie viele Punkte für die echte Belohnung einlösen? (Verfügbar: '+t.available+')','5'));if(!Number.isInteger(amount)||amount<1||amount>Math.min(100,t.available))return;const note=prompt('Welche Belohnung wurde vergeben?','Gemeinsame Belohnung');if(!note?.trim())return;try{const {error}=await Auth.cloudClient.from('kompass_noise_events').insert({id:crypto.randomUUID(),grade,room,event_type:'reward',points:amount,note:note.trim().slice(0,200)});if(error)throw error;await laNoiseCloudRefresh(true);}catch(e){toast('Belohnung konnte nicht gespeichert werden: '+e.message,5000);}}
+function laNoiseCloudPaint(){const holder=document.getElementById('laNoiseScoreboard');if(!holder)return;holder.innerHTML=laNoiseScoreboardHTML();}
+function laNoiseScoreboardHTML(){const totals=LA_ROOMS.map(room=>({room,...laNoiseCloudTotals(laGrade,room)}));return '<div class="card"><b>🏆 Lärm-Challenge · Tages- und Wochenstand</b><div class="laMetrics">'+totals.map((t,i)=>'<div class="card"><b>'+esc(t.room)+'</b><p>Heute: <strong>'+t.day+'</strong> Punkte</p><p>Woche: <strong>'+t.week+'</strong> Punkte</p><p>Belohnungskonto: <strong>'+t.available+'</strong> Punkte</p><p class="mini">Eingelöst: '+t.spent+'</p>'+(!Auth.isLernatelier()&&Auth.isAdmin()?'<button class="chip" onclick="laNoiseRedeem('+laGrade+',\''+t.room+'\')">🎁 Belohnung vergeben</button>':'')+'</div>').join('')+'</div><p class="mini">Wettbewerb: '+totals.slice().sort((a,b)=>b.week-a.week).map((t,i)=>(i+1)+'. '+esc(t.room)+' ('+t.week+')').join(' · ')+'</p></div>';}
 const laNoiseChallenge={greenSince:0,points:0,lastRoom:'',lastGrade:0,lastWeek:'',lastTime:0};
 function laNoiseMinutes(){try{return Math.max(1,Math.min(30,Number(localStorage.getItem('kompass_noise_minutes_'+laGrade+'_'+laSelectedRoom))||5));}catch(e){return 5;}}
 function laNoiseScoreKey(){return 'kompass_noise_scores_'+laGrade+'_'+laWeekKey()+'_'+laSelectedRoom;}
@@ -702,6 +711,7 @@ function laNoiseSetMinutes(value){
  const label=document.getElementById('laNoiseTimer');if(label)label.textContent=minutes+':00';
 }
 function laNoiseChallengeUI(){
+ laNoiseCloudRefresh();
  const minutes=laNoiseMinutes();
  return '<div class="laNoiseChallenge"><strong>🏆 <span id="laNoisePoints">'+laNoiseLocalPoints()+'</span> Punkte</strong><span class="laNoiseRewards">🎁 <span id="laNoiseRewards">'+Math.floor(laNoiseLocalPoints()/5)+'</span> Belohnungen erspielt</span><span id="laNoiseTimer">'+minutes+':00</span><div class="laNoiseProgress"><span id="laNoiseProgressFill"></span></div>'+
  (!laKioskLocked()&&!Auth.isLernatelier()?'<label class="laNoiseMinutes">Punkt nach <select onchange="laNoiseSetMinutes(this.value)">'+[3,5,7,10].map(n=>'<option value="'+n+'" '+(minutes===n?'selected':'')+'>'+n+' Min.</option>').join('')+'</select></label>':'')+
@@ -722,6 +732,7 @@ function laNoiseChallengeTick(){
  if(elapsed>=duration){
   c.greenSince=Date.now();
   try{localStorage.setItem(laNoiseScoreKey(),String(laNoiseLocalPoints()+1));}catch(e){}
+  laNoiseCloudPoint(grade,room);
   const points=laNoiseLocalPoints();
   const score=document.getElementById('laNoisePoints');if(score)score.textContent=points;
   const rewards=document.getElementById('laNoiseRewards');if(rewards)rewards.textContent=Math.floor(points/5);
@@ -801,7 +812,7 @@ function laStudentPreview(){
  const info=laGradeSettings('laBoardInfo')?.[laSelectedRoom]||{};
  let html='<div class="laBoardTop laBoardTopClean">'+laGradeTabs()+'<div class="laRoomSwitcher laMainTabs"><button class="chip '+(laStudentTab==='news'?'dark':'')+'" onclick="laStudentTab=\'news\';laBoardSelectedId=\'\';render()">📰 News</button>'+LA_ROOMS.map(room=>'<button class="chip '+(laStudentTab==='room'&&room===laSelectedRoom?'dark':'')+'" onclick="laStudentTab=\'room\';laSelectedRoom=\''+room+'\';laBoardSelectedId=\'\';render()">'+room+'</button>').join('')+'</div><div class="laTopActions"><button class="chip" onclick="laExitStudentPreview()">🔒 Lehrkraftmodus</button></div></div>';
 
- if(laStudentTab==='room')html+='<div class="laRoomTools">'+laNoiseMeterUI()+(laKioskLocked()?'':'<button class="chip" onclick="laResetRoomOccupancy()">↺ Alle zurück ins Lernatelier</button>')+'<button class="chip laSwitchAccount" onclick="laSwitchAccount()">⇄ Account wechseln</button></div>';
+ if(laStudentTab==='room')html+='<div id="laNoiseScoreboard">'+laNoiseScoreboardHTML()+'</div><div class="laRoomTools">'+laNoiseMeterUI()+(laKioskLocked()?'':'<button class="chip" onclick="laResetRoomOccupancy()">↺ Alle zurück ins Lernatelier</button>')+'<button class="chip laSwitchAccount" onclick="laSwitchAccount()">⇄ Account wechseln</button></div>';
  if(laStudentTab==='news'){
   const dateNav='<div class="laTodayDateNav"><button class="chip" onclick="laMoveBoardDay(-1)">‹ Vortag</button><button class="chip" onclick="laBoardDate=\'\';render()">Heute</button><button class="chip" onclick="laMoveBoardDay(1)">Nächster Tag ›</button><button class="chip laSwitchAccount" onclick="laSwitchAccount()">⇄ Account wechseln</button></div>';
   const todayHtml=Auth.isLernatelier()?laLimitedNews():laTodayBoard();
