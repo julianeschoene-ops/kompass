@@ -178,8 +178,15 @@ function renderProfileCore(p,entries){
   :entries.filter(([key])=>Store.competencies.find(c=>c.id===key.split('|')[0])?.subject===profileSubject);
  const assessed=selected.filter(([,r])=>['green','yellow','red'].includes(r.current)).length;
  const achieved=selected.filter(([,r])=>r.current==='green').length;
+ const grouped=profileSubject==='Englisch'?[5,6,7,8].map(year=>{
+  const rows=selected.filter(([key])=>Number(Store.competencies.find(c=>c.id===key.split('|')[0])?.year)===year);
+  if(!rows.length)return '';
+  const done=rows.filter(([,r])=>r.current==='green').length;
+  const checked=rows.filter(([,r])=>['green','yellow','red'].includes(r.current)).length;
+  return '<details class="card" '+(year===grade?'open':'')+'><summary><strong>Stufe '+year+'</strong> · '+done+' von '+rows.length+' erreicht · '+checked+' bewertet</summary>'+renderGroupedCompetencies(rows)+'</details>';
+ }).join(''):renderGroupedCompetencies(selected);
  const progress=profileSubject==='Englisch'?'<div class="card"><h3>Englisch · Kompetenzfortschritt</h3><p><strong>'+achieved+' von '+selected.length+' Kompetenzen erreicht</strong> · '+assessed+' bewertet · '+(selected.length-assessed)+' offen</p><p class="mini">Alle hinterlegten Englisch-Kompetenzen der Jahrgänge 5–8, auch noch nicht bewertete. Die Gesamtzahl wächst, sobald weitere Jahrgangsraster angelegt werden.</p></div>':'';
- return '<h2>Kernfächer · Kompetenzraster</h2>'+ `<div class="profileSubjectNav" aria-label="Fach auswählen">${subjects.map(subject=>`<button class="chip ${subject===profileSubject?'dark':''}" aria-pressed="${subject===profileSubject}" onclick="selectProfileSubject(${esc(JSON.stringify(subject))})">${esc(subject)}</button>`).join('')}</div>`+progress+renderGroupedCompetencies(selected);
+ return '<h2>Kernfächer · Kompetenzraster</h2>'+ `<div class="profileSubjectNav" aria-label="Fach auswählen">${subjects.map(subject=>`<button class="chip ${subject===profileSubject?'dark':''}" aria-pressed="${subject===profileSubject}" onclick="selectProfileSubject(${esc(JSON.stringify(subject))})">${esc(subject)}</button>`).join('')}</div>`+progress+grouped;
 }
 function renderGroupedCompetencies(entries){
  const groups={};entries.forEach(([key,r])=>{const c=Store.competencies.find(x=>x.id===key.split('|')[0]);if(!c)return;(groups[c.subject]||(groups[c.subject]=[])).push({c,r});});
