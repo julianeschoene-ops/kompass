@@ -104,10 +104,7 @@ const EnglishPractice = {
     if(!this.userKey())return;const value=prompt('Gesamtpunktzahl nach Prüfung (0–'+max+'):');if(value===null)return;const points=Number(value);if(!value.trim()||!Number.isInteger(points)||points<0||points>max){alert('Bitte eine ganze Punktzahl zwischen 0 und '+max+' eingeben.');return}const note=prompt('Anmerkung zur Prüfung (optional):')||'';
     try{const r=await Auth.cloudClient.rpc('kompass_english_review_vocab',{p_id:id,p_points:points,p_note:note});if(r.error)throw r.error;await reloadTeacherCloudData();toast('Geprüfte Punkte in der Kompetenz gespeichert.');}catch(e){alert('Bewertung nicht gespeichert: '+(e.message||e));}
   },
-  access(p) {
-    if (!this.userKey() || !canManageRoster()) return '';
-    return `<details style="display:inline-block;margin:8px;font-size:.85rem"><summary>English Practice · Zugang</summary><button class="chip" onclick="EnglishPractice.printCodes('${esc(p.id)}')">Code + Symbol drucken</button><button class="chip" onclick="EnglishPractice.printCodes('${esc(p.id)}',false,true)">Zugang erneuern</button><button class="chip" onclick="EnglishPractice.revoke('${esc(p.id)}')">Zugang sperren</button></details>`;
-  },
+  access(p) { return ''; },
   async revoke(pupilId) {
     if (!canManageRoster() || !confirm('Diesen Übungszugang sperren? Vorhandene Kompetenzergebnisse bleiben erhalten.')) return;
     try {
