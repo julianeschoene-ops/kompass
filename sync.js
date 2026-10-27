@@ -49,10 +49,11 @@ const Sync={
   },
   // Preserve referenced competencies and block destructive shared-state uploads.
   referencedCompetencyIds(){const ids=new Set();for(const record of Object.values(Store.records||{})){}for(const key of Object.keys(Store.records||{}))ids.add(String(key).split('|')[0]);return ids;},
+  keepRecoverySnapshot(label,payload){try{const key='kompass_recovery_'+label;const current=JSON.parse(localStorage.getItem(key)||'[]');current.push({at:new Date().toISOString(),payload:clone(payload)});while(current.length>5)current.shift();localStorage.setItem(key,JSON.stringify(current));}catch(e){console.warn('Lokale Sicherung konnte nicht angelegt werden',e);}},
   async safeSharedPush(now){
     const current=await Auth.cloudClient.from('kompass_shared_state').select('payload,updated_at').eq('id','school').maybeSingle();
     if(current.error)throw current.error;
-    const remote=current.data?.payload||{},local=this.sharedPayload();
+    const remote=current.data?.payload||{},local=this.sharedPayload();this.keepRecoverySnapshot('shared',remote);
     const oldComps=Array.isArray(remote.competencies)?remote.competencies:[];
     const newComps=Array.isArray(local.competencies)?local.competencies:[];
     const ids=new Set(newComps.map(x=>String(x.id)));
@@ -267,7 +268,7 @@ const Sync={
           const current=await Auth.cloudClient.from('kompass_grade_state').select('payload,updated_at').eq('grade',grade).maybeSingle();
           if(current.error){error=current.error;break;}
           if(!current.data){const inserted=await Auth.cloudClient.from('kompass_grade_state').insert({grade,payload:localPayload,updated_at:new Date().toISOString()}).select('grade');error=inserted.error;done=!error;if(done)persistedPayload=localPayload;break;}
-          const remotePayload=current.data.payload||{};
+          const remotePayload=current.data.payload||{};this.keepRecoverySnapshot('grade_'+grade,remotePayload);
           const merged=this.mergeConcurrent(base,localPayload,remotePayload),stamp=new Date().toISOString();
           // A stale/empty browser cache must never erase saved allocation rounds.
           // Explicit edits to a saved assignment remain possible, but deletion of
