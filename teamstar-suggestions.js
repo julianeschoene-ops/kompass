@@ -1,7 +1,7 @@
 // KOMPASS: Vorschlaege fuer Fach-Teamstars, ohne automatische Vergabe.
 (function(){
 function candidates(){
- const pupils=(Store.pupils||[]).filter(p=>Number(p.year)===Number(laGrade));
+ const pupils=laPupils();
  const comps=(Store.competencies||[]).filter(c=>(Number(c.year)===Number(laGrade)||Number(c.year)===5)&&c.subject==='Englisch');
  return pupils.map(p=>{
   const values=comps.map(c=>Store.records?.[c.id+'|'+p.id]?.current).filter(x=>['green','yellow','red'].includes(x));
@@ -10,7 +10,7 @@ function candidates(){
  }).filter(x=>x.total>=3&&x.ratio>=.75&&!laStars(x.p).includes('en')).sort((a,b)=>b.ratio-a.ratio||b.total-a.total);
 }
 function insert(){
- if(typeof Auth==='undefined'||typeof laGrade==='undefined'||typeof Store==='undefined'||typeof laStars!=='function')return;
+ if(typeof Auth==='undefined'||typeof laGrade==='undefined'||typeof Store==='undefined'||typeof laStars!=='function'||typeof laPupils!=='function')return;
  if(Auth.isLernatelier?.()||!(Auth.canLead(laGrade)||Auth.isAdmin()))return;
  const table=document.querySelector('.studentTable');if(!table||document.getElementById('enStarSuggestions'))return;
  const found=candidates();const panel=document.createElement('div');panel.id='enStarSuggestions';panel.className='card';
