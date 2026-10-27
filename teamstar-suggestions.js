@@ -1,10 +1,10 @@
 // KOMPASS: Vorschlaege fuer Fach-Teamstars, ohne automatische Vergabe.
 (function(){
 function candidates(){
- const pupils=(Store.data.pupils||[]).filter(p=>Number(p.year)===Number(laGrade));
- const comps=(Store.data.competencies||[]).filter(c=>Number(c.year)===Number(laGrade)&&c.subject==='Englisch');
+ const pupils=(Store.pupils||[]).filter(p=>Number(p.year)===Number(laGrade));
+ const comps=(Store.competencies||[]).filter(c=>(Number(c.year)===Number(laGrade)||Number(c.year)===5)&&c.subject==='Englisch');
  return pupils.map(p=>{
-  const values=comps.map(c=>Store.data.records?.[c.id+'|'+p.id]?.current).filter(x=>['green','yellow','red'].includes(x));
+  const values=comps.map(c=>Store.records?.[c.id+'|'+p.id]?.current).filter(x=>['green','yellow','red'].includes(x));
   const green=values.filter(x=>x==='green').length;
   return {p,green,total:values.length,ratio:values.length?green/values.length:0};
  }).filter(x=>x.total>=3&&x.ratio>=.75&&!laStars(x.p).includes('en')).sort((a,b)=>b.ratio-a.ratio||b.total-a.total);
@@ -20,5 +20,5 @@ function insert(){
  for(const x of found){const line=document.createElement('div');line.style.cssText='display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:8px 0';const label=document.createElement('span');label.textContent=(x.p.short||x.p.first+' '+x.p.last)+' · '+x.green+'/'+x.total+' grün';const b=document.createElement('button');b.type='button';b.textContent='Als Teamstar Englisch übernehmen';b.onclick=()=>laToggleStar(x.p.id,'en');line.append(label,b);panel.append(line)}
  table.parentElement?.parentElement?.prepend(panel);
 }
-new MutationObserver(()=>{if(!document.getElementById('enStarSuggestions'))insert()}).observe(document.getElementById('app')||document.body,{childList:true,subtree:true});
+let queued=false;new MutationObserver(()=>{if(queued)return;queued=true;setTimeout(()=>{queued=false;insert()},100)}).observe(document.getElementById('app')||document.body,{childList:true,subtree:true});
 })();
