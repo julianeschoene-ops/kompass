@@ -1,5 +1,5 @@
 let coreCategory='alle'; let coreUnit='alle'; let coreCompetencyYear=null;
-function competencyList(type,subject){return Store.competencies.filter(c=>c.year===State.year&&c.type===type&&c.subject===subject&&(type!=='workshop'||c.sprint===State.sprint)).sort((a,b)=>(a.order||0)-(b.order||0)||a.text.localeCompare(b.text,'de'));}
+function competencyList(type,subject){const list=Store.competencies.filter(c=>c.year===State.year&&c.type===type&&c.subject===subject&&(type!=='workshop'||c.sprint===State.sprint));if(type==='workshop'&&State.year===7&&State.sprint===1&&subject==='WBS'&&!list.some(c=>c.id==='wbs7_s1_product_g_20261024'))list.push({id:'wbs7_s1_product_g_20261024',year:7,type:'workshop',subject:'WBS',sprint:1,phase:'base',category:'Produkt',text:'Ich kann ein Produkt unter wirtschaftlichen Gesichtspunkten beschreiben.',level:'G',order:10,includeInLeb:true});return list.sort((a,b)=>(a.order||0)-(b.order||0)||a.text.localeCompare(b.text,'de'));}
 function currentSprintProject(){const s=sprintObj();return Store.projectTemplates.find(x=>x.id===s?.projectId)||null;}
 function workshop(){
  const subjects=WORKSHOP_SUBJECTS; if(!subjects.includes(State.subject))State.subject=subjects[0];
