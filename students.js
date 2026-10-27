@@ -74,7 +74,7 @@ function studentProfile(){
  if(profileSection!=='overview')content+=renderProfileNavigation();
  if(profileSection==='core')content+=renderProfileCore(p,core);
  else if(profileSection==='practice')content+='<h2>English Practice · Übungsübersicht</h2><p class="mini">Übungen, Übungspunkte und selbst gemeldete Kontrollen. Testergebnisse stehen bei den Kompetenzen unter Kernfächer → Englisch.</p>'+(EnglishPractice.practiceReport(p)||'<div class="card empty">Noch keine Übungsberichte übermittelt.</div>')+EnglishPractice.access(p);
- else if(profileSection==='workshop')content+=renderWorkshopPath(p)+(workshop.length?renderGroupedCompetencies(workshop):'');
+ else if(profileSection==='workshop')content+=renderWorkshopLearningOverview(p,workshop);
  else if(profileSection==='offers')content+=renderProfileOffers(p,acts);
  else if(profileSection==='development')content+=`<h2>Coaching & Entwicklung</h2><div class="card"><h3>Arbeits- & Sozialverhalten</h3><p>${Number(b.teamStars)||0} volle TeamStar-Karten</p>${(b.observations||[]).map(x=>`<p>${esc(x)}</p>`).join('')||'<p class="mini">Noch keine Beobachtungen.</p>'}${b.note?`<h3>Notiz</h3><p class="profileNote">${esc(b.note)}</p>`:''}<button class="chip" onclick="State.view='behaviour';behaviourPupil='${p.id}';resetBehaviourDraft();render()">Beobachtungen bearbeiten</button><div class="section">Verlauf</div>${behaviourHistoryHtml(b.history)}</div>`;
  else if(profileSection==='leb')content+=`<h2>Lernentwicklungsbericht</h2><div class="card"><p>${Store.lebDrafts[p.id]?'Ein gespeicherter Entwurf liegt vor.':'Noch kein Entwurf gespeichert.'}</p><button class="chip dark" onclick="State.view='leb';lebMode='schueler';State.pupil='${p.id}';render()">LEB öffnen</button></div>`;
@@ -119,6 +119,28 @@ function renderProfileOffers(p,acts){
   return `<div class="card"><h3>${esc(group.name)}</h3><p class="mini">${esc(group.type)}</p><p>${visits} Teilnahmen</p>${group.items.map(({record:r})=>`${r.note?`<p class="profileNote">${esc(r.note)}</p>`:''}${r.creativeAssessment?.assessedBy?`<p>${esc(creativeAssessmentSummary(r.creativeAssessment))}</p>${r.creativeAssessment.note?`<p class="profileNote">${esc(r.creativeAssessment.note)}</p>`:''}`:''}${r.licenses?.length?`<p>${r.licenses.map(x=>esc(x)).join(' · ')}</p>`:''}`).join('')}</div>`;
  }).join('');
  return '<h2>Angebote & Teilnahmen</h2>'+ (clubs.length?'<details class="card"><summary>Clubzuordnungen</summary>'+clubs.slice().reverse().map(x=>`<div class="history"><b>${esc(x.name)}</b><br>${esc(x.title)} · Wunsch ${esc(x.priority)}</div>`).join('')+'</details>':'')+(cards||'<div class="card empty">Noch keine Teilnahmen erfasst.</div>');
+}
+function renderWorkshopLearningOverview(p,workshop){
+ const year=Number(p.year||String(p.className||'').charAt(0));
+ const all=(Store.sprints||[]).filter(s=>Number(s.year)===year).sort((a,b)=>Number(a.number)-Number(b.number));
+ const current=all.find(s=>Number(s.number)===1)||all[0];
+ const path=current?(Store.workshopPaths||{})[`${p.id}|${year}|${current.number}`]||{}:{};
+ const assigned=(Store.assignments||[]).filter(a=>a.type==='Sprint'&&Number(a.year)===year&&Number(a.sprint||a.sprintNumber||1)===Number(current?.number||1)).slice().reverse().find(a=>Object.values(a.groups||{}).some(ids=>Array.isArray(ids)&&ids.some(id=>String(id)===String(p.id))));
+ const assignedLab=assigned?Object.entries(assigned.groups||{}).find(([lab,ids])=>lab!=='Nicht zugeteilt'&&Array.isArray(ids)&&ids.some(id=>String(id)===String(p.id)))?.[0]:'';
+ const project=(Store.projectTemplates||[]).find(x=>String(x.id)===String(current?.projectId));
+ const topic=year===6&&Number(current?.number)===1?'Vom Korn zum Brot':project?.name||current?.name||'Noch kein Thema hinterlegt';
+ const lab=path.lab||assignedLab||'noch nicht gewählt';
+ const entries=(workshop||[]).filter(([key,r])=>r?.current||r?.level||r?.history?.length);
+ const subjects=new Map();for(const [key,r] of entries){const id=key.split('|')[0];const comp=Store.competencies.find(x=>String(x.id)===id);const subject=comp?.subject||'Weitere Bewertungen';if(!subjects.has(subject))subjects.set(subject,[]);subjects.get(subject).push({comp,r});}
+ let html=`<div class="section">Lernstand in den Nebenfächern</div><div class="card"><b>${year===7?'Themenfeldunterricht':'Aktuelle Werkstatt'} · Sprint ${esc(current?.number||1)}</b><p>${esc(topic)}</p><p class="mini"><b>${year===7?'Themenfeld / Vertiefung':'Gewähltes Lab / Vertiefung'}:</b> ${esc(lab)}</p></div>`;
+ html+='<div class="section">Bewertungen nach Fach</div>';
+ if(!subjects.size)html+='<div class="card empty">Noch keine Bewertungen für die Werkstatt hinterlegt.</div>';
+ for(const [subject,items] of [...subjects].sort((a,b)=>a[0].localeCompare(b[0],'de'))){html+=`<details class="card" open><summary><b>${esc(subject)}</b> · ${items.length} ${items.length===1?'Kompetenz':'Kompetenzen'} · ${items.filter(x=>x.r.current==='green').length} erreicht</summary>`;for(const {comp,r} of items){html+=`<div class="history"><b>${esc(comp?.text||'Gespeicherte Kompetenzbewertung')}</b> · ${esc(r.level||'–')} · ${statusLabel(r.current)}${r.history?.length?`<details><summary>Bewertungsverlauf (${r.history.length})</summary>${r.history.slice().reverse().map(h=>`<div class="mini">${esc(h.date||'')} · ${esc(h.teacher||'')} · ${esc(h.level||'')} · ${esc(h.value||'')}</div>`).join('')}</details>`:''}</div>`;}html+='</details>';}
+ const base=entries.filter(([key])=>Store.competencies.find(c=>String(c.id)===key.split('|')[0])?.phase==='base').length;
+ const depth=entries.filter(([key])=>Store.competencies.find(c=>String(c.id)===key.split('|')[0])?.phase==='lab').length;
+ if(year<=6)html+=`<p class="mini">Davon ${base} bewertete Basiskompetenzen und ${depth} bewertete Vertiefungskompetenzen.</p>`;
+ html+='<details class="card"><summary><b>Werkstattweg und Sprintzuordnungen bearbeiten</b></summary>'+renderWorkshopPath(p)+'</details>';
+ return html;
 }
 function renderWorkshopPath(p){
  const year=Number(p.year||String(p.className||'').charAt(0));
