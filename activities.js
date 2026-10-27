@@ -75,7 +75,13 @@ async function confirmCreativeAssessment(activityId,pupilId){
  if(!pupil||activity?.type!=='Kreativband'||!Auth.canAccessGrade(Number(pupil.year||String(pupil.className||'').charAt(0)))){toast('Keine Berechtigung für diese Bewertung',6000);return;}
  if(!['','G','M','E'].includes(level)||!['','red','yellow','green'].includes(color)){toast('Ungültige Bewertung',6000);return;}
  const old=activityRecord(activityId,pupilId);
- const assessment={...(old.creativeAssessment||{}),level,color,note:note.trim(),assessedBy:Auth.currentUser()?.name||'Lehrkraft',assessedAt:new Date().toISOString()};
+ const competencyValues={...(old.creativeAssessment?.competencies||{})};
+ for(const [competencyId] of creativeCompetenciesFor(activity)){
+  const value=document.getElementById('creativeCompetency_'+activityId+'_'+pupilId+'_'+competencyId)?.value||'';
+  if(!['','red','yellow','green'].includes(value))throw new Error('Ungültige Kompetenzbewertung');
+  if(value)competencyValues[competencyId]=value;else delete competencyValues[competencyId];
+ }
+ const assessment={...(old.creativeAssessment||{}),level,color,note:note.trim(),competencies:competencyValues,assessedBy:Auth.currentUser()?.name||'Lehrkraft',assessedAt:new Date().toISOString()};
  Store.activityRecords[key]={...old,activityId,pupilId,active:true,creativeAssessment:assessment};
  // Commit all three fields together, including text not yet blurred on iPad.
  Store.saveLocalOnly();
@@ -99,6 +105,22 @@ async function confirmCreativeAssessment(activityId,pupilId){
   toast('Cloud-Speicherung nicht bestätigt: '+(e?.message||String(e)),8000);
  }finally{if(btn){btn.disabled=false;btn.textContent='Speichern';}}
 }
+const IT_STUDIO_COMPETENCIES=[
+ ['algorithms','Ich kann einfache Programmieraufgaben Schritt für Schritt lösen.'],
+ ['create','Ich kann mit einer Programmierumgebung ein eigenes kleines Programm erstellen.'],
+ ['debug','Ich kann Fehler in meinem Programm erkennen und verbessern.'],
+ ['explain','Ich kann mein Programm erklären und eigene Ideen weiterentwickeln.']
+];
+function creativeCompetenciesFor(a){
+ return a?.type==='Kreativband'&&/it.studio|informatik.studio/i.test(String(a.name||''))?IT_STUDIO_COMPETENCIES:[];
+}
+function creativeCompetencyControls(a,p,assessment){
+ const competencies=creativeCompetenciesFor(a);if(!competencies.length)return '';
+ const id=esc(a.id+'_'+p.id),values=assessment.competencies||{};
+ return '<details class="creativeCompetencyDetails"><summary>💻 Kompetenzen IT-Studio ('+Object.values(values).filter(Boolean).length+'/'+competencies.length+')</summary>'+
+ competencies.map(([key,title])=>'<label class="mini" style="display:block;margin:8px 0">'+esc(title)+' <select id="creativeCompetency_'+id+'_'+key+'">'+
+ [['','– offen'],['red','🔴 Noch nicht erreicht'],['yellow','🟡 Teilweise erreicht'],['green','🟢 Erreicht']].map(([v,label])=>'<option value="'+v+'" '+(values[key]===v?'selected':'')+'>'+label+'</option>').join('')+'</select></label>').join('')+'</details>';
+}
 function creativeAssessmentSummary(a){
  if(!a?.assessedBy)return 'Noch keine Bewertung';
  const d=a.assessedAt?new Date(a.assessedAt).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'}):'';
@@ -113,6 +135,7 @@ function creativeAssessmentControls(a,p,r){
  return '<div class="mini" id="assessmentStatus_'+id+'">'+esc(creativeAssessmentSummary(assessment))+'</div>'+
  '<div class="creativeInlineAssessment"><label class="mini">Niveau <select id="assessmentLevel_'+id+'">'+opts([['','–'],['G','G'],['M','M'],['E','E']],assessment.level||'')+'</select></label>'+
  ' <label class="mini">Bewertung <select id="assessmentColor_'+id+'">'+opts([['','–'],['red','🔴 Rot'],['yellow','🟡 Gelb'],['green','🟢 Grün']],assessment.color||'')+'</select></label></div>'+
+ creativeCompetencyControls(a,p,assessment)+
  '<label class="mini">Notiz <textarea id="assessmentNote_'+id+'" rows="2" placeholder="Notiz zur Bewertung">'+esc(assessment.note||'')+'</textarea></label>'+
  '<button type="button" class="miniBtn" id="assessmentSave_'+id+'" onclick="confirmCreativeAssessment('+esc(JSON.stringify(a.id))+','+esc(JSON.stringify(p.id))+')">Speichern</button>';
 }
