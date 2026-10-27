@@ -602,7 +602,7 @@ function laTodayBoard(){
  const notes=[flexChangeNotes,mondayNotes,scheduledNotes,published?String(current.notes||'').trim():''].filter(Boolean).join('\n');
  const news=published?String(current.news||'').trim():'';
  const curatedWorldNews=(laGrade===6&&d.date==='2026-10-12')?{title:'🌊 Neue Tiere in der Tiefsee entdeckt',text:'Forschende haben neue Meerestiere in mehr als 2.500 Metern Tiefe entdeckt. Dort unten ist es dunkel und der Wasserdruck ist riesig. Trotzdem leben dort erstaunliche Tiere.',url:'https://www.logo.de/'}:null;
- const worldNewsHtml=(news&&!/^https?:\/\/\S+$/.test(news))?'<p>'+esc(news).replace(/\\n/g,'<br>')+'</p>':curatedWorldNews?'<div class="laWorldStory"><strong>'+esc(curatedWorldNews.title)+'</strong><p>'+esc(curatedWorldNews.text)+'</p><a href="'+esc(curatedWorldNews.url)+'" target="_blank" rel="noopener noreferrer">Quelle: ZDF logo! ↗</a></div>':'<p class="mini">Noch keine geprüfte Nachricht veröffentlicht.</p>';
+ const worldNewsHtml=news?( /^https?:\/\/\S+$/.test(news)?'<p><a href="'+esc(news)+'" target="_blank" rel="noopener noreferrer">🌍 Aktuelle Weltnachricht öffnen ↗</a></p>':'<p>'+esc(news).replace(/\\n/g,'<br>')+'</p>'):curatedWorldNews?'<div class="laWorldStory"><strong>'+esc(curatedWorldNews.title)+'</strong><p>'+esc(curatedWorldNews.text)+'</p><a href="'+esc(curatedWorldNews.url)+'" target="_blank" rel="noopener noreferrer">Quelle: ZDF logo! ↗</a></div>':'<p class="mini">Für diesen Tag ist noch keine geprüfte Weltnachricht veröffentlicht. Die Lehrkraft kann sie unter News eintragen.</p>';
  const motivation=published&&String(current.motivation||'').trim()?String(current.motivation).trim():laMotivationForDate(d.date);
  return '<section class="laTodayBoard"><div class="laTodayHeading"><h2>☀️ Heute bei uns</h2><span>'+esc(d.label)+'</span></div>'+
  '<div class="laMotivation"><div class="laMotivationEyebrow">✨ Dein Gedanke für heute</div><div class="laMotivationQuote">'+esc(motivation)+'</div></div><div class="laTodayGrid laTodayMasonry">'+
@@ -691,13 +691,13 @@ function laNoiseMeterKey(){return 'kompass_noise_threshold_v2_'+laGrade+'_'+laSe
 function laNoiseMeterThreshold(){try{return Math.max(1,Math.min(90,Number(localStorage.getItem(laNoiseMeterKey()))||8));}catch(e){return 8;}}
 
 const laNoiseChallenge={greenSince:0,points:0,lastRoom:'',lastGrade:0,lastWeek:'',lastTime:0};
-function laNoiseMinutes(){try{return Math.max(1,Math.min(30,Number(localStorage.getItem('kompass_noise_minutes'))||5));}catch(e){return 5;}}
+function laNoiseMinutes(){try{return Math.max(1,Math.min(30,Number(localStorage.getItem('kompass_noise_minutes_'+laGrade+'_'+laSelectedRoom))||5));}catch(e){return 5;}}
 function laNoiseScoreKey(){return 'kompass_noise_scores_'+laGrade+'_'+laWeekKey()+'_'+laSelectedRoom;}
 function laNoiseLocalPoints(){try{return Number(localStorage.getItem(laNoiseScoreKey()))||0;}catch(e){return 0;}}
 function laNoiseSetMinutes(value){
  if(Auth.isLernatelier()&&laKioskLocked())return;
  const minutes=Math.max(1,Math.min(30,Number(value)||5));
- try{localStorage.setItem('kompass_noise_minutes',String(minutes));}catch(e){}
+ try{localStorage.setItem('kompass_noise_minutes_'+laGrade+'_'+laSelectedRoom,String(minutes));}catch(e){}
  laNoiseChallenge.greenSince=0;
  const label=document.getElementById('laNoiseTimer');if(label)label.textContent=minutes+':00';
 }
@@ -708,6 +708,8 @@ function laNoiseChallengeUI(){
  '</div>';
 }
 function laNoiseChallengeTick(){
+ if(laNoiseMeter.active&&(laNoiseMeter.room!==laSelectedRoom||laNoiseMeter.grade!==laGrade)){laNoiseStop();return;}
+
  const c=laNoiseChallenge,week=laWeekKey(),room=laSelectedRoom,grade=laGrade;
  if(c.lastRoom!==room||c.lastGrade!==grade||c.lastWeek!==week){
   c.greenSince=0;c.lastRoom=room;c.lastGrade=grade;c.lastWeek=week;
@@ -749,7 +751,7 @@ async function laNoiseToggle(){
   const source=ctx.createMediaStreamSource(stream),analyser=ctx.createAnalyser();
   analyser.fftSize=2048;analyser.smoothingTimeConstant=.65;source.connect(analyser);
   await ctx.resume();
-  Object.assign(laNoiseMeter,{stream,context:ctx,analyser,buffer:new Float32Array(analyser.fftSize),active:true,threshold:laNoiseMeterThreshold(),level:0,peak:0});
+  Object.assign(laNoiseMeter,{stream,context:ctx,analyser,buffer:new Float32Array(analyser.fftSize),active:true,room:laSelectedRoom,grade:laGrade,threshold:laNoiseMeterThreshold(),level:0,peak:0});
   laNoiseTick();laNoiseRefreshButton();
  }catch(e){alert('Mikrofon konnte nicht gestartet werden. Bitte Mikrofonzugriff für KOMPASS erlauben. ('+e.message+')');}
 }
@@ -759,14 +761,14 @@ function laNoiseStop(){
  if(m.frame)cancelAnimationFrame(m.frame);m.frame=0;
  if(m.stream)m.stream.getTracks().forEach(t=>t.stop());
  if(m.context)m.context.close().catch(()=>{});
- m.stream=null;m.context=null;m.analyser=null;m.level=0;
+ m.stream=null;m.context=null;m.analyser=null;m.level=0;m.room='';m.grade=0;
  laNoiseRefreshButton();laNoisePaint();
 }
 function laNoiseRefreshButton(){
  const el=document.querySelector('.laNoiseMeter button');if(el)el.textContent=laNoiseMeter.active?'⏹ Messung stoppen':'🎙️ Messung starten';
 }
 function laNoiseTick(time=0){
- const m=laNoiseMeter;if(!m.active||!m.analyser)return;
+ const m=laNoiseMeter;if(!m.active||!m.analyser)return;if(m.room!==laSelectedRoom||m.grade!==laGrade){laNoiseStop();return;}
  m.analyser.getFloatTimeDomainData(m.buffer);
  let sum=0;for(let i=0;i<m.buffer.length;i++)sum+=m.buffer[i]*m.buffer[i];
  const rms=Math.sqrt(sum/m.buffer.length);
