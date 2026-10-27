@@ -53,6 +53,11 @@ const Store = {
     d.sprints=d.sprints||clone(SEED.sprints);
     d.pupils=d.pupils||[];
     d.competencies=d.competencies||[];
+    // Fehlende Mathematik-5-Kompetenzen nachtragen, bestehende Bewertungen und IDs bewahren.
+    if(typeof mathematik5Competencies==='function'){
+      const ids=new Set(d.competencies.map(c=>String(c.id)));
+      for(const c of mathematik5Competencies())if(!ids.has(c.id))d.competencies.push(c);
+    }
     d.records=d.records||{};
     d.lebDrafts=d.lebDrafts||{};
     d.activities=d.activities||[];
