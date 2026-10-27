@@ -108,6 +108,7 @@ function renderProfileWorkshop(p){
  }).filter(Boolean);
  return '<h2>Werkstatt</h2>'+(cards.length?'<div class="card"><h3>Sprintzuordnungen</h3>'+cards.join('')+'</div>':'<div class="card empty">Noch keine Sprintzuteilung gespeichert.</div>');
 }
+function creativeCompetencyProfileHtml(a){const labels={red:'🔴 Noch nicht erreicht',yellow:'🟡 Teilweise erreicht',green:'🟢 Erreicht'};const defs=typeof IT_STUDIO_COMPETENCIES!=='undefined'?IT_STUDIO_COMPETENCIES:[];const entries=defs.filter(([id])=>a?.competencies?.[id]);return entries.length?'<div class="profileNote"><b>IT-Studio · Kompetenzen</b>'+entries.map(([id,t])=>'<p class="mini">'+esc(t)+' · '+esc(labels[a.competencies[id]])+'</p>').join('')+'</div>':'';}
 function renderProfileOffers(p,acts){
  const clubs=Store.clubHistory[p.id]||[],groups=new Map();
  for(const item of acts){const a=item.activity,name=a.type==='Kreativband'?creativeStatsGroupName(a.name):a.name,key=a.type+'|'+name; if(!groups.has(key))groups.set(key,{name,type:a.type,items:[]});groups.get(key).items.push(item);}
@@ -116,7 +117,7 @@ function renderProfileOffers(p,acts){
   if(group.type==='Kreativband'&&group.name==='Kochen & Nähstudio')combinedCookSewIds().forEach(id=>ids.add(String(id)));
   const dated=Object.values(Store.dailyCreativeVisits||{}).filter(v=>v&&ids.has(String(v.activityId))&&String(v.pupilId)===String(p.id)&&v.date).length;
   const visits=Math.max(dated,...group.items.map(x=>Number(x.record.count)||0));
-  return `<div class="card"><h3>${esc(group.name)}</h3><p class="mini">${esc(group.type)}</p><p>${visits} Teilnahmen</p>${group.items.map(({record:r})=>`${r.note?`<p class="profileNote">${esc(r.note)}</p>`:''}${r.creativeAssessment?.assessedBy?`<p>${esc(creativeAssessmentSummary(r.creativeAssessment))}</p>${r.creativeAssessment.note?`<p class="profileNote">${esc(r.creativeAssessment.note)}</p>`:''}`:''}${r.licenses?.length?`<p>${r.licenses.map(x=>esc(x)).join(' · ')}</p>`:''}`).join('')}</div>`;
+  return `<div class="card"><h3>${esc(group.name)}</h3><p class="mini">${esc(group.type)}</p><p>${visits} Teilnahmen</p>${group.items.map(({record:r})=>`${r.note?`<p class="profileNote">${esc(r.note)}</p>`:''}${r.creativeAssessment?.assessedBy?`<p>${esc(creativeAssessmentSummary(r.creativeAssessment))}</p>${r.creativeAssessment.note?`<p class="profileNote">${esc(r.creativeAssessment.note)}</p>`:''}${creativeCompetencyProfileHtml(r.creativeAssessment)}`:''}${r.licenses?.length?`<p>${r.licenses.map(x=>esc(x)).join(' · ')}</p>`:''}`).join('')}</div>`;
  }).join('');
  return '<h2>Angebote & Teilnahmen</h2>'+ (clubs.length?'<details class="card"><summary>Clubzuordnungen</summary>'+clubs.slice().reverse().map(x=>`<div class="history"><b>${esc(x.name)}</b><br>${esc(x.title)} · Wunsch ${esc(x.priority)}</div>`).join('')+'</details>':'')+(cards||'<div class="card empty">Noch keine Teilnahmen erfasst.</div>');
 }
