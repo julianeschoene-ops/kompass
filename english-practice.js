@@ -28,7 +28,7 @@ const EnglishPractice = {
     return `<div class="toolbar" style="margin-bottom:12px;flex-wrap:wrap"><button class="chip" onclick="reloadTeacherCloudData()">↻ Ergebnisse aktualisieren</button>
       ${canManageRoster() ? `<button class="chip dark" onclick="EnglishPractice.printCodes(null,true)">Code + Symbol · ganzer Jahrgang (${all.length})</button>
       ${State.team !== 'alle' ? `<button class="chip" onclick="EnglishPractice.printCodes()">Code + Symbol · ${esc(State.team)} (${selected.length})</button>` : ''}` : ''}
-    </div>${comp ? this.mapping(comp) : ''}${this.calendarTools()}`;
+    </div>`;
   },
   taskPreview(t) {
     const a=t.assessment_config;if(!a)return '';
