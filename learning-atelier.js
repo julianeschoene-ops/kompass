@@ -601,7 +601,7 @@ function laTodayBoard(){
  const flexChangeNotes=(laGrade===6&&d.date==='2026-10-12')?'📘 Jetzt Flexstunden buchen – so bist du gut auf deine Lernnachweise vorbereitet!':'';
  const notes=[flexChangeNotes,mondayNotes,scheduledNotes,published?String(current.notes||'').trim():''].filter(Boolean).join('\n');
  const news=published?String(current.news||'').trim():'';
- const worldNewsHtml=news?( /^https?:\\/\\/\\S+$/.test(news)?'<p><a href="'+esc(news)+'" target="_blank" rel="noopener noreferrer">🌍 Aktuelle Weltnachricht öffnen ↗</a></p>':'<p>'+esc(news).replace(/\\n/g,'<br>')+'</p>'):'<p class="mini">Aktuelle Kindernachrichten werden automatisch geladen.</p>';
+ const worldNewsHtml=news?( /^https?:\/\/\S+$/.test(news)?'<p><a href="'+esc(news)+'" target="_blank" rel="noopener noreferrer">🌍 Aktuelle Weltnachricht öffnen ↗</a></p>':'<p>'+esc(news).replace(/\n/g,'<br>')+'</p>'):'<p class="mini">Aktuelle Kindernachrichten werden automatisch geladen.</p>';
  const motivation=published&&String(current.motivation||'').trim()?String(current.motivation).trim():laMotivationForDate(d.date);
  return '<section class="laTodayBoard"><div class="laTodayHeading"><h2>☀️ Heute bei uns</h2><span>'+esc(d.label)+'</span></div>'+
  '<div class="laMotivation"><div class="laMotivationEyebrow">✨ Dein Gedanke für heute</div><div class="laMotivationQuote">'+esc(motivation)+'</div></div><div class="laTodayGrid laTodayMasonry">'+
