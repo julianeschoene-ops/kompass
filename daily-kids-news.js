@@ -16,7 +16,7 @@
     const date=new Date(data.updated+'T12:00:00');
     head.textContent='Kindernachrichten · ZDF logo! · Zuletzt abgerufen: '+(isNaN(date)?data.updated:date.toLocaleDateString('de-DE'));
     wrap.append(head);
-    for(const item of data.items.slice(0,3)){
+    for(const item of data.items.slice(0,1)){
      const el=document.createElement('div');el.className='laTodayItem';
      const title=document.createElement('b');title.textContent=item.title;
      const summary=document.createElement('p');summary.textContent=item.summary;summary.style.margin='0.5em 0';
