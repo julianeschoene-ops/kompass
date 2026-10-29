@@ -98,6 +98,15 @@ const Sync={
     if(error)throw error;
     const index=new Map((merged.pupils||[]).map(p=>[String(p.id),p]));
     for(const row of data||[]){
+      // Published daily notices are held in the restricted LA payload too.
+      // Recover them for the staff preview instead of loading only pupil places.
+      const boardKey='laDailyBoard'+(Number(row.grade)===6?'':'Grade'+row.grade);
+      merged.settings=merged.settings||{};
+      const board=merged.settings[boardKey]||{};
+      for(const [date,entry] of Object.entries(row.payload?.dailyBoard||{})){
+        if(!board[date]||String(entry.updatedAt||'')>String(board[date].updatedAt||''))board[date]=clone(entry);
+      }
+      merged.settings[boardKey]=board;
       for(const lp of row.payload?.pupils||[]){
         const p=index.get(String(lp.id));
         if(!p)continue;

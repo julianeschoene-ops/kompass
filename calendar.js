@@ -8,33 +8,31 @@ function calTeamsForGrade(grade){
   const teams=[...new Set((Store.pupils||[]).filter(p=>Number(p.year||String(p.className||'').charAt(0))===Number(grade)).map(p=>p.team).filter(Boolean))];
   return (teams.length?teams:TEAMS).sort((a,b)=>String(a).localeCompare(String(b),'de'));
 }
-function ensureCalendarDefaults(){
-  let changed=false;
-  for(const [n,start,end] of QUOP_WINDOWS_2026_27){
-    const id=`preset_quop_2026_27_${n}`;
-    if(!Store.calendarEvents.some(e=>e.id===id)){
-      Store.calendarEvents.push({id,title:`QUOP · Test ${n}`,date:start,endDate:end,time:'',endTime:'',category:'Besonderes Angebot',offerName:'QUOP',location:'',notes:'QUOP-Testzeitraum',visibility:'all',grade:'all',targetTeam:'all',reminder:true,preset:true,createdAt:new Date().toISOString(),createdBy:'KOMPASS'});changed=true;
-    }
-  }
+function calendarDefaultEvents(){
+  const stamp=new Date().toISOString();
+  const events=QUOP_WINDOWS_2026_27.map(([n,start,end])=>({id:'preset_quop_2026_27_'+n,title:'QUOP · Test '+n,date:start,endDate:end,time:'',endTime:'',category:'Besonderes Angebot',offerName:'QUOP',location:'',notes:'QUOP-Testzeitraum',visibility:'all',grade:'all',targetTeam:'all',reminder:true,preset:true,createdAt:stamp,createdBy:'KOMPASS'}));
   if(Auth.canAccessGrade(6)){
     for(const [date,team,hours] of [
       ['2026-11-04','Rot','1. und 2.'],['2026-11-11','Grün','1. und 2.'],
       ['2026-11-18','Violett','3. und 4.'],['2026-11-25','Gelb','2. und 3.'],
       ['2026-12-02','Blau','1. und 2.']
-    ]){
-      const id='vape_6_'+date;
-      if(!Store.calendarEvents.some(e=>e.id===id||(e.date===date&&e.targetTeam===team&&/vape/i.test(e.title||'')))){
-        Store.calendarEvents.push({id,title:'Vape-Projekt · Team '+team+' · '+hours+' Stunde',date,endDate:date,time:'',endTime:'',category:'Besonderes Angebot',offerName:'Vape-Projekt',location:'',notes:hours+' Stunde. Organisation: Marion.',visibility:'all',grade:'6',targetTeam:team,reminder:true,createdAt:new Date().toISOString(),createdBy:'Juliane'});
-        changed=true;
-      }
-    }
+    ])events.push({id:'vape_6_'+date,title:'Vape-Projekt · Team '+team+' · '+hours+' Stunde',date,endDate:date,time:'',endTime:'',category:'Besonderes Angebot',offerName:'Vape-Projekt',location:'',notes:hours+' Stunde. Organisation: Marion.',visibility:'all',grade:'6',targetTeam:team,reminder:true,createdAt:stamp,createdBy:'Juliane'});
+    events.push({id:'berufsschnuppertag_6_2026-11-16',title:'Berufsschnuppertag',date:'2026-11-16',endDate:'2026-11-16',time:'',endTime:'',category:'Schule',offerName:'',location:'',notes:'',visibility:'all',grade:'6',targetTeam:'all',reminder:true,createdAt:stamp,createdBy:'Juliane'});
   }
-  if(changed){
-    // Die festen QUOP-Zeiträume müssen auch beim ersten Start eines normalen
-    // Kollegiumskontos sichtbar sein. Nur ein Admin synchronisiert sie zentral;
-    // alle anderen ergänzen sie gefahrlos in ihrer lokalen Ansicht.
-    if(Auth.isAdmin())Store.save('Kalendertermine ergänzt');else Store.saveLocalOnly();
+  return events;
+}
+function calendarEventsWithDefaults(events){
+  const merged=[...(events||[])];
+  for(const event of calendarDefaultEvents()){
+    if(!merged.some(old=>old.id===event.id||(old.date===event.date&&old.title===event.title)))merged.push(event);
   }
+  return merged;
+}
+function ensureCalendarDefaults(){
+  const merged=calendarEventsWithDefaults(Store.calendarEvents);
+  if(merged.length===(Store.calendarEvents||[]).length)return;
+  Store.calendarEvents=merged;
+  if(Auth.isAdmin())Store.save('Kalendertermine ergänzt');else Store.saveLocalOnly();
 }
 function calendarCanManage(e=null){
   if(Auth.isAdmin())return true;

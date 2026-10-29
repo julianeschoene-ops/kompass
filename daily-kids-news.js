@@ -1,7 +1,7 @@
 // Public logo! headlines; independent of the signed-in account and cloud data.
 (function(){
  let data=null,busy=false,nextAttempt=0;
- function valid(item){try{const u=new URL(item.url);return u.protocol==='https:'&&u.hostname==='www.logo.de'&&typeof item.title==='string'&&item.title.trim()&&!item.title.startsWith('Thema:')}catch(_){return false}}
+ function valid(item){try{const u=new URL(item.url);return u.protocol==='https:'&&u.hostname==='www.logo.de'&&typeof item.summary==='string'&&item.summary.trim().length>=35&&typeof item.title==='string'&&item.title.trim()&&!item.title.startsWith('Thema:')}catch(_){return false}}
  function show(){
   document.querySelectorAll('.laWorldNews').forEach(box=>{
    const placeholder=box.querySelector('[data-kids-news-placeholder]')||Array.from(box.querySelectorAll('p.mini')).find(p=>/Kindernachrichten|Noch keine geprüfte Nachricht veröffentlicht/.test(p.textContent));
@@ -18,8 +18,10 @@
     wrap.append(head);
     for(const item of data.items.slice(0,3)){
      const el=document.createElement('div');el.className='laTodayItem';
-     const a=document.createElement('a');a.href=item.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent=item.title;
-     el.append(a);wrap.append(el);
+     const title=document.createElement('b');title.textContent=item.title;
+     const summary=document.createElement('p');summary.textContent=item.summary;summary.style.margin='0.5em 0';
+     const a=document.createElement('a');a.href=item.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='Quelle: ZDF logo! ↗';a.className='mini';
+     el.append(title,summary,a);wrap.append(el);
     }
    }else{
     head.textContent='Die Kindernachrichten konnten gerade nicht geladen werden.';wrap.append(head);

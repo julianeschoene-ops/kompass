@@ -593,7 +593,7 @@ function laMergeConsecutiveOffers(items){
 function laTodayBoard(){
  const d=laDayData();const config=laGradeSettings('laDailyBoard')||{};
  const current=config[d.date]||{};const published=current.published===true;
- const events=(Store.calendarEvents||[]).filter(e=>e.date<=d.date&&d.date<=(e.endDate||e.date)&&(!e.grade||e.grade==='all'||Number(e.grade)===laGrade)&&(!e.visibility||e.visibility==='all'||e.visibility==='students'));
+ const events=calendarEventsWithDefaults(Store.calendarEvents||[]).filter(e=>e.date<=d.date&&d.date<=(e.endDate||e.date)&&(!e.grade||e.grade==='all'||Number(e.grade)===laGrade)&&(!e.visibility||e.visibility==='all'||e.visibility==='students'));
  const list=(items,isFlex=false)=>items.length?'<div class="laTodayItems">'+items.map(x=>'<div class="laTodayItem"><b>'+esc(x[0])+' Std. · '+esc(x[1])+'</b><span>'+esc(laTeacherShort(x[2]))+(x[3]?(isFlex?' · Raum: ':' · Treff: ')+esc(x[3]):'')+(isFlex&&x[4]?'<br>Teams: '+esc(x[4]):'')+'</span></div>').join('')+'</div>':'<p class="mini">Keine Angebote eingetragen.</p>';
  const flex=laGrade===6?laFlexForDate(d):[];
  const mondayNotes=(laGrade===6&&d.date==='2026-10-12')?'🏀 Sportangebote für heute können noch gebucht werden.':'';

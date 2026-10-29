@@ -3,24 +3,16 @@
   "source": "ZDF logo!",
   "items": [
     {
-      "title": "Wer regiert das Land in Zukunft?",
-      "url": "https://www.logo.de/israel-wahl-parlament-100.html"
+      "title": "Israel hat gewählt: Wer bildet die Regierung?",
+      "url": "https://www.logo.de/israel-wahl-parlament-100.html",
+      "published": "2026-10-28",
+      "summary": "Die Menschen in Israel haben ein neues Parlament gewählt. Noch hat keine politische Gruppe genug Stimmen, um allein eine Regierung zu bilden. Deshalb müssen die Parteien nun überlegen, mit wem sie zusammenarbeiten können."
     },
     {
-      "title": "Warum diese Wahl so besonders ist",
-      "url": "https://www.logo.de/israel-wahlen-parlament-100.html"
-    },
-    {
-      "title": "Jonas will Sternekoch werden",
-      "url": "https://www.logo.de/sternekoch-jonas-102.html"
-    },
-    {
-      "title": "Darum werden Blätter im Herbst bunt",
-      "url": "https://www.logo.de/herbst-blaetter-farbe-einfach-erklaert-100.html"
-    },
-    {
-      "title": "Wohin mit dem Atommüll in Deutschland?",
-      "url": "https://www.logo.de/atommuell-endlager-suche-104.html"
+      "title": "Ein sicherer Ort für Atommüll wird gesucht",
+      "url": "https://www.logo.de/atommuell-endlager-suche-104.html",
+      "published": "2026-10-27",
+      "summary": "Aus früheren Atomkraftwerken gibt es Müll, der sehr lange gefährlich bleibt. Deutschland sucht einen Ort tief unter der Erde, an dem er sicher aufbewahrt werden kann. Fünf Bundesländer sind bei der Suche inzwischen ausgeschlossen."
     }
   ]
 }
