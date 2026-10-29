@@ -3,16 +3,31 @@
   "source": "ZDF logo!",
   "items": [
     {
-      "title": "Israel hat gewählt: Wer bildet die Regierung?",
+      "title": "Wer regiert das Land in Zukunft?",
       "url": "https://www.logo.de/israel-wahl-parlament-100.html",
-      "published": "2026-10-28",
-      "summary": "Die Menschen in Israel haben ein neues Parlament gewählt. Noch hat keine politische Gruppe genug Stimmen, um allein eine Regierung zu bilden. Deshalb müssen die Parteien nun überlegen, mit wem sie zusammenarbeiten können."
+      "summary": "Die Menschen in Israel haben ein neues Parlament gewählt. Noch hat keine politische Gruppe genug Stimmen, um allein eine Regierung zu bilden. Deshalb müssen die Parteien nun überlegen, mit wem sie zusammenarbeiten können.",
+      "published": "2026-10-28"
     },
     {
-      "title": "Ein sicherer Ort für Atommüll wird gesucht",
+      "title": "Warum diese Wahl so besonders ist",
+      "url": "https://www.logo.de/israel-wahlen-parlament-100.html",
+      "summary": "In Israel wurde gewählt, doch wer das Land in Zukunft regiert ist noch unklar. Dabei haben dort so viele Menchen gewählt wie lange nicht mehr."
+    },
+    {
+      "title": "Jonas will Sternekoch werden",
+      "url": "https://www.logo.de/sternekoch-jonas-102.html",
+      "summary": "Schalotten für die Beurre Blanc, Zander im Dampfkorb: Jonas ist 13, kocht aber schon wie ein Profi. Sein großer Traum: einmal Sternekoch werden."
+    },
+    {
+      "title": "Darum werden Blätter im Herbst bunt",
+      "url": "https://www.logo.de/herbst-blaetter-farbe-einfach-erklaert-100.html",
+      "summary": "Im Herbst färben sich die Blätter an den Bäumen in bunten Farben und fallen dann ab. Warum eigentlich?"
+    },
+    {
+      "title": "Wohin mit dem Atommüll in Deutschland?",
       "url": "https://www.logo.de/atommuell-endlager-suche-104.html",
-      "published": "2026-10-27",
-      "summary": "Aus früheren Atomkraftwerken gibt es Müll, der sehr lange gefährlich bleibt. Deutschland sucht einen Ort tief unter der Erde, an dem er sicher aufbewahrt werden kann. Fünf Bundesländer sind bei der Suche inzwischen ausgeschlossen."
+      "summary": "Aus früheren Atomkraftwerken gibt es Müll, der sehr lange gefährlich bleibt. Deutschland sucht einen Ort tief unter der Erde, an dem er sicher aufbewahrt werden kann. Fünf Bundesländer sind bei der Suche inzwischen ausgeschlossen.",
+      "published": "2025-04-16"
     }
   ]
 }
