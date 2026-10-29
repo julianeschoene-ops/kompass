@@ -16,11 +16,24 @@ function ensureCalendarDefaults(){
       Store.calendarEvents.push({id,title:`QUOP · Test ${n}`,date:start,endDate:end,time:'',endTime:'',category:'Besonderes Angebot',offerName:'QUOP',location:'',notes:'QUOP-Testzeitraum',visibility:'all',grade:'all',targetTeam:'all',reminder:true,preset:true,createdAt:new Date().toISOString(),createdBy:'KOMPASS'});changed=true;
     }
   }
+  if(Auth.canAccessGrade(6)){
+    for(const [date,team,hours] of [
+      ['2026-11-04','Rot','1. und 2.'],['2026-11-11','Grün','1. und 2.'],
+      ['2026-11-18','Violett','3. und 4.'],['2026-11-25','Gelb','2. und 3.'],
+      ['2026-12-02','Blau','1. und 2.']
+    ]){
+      const id='vape_6_'+date;
+      if(!Store.calendarEvents.some(e=>e.id===id||(e.date===date&&e.targetTeam===team&&/vape/i.test(e.title||'')))){
+        Store.calendarEvents.push({id,title:'Vape-Projekt · Team '+team+' · '+hours+' Stunde',date,endDate:date,time:'',endTime:'',category:'Besonderes Angebot',offerName:'Vape-Projekt',location:'',notes:hours+' Stunde. Organisation: Marion.',visibility:'all',grade:'6',targetTeam:team,reminder:true,createdAt:new Date().toISOString(),createdBy:'Juliane'});
+        changed=true;
+      }
+    }
+  }
   if(changed){
     // Die festen QUOP-Zeiträume müssen auch beim ersten Start eines normalen
     // Kollegiumskontos sichtbar sein. Nur ein Admin synchronisiert sie zentral;
     // alle anderen ergänzen sie gefahrlos in ihrer lokalen Ansicht.
-    if(Auth.isAdmin())Store.save('QUOP-Zeiträume ergänzt');else Store.saveLocalOnly();
+    if(Auth.isAdmin())Store.save('Kalendertermine ergänzt');else Store.saveLocalOnly();
   }
 }
 function calendarCanManage(e=null){
