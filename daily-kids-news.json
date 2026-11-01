@@ -1,33 +1,35 @@
 {
-  "updated": "2026-10-31",
+  "updated": "2026-11-01",
   "source": "ZDF logo!",
   "items": [
     {
-      "title": "Dieser Vertrag hat Deutschland verändert",
-      "url": "https://www.logo.de/abkommen-tuerkei-deutschland-100.html",
-      "summary": "Vor 65 Jahren suchte Deutschland Arbeitskräfte. Viele Menschen aus der Türkei kamen und fanden hier ein neues Zuhause.",
-      "published": "2026-10-30"
+      "title": "Das fordern Jugendliche von der Politik",
+      "url": "https://www.logo.de/genz-bewegung-demonstration-deutschland-100.html",
+      "summary": "Bessere Schulen, mehr Klimaschutz: Junge Menschen gehen in vielen Städten auf die Straße. Wir haben gefragt, was sie verändern wollen."
     },
     {
-      "title": "Viele Türkischstämmige leben in Deutschland",
-      "url": "https://www.logo.de/tuerkischstaemmig-deutschland-einfach-erklaert-100.html",
-      "summary": "Etwa drei Millionen Menschen in Deutschland haben Wurzeln in der Türkei. Um zu verstehen, warum, reisen wir 65 Jahre in die Vergangenheit."
-    },
-    {
-      "title": "Das ist die Türkei",
-      "url": "https://www.logo.de/das-land-tuerkei-einfach-erklaert-102.html",
-      "summary": "Hier erfahrt ihr, was das Land alles so ausmacht."
-    },
-    {
-      "title": "Seehunde-Hilfe vor dem Aus",
-      "url": "https://www.logo.de/seehundstation-aus-100.html",
-      "summary": "In der Seehundstation in Pieterburen werden verletzte Jungtiere aufgepäppelt. Doch der Station fehlt das Geld."
-    },
-    {
-      "title": "Verliert Trump seine Macht?",
-      "url": "https://www.logo.de/midterms-wahlkampf-usa-100.html",
-      "summary": "Donald Trump steht mal wieder im Mittelpunkt: Für die Zwischenwahlen macht er Wahlkampf für seine Politik. Das Ergebnis ist auch für uns wichtig.",
+      "title": "Was es mit den Gen-Z-Demos auf sich hat",
+      "url": "https://www.logo.de/genz-demonstriert-100.html",
+      "summary": "In Frankreich gab es zuletzt große Demonstrationen. Jugendliche protestierten für bessere Bildung. Auch in Deutschland wurde jetzt demonstriert.",
       "published": "2026-10-29"
+    },
+    {
+      "title": "Eine Nacht zum Gruseln!",
+      "url": "https://www.logo.de/halloween-108.html",
+      "summary": "Halloween wird jedes Jahr in der Nacht vom 31. Oktober auf den 1. November gefeiert. Der Brauch ist wohl schon mehr als 2.000 Jahr alt.",
+      "published": "2026-10-31"
+    },
+    {
+      "title": "Die Anfänge der evangelischen Kirche",
+      "url": "https://www.logo.de/was-wird-am-reformationstag-gefeiert-100.html",
+      "summary": "Am 31. Oktober 1517 nagelte Martin Luther eine Liste mit Ideen an die Schlosskirche von Wittenberg. Der Beginn der sogenannten Reformation.",
+      "published": "2022-09-06"
+    },
+    {
+      "title": "Wisst ihr, was los war?",
+      "url": "https://www.logo.de/nachrichten-quiz-der-woche-100.html",
+      "summary": "Habt ihr alle wichtigen Nachrichten der Woche mitbekommen? Testet mit unseren spannenden Quizfragen euer Wissen zu den aktuellen Themen!",
+      "published": "2025-05-17"
     }
   ]
 }
