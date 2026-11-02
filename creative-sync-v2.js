@@ -136,7 +136,16 @@ const CreativeSyncV2={
             continue;
           }
         }
-        const {error}=await client.from(table).upsert(row,{onConflict:conflict,ignoreDuplicates:item.kind==='visit'});
+        // A cancelled cloud visit must never be resurrected by an older device.
+        if(item.kind==='visit'&&previous.data?.visit?.cancelledAt){
+          Store.dailyCreativeVisits[item.key]=clone(previous.data.visit);
+          const ack=this.acknowledgements();ack[id]=JSON.stringify(previous.data.visit);this.saveAcknowledgements(ack);
+          const latest=this.pending();if(JSON.stringify(latest[id])===JSON.stringify(item)){delete latest[id];this.persist(latest);}
+          continue;
+        }
+        const {error}=item.kind==='visit'&&item.value?.cancelledAt&&previous.data
+          ?await client.from(table).update({visit:item.value,updated_at:new Date().toISOString()}).eq('grade',item.grade).eq('visit_key',item.key)
+          :await client.from(table).upsert(row,{onConflict:conflict,ignoreDuplicates:item.kind==='visit'});
         if(error)throw error;
         const col=item.kind==='visit'?'visit_key':'record_key';
         const {data,error:readError}=await client.from(table).select('*').eq('grade',item.grade).eq(col,item.key).single();
