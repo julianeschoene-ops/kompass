@@ -49,7 +49,7 @@ const Sync={
   },
   // Preserve referenced competencies and block destructive shared-state uploads.
   referencedCompetencyIds(){const ids=new Set();for(const record of Object.values(Store.records||{})){}for(const key of Object.keys(Store.records||{}))ids.add(String(key).split('|')[0]);return ids;},
-  keepRecoverySnapshot(label,payload){try{const key='kompass_recovery_'+label;const current=JSON.parse(localStorage.getItem(key)||'[]');current.push({at:new Date().toISOString(),payload:clone(payload)});while(current.length>5)current.shift();localStorage.setItem(key,JSON.stringify(current));}catch(e){console.warn('Lokale Sicherung konnte nicht angelegt werden',e);}},
+  keepRecoverySnapshot(label,payload){try{const key='kompass_recovery_'+label;const current=JSON.parse(localStorage.getItem(key)||'[]');current.push({at:new Date().toISOString(),payload:clone(payload)});while(current.length>1)current.shift();localStorage.setItem(key,JSON.stringify(current));}catch(e){console.warn('Lokale Sicherung konnte nicht angelegt werden',e);}},
   async safeSharedPush(now){
     const current=await Auth.cloudClient.from('kompass_shared_state').select('payload,updated_at').eq('id','school').maybeSingle();
     if(current.error)throw current.error;
