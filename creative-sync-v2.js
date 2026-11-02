@@ -2,6 +2,10 @@
  * Explicit pending journal: never infer that localStorage means cloud saved.
  * V2 tables must be deployed/backfilled before this module is enabled.
  */
+function creativeSameValue(a,b){
+  const normalize=v=>Array.isArray(v)?v.map(normalize):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,normalize(v[k])])):v;
+  return JSON.stringify(normalize(a))===JSON.stringify(normalize(b));
+}
 const CreativeSyncV2={
   journalKey:'kompass_creative_v2_pending',ackKey:'kompass_creative_v2_ack',busy:false,ready:false,lastError:null,retryRequested:false,lastSnapshot:null,
   acknowledgements(){try{return JSON.parse(localStorage.getItem(this.ackKey)||'{}')}catch(e){return {}}},
@@ -138,7 +142,7 @@ const CreativeSyncV2={
         const {data,error:readError}=await client.from(table).select('*').eq('grade',item.grade).eq(col,item.key).single();
         if(readError||!data)throw readError||new Error('Speicherung nicht lesbar');
         const stored=item.kind==='visit'?data.visit:data.assessment;
-        if(JSON.stringify(stored)!==JSON.stringify(item.value)){
+        if(!creativeSameValue(stored,item.value)){
           if(item.kind==='visit'){
             // Existing cloud visit wins; retain the differing local entry for manual reconciliation.
             console.warn('Besuchskonflikt bleibt lokal gesichert; andere Einträge werden weiter übertragen',id);continue;
