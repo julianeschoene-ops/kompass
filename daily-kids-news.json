@@ -1,7 +1,12 @@
 {
-  "updated": "2026-11-01",
+  "updated": "2026-11-02",
   "source": "ZDF logo!",
   "items": [
+    {
+      "title": "Wie es nach den Protesten weiterging",
+      "url": "https://www.logo.de/demo-ausschreitung-genz-regelt-100.html",
+      "summary": "Junge Menschen demonstrierten für bessere Bildung und Klimaschutz. Meist friedlich, doch später gab es in einigen Städten Gewalt. Was war los?"
+    },
     {
       "title": "Das fordern Jugendliche von der Politik",
       "url": "https://www.logo.de/genz-bewegung-demonstration-deutschland-100.html",
@@ -14,22 +19,16 @@
       "published": "2026-10-29"
     },
     {
-      "title": "Eine Nacht zum Gruseln!",
-      "url": "https://www.logo.de/halloween-108.html",
-      "summary": "Halloween wird jedes Jahr in der Nacht vom 31. Oktober auf den 1. November gefeiert. Der Brauch ist wohl schon mehr als 2.000 Jahr alt.",
-      "published": "2026-10-31"
-    },
-    {
-      "title": "Die Anfänge der evangelischen Kirche",
-      "url": "https://www.logo.de/was-wird-am-reformationstag-gefeiert-100.html",
-      "summary": "Am 31. Oktober 1517 nagelte Martin Luther eine Liste mit Ideen an die Schlosskirche von Wittenberg. Der Beginn der sogenannten Reformation.",
-      "published": "2022-09-06"
-    },
-    {
       "title": "Wisst ihr, was los war?",
       "url": "https://www.logo.de/nachrichten-quiz-der-woche-100.html",
       "summary": "Habt ihr alle wichtigen Nachrichten der Woche mitbekommen? Testet mit unseren spannenden Quizfragen euer Wissen zu den aktuellen Themen!",
       "published": "2025-05-17"
+    },
+    {
+      "title": "Tierisch gutes Comeback",
+      "url": "https://www.logo.de/foto-des-monats-oktober-134.html",
+      "summary": "Beim logo!-Fotowettbewerb springt ein Luchs vor die Kamera. Zuschauer Jakob freut sich über die gute Nachricht aus dem Thüringer Wald.",
+      "published": "2022-04-30"
     }
   ]
 }
