@@ -43,13 +43,55 @@ function generateFullLebText(pupil){
  const text=[subjectText,behaviourText,activityText].filter(Boolean).join('\n\n');
  return text||`${pupil.first} hat bisher noch keine dokumentierten Kompetenzbewertungen erhalten.`;
 }
+function lebStableVariant(key,variants){
+ let hash=0;for(const char of String(key||''))hash=(Math.imul(hash,31)+char.charCodeAt(0))>>>0;
+ return variants[hash%variants.length];
+}
+function lebCompetencyDevelopmentText(pupil,status,areas,key){
+ const name=pupil.first;
+ const variants={
+  green:[
+   `Folgende Kompetenzen sind sicher erreicht: ${areas}.`,
+   `${name} hat folgende Kompetenzen sicher erreicht: ${areas}.`,
+   `Ein sicherer Lernstand zeigt sich bei folgenden Kompetenzen: ${areas}.`
+  ],
+  yellow:[
+   `Folgende Kompetenzen sind teilweise erreicht: ${areas}. ${name} entwickelt hier zunehmend Sicherheit.`,
+   `Bei folgenden Kompetenzen sind bereits wesentliche Teilanforderungen erreicht: ${areas}. ${name} baut die benötigte Sicherheit weiter aus.`,
+   `${name} befindet sich bei folgenden Kompetenzen auf einem guten Weg: ${areas}. Die Sicherheit nimmt dabei zunehmend zu.`
+  ],
+  red:[
+   `Folgende Kompetenzen sind noch nicht erreicht: ${areas}. ${name} arbeitet mit gezielter Unterstützung und weiterer Übung an den nächsten Lernschritten.`,
+   `Noch nicht erreicht sind folgende Kompetenzen: ${areas}. Mit gezielter Unterstützung kann ${name} die nächsten Lernschritte zunehmend bewältigen.`,
+   `Bei folgenden Kompetenzen ist das Lernziel noch nicht erreicht: ${areas}. ${name} arbeitet daran weiter und erhält dafür passende Unterstützung und Übungsgelegenheiten.`
+  ]
+ };
+ return lebStableVariant(key,variants[status]);
+}
+function lebOverallDevelopmentText(pupil,status,key){
+ const name=pupil.first,variants={
+  green:['Die Anforderungen sind sicher erreicht.',`${name} erfüllt die Anforderungen bereits sicher.`,`Dabei zeigt ${name} einen sicheren Lernstand.`],
+  yellow:[`Die Anforderungen sind teilweise erreicht. ${name} entwickelt dabei zunehmend Sicherheit.`,`${name} erfüllt bereits wesentliche Teilanforderungen und gewinnt zunehmend Sicherheit.`,`${name} befindet sich auf einem guten Weg und baut die benötigte Sicherheit weiter aus.`],
+  red:[`Die Anforderungen sind noch nicht erreicht. ${name} arbeitet mit gezielter Unterstützung und weiterer Übung an den nächsten Lernschritten.`,`${name} befindet sich noch im Lernprozess; die Anforderungen sind noch nicht erreicht. Passende Hilfen unterstützen die nächsten Lernschritte.`,`Die Anforderungen sind noch nicht erreicht. ${name} arbeitet daran weiter und erhält gezielte Unterstützung sowie zusätzliche Übungsgelegenheiten.`]
+ };
+ return lebStableVariant(key,variants[status]);
+}
 function generateSubjectParagraph(pupil,subject,items){
  const green=items.filter(r=>r.record.current==='green'),yellow=items.filter(r=>r.record.current==='yellow'),red=items.filter(r=>r.record.current==='red');
- const level=mostCommon(items.map(r=>r.record.level).filter(Boolean));
- let text=`${pupil.first} arbeitet im Fach ${subject}${level?` überwiegend auf ${level}-Niveau`:''}.`;
- if(green.length)text+=` Folgende Kompetenzen sind sicher erreicht: ${listAreas(green)}.`;
- if(yellow.length)text+=` Folgende Kompetenzen sind teilweise erreicht: ${listAreas(yellow)}. ${pupil.first} entwickelt hier zunehmend Sicherheit.`;
- if(red.length)text+=` Folgende Kompetenzen sind noch nicht erreicht: ${listAreas(red)}. ${pupil.first} arbeitet mit gezielter Unterstützung und weiterer Übung an den nächsten Lernschritten.`;
+ const level=mostCommon(items.map(r=>r.record.level).filter(Boolean)),key=(pupil.id||pupil.first)+'|'+subject;
+ const openings=level?[
+  `${pupil.first} arbeitet im Fach ${subject} überwiegend auf ${level}-Niveau.`,
+  `Im Fach ${subject} arbeitet ${pupil.first} überwiegend auf ${level}-Niveau.`,
+  `${pupil.first} bearbeitet die Aufgaben im Fach ${subject} überwiegend auf ${level}-Niveau.`
+ ]:[
+  `${pupil.first} arbeitet im Fach ${subject}.`,
+  `Im Fach ${subject} setzt sich ${pupil.first} mit den Lerninhalten auseinander.`,
+  `${pupil.first} beschäftigt sich im Fach ${subject} mit den aktuellen Lerninhalten.`
+ ];
+ let text=lebStableVariant(key+'|opening',openings);
+ if(green.length)text+=' '+lebCompetencyDevelopmentText(pupil,'green',listAreas(green),key+'|green');
+ if(yellow.length)text+=' '+lebCompetencyDevelopmentText(pupil,'yellow',listAreas(yellow),key+'|yellow');
+ if(red.length)text+=' '+lebCompetencyDevelopmentText(pupil,'red',listAreas(red),key+'|red');
  const scores=items.filter(r=>r.record.score).slice(-2);
  if(scores.length)text+=` Die dokumentierten Punkteergebnisse (${scores.map(r=>r.record.score.points+'/'+r.record.score.max+' Punkte').join(', ')}) stützen diese Einschätzung.`;
  return text.trim();
@@ -58,17 +100,18 @@ function listAreas(rows){return [...new Set(rows.slice(0,3).map(r=>cleanCompeten
 function cleanCompetencyText(text){return String(text||'').replace(/^Ich kann\s+/i,'').replace(/^I can\s+/i,'').replace(/\.$/,'');}
 function mostCommon(arr){ if(!arr.length)return null; const c={}; arr.forEach(x=>c[x]=(c[x]||0)+1); return Object.entries(c).sort((a,b)=>b[1]-a[1])[0][0];}
 function generateCreativeLebParagraph(pupil,activity,record){
- const a=record.creativeAssessment||{},level=a.level?` auf ${a.level}-Niveau`:'';
- let text=`${pupil.first} arbeitet im Kreativband „${activity.name}“${level}.`;
- if(a.color==='green')text+=' Die Anforderungen sind sicher erreicht.';
- else if(a.color==='yellow')text+=` Die Anforderungen sind teilweise erreicht. ${pupil.first} entwickelt dabei zunehmend Sicherheit.`;
- else if(a.color==='red')text+=` Die Anforderungen sind noch nicht erreicht. ${pupil.first} arbeitet mit gezielter Unterstützung und weiterer Übung an den nächsten Lernschritten.`;
+ const a=record.creativeAssessment||{},level=a.level?` auf ${a.level}-Niveau`:'',key=(pupil.id||pupil.first)+'|'+(activity.id||activity.name);
+ const openings=[
+  `${pupil.first} arbeitet im Kreativband „${activity.name}“${level}.`,
+  `Im Kreativband „${activity.name}“ arbeitet ${pupil.first}${level}.`,
+  `${pupil.first} nimmt am Kreativband „${activity.name}“ teil und arbeitet dort${level}.`
+ ];
+ let text=lebStableVariant(key+'|opening',openings);
+ if(['green','yellow','red'].includes(a.color))text+=' '+lebOverallDevelopmentText(pupil,a.color,key+'|overall|'+a.color);
  const defs=typeof creativeCompetenciesFor==='function'?creativeCompetenciesFor(activity):[];
  const labels=new Map(defs),groups={green:[],yellow:[],red:[]};
  for(const [id,value] of Object.entries(a.competencies||{}))if(groups[value])groups[value].push(cleanCompetencyText(labels.get(id)||id));
- if(groups.green.length)text+=` Folgende Kompetenzen sind sicher erreicht: ${groups.green.join('; ')}.`;
- if(groups.yellow.length)text+=` Folgende Kompetenzen sind teilweise erreicht: ${groups.yellow.join('; ')}. ${pupil.first} entwickelt hier zunehmend Sicherheit.`;
- if(groups.red.length)text+=` Folgende Kompetenzen sind noch nicht erreicht: ${groups.red.join('; ')}. ${pupil.first} arbeitet daran mit gezielter Unterstützung weiter.`;
+ for(const status of ['green','yellow','red'])if(groups[status].length)text+=' '+lebCompetencyDevelopmentText(pupil,status,groups[status].join('; '),key+'|competencies|'+status);
  if(a.note)text+=' '+String(a.note).trim().replace(/([^.!?])$/,'$1.');
  return text;
 }
