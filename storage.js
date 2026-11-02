@@ -115,6 +115,7 @@ const Store = {
   },
   _lastSnapshot:null,
   saveLocalOnly(){
+    if(Array.isArray(this.data.auditLog)&&this.data.auditLog.length>200)this.data.auditLog=this.data.auditLog.slice(-200);
     const payload=JSON.stringify(this.data);
     try{localStorage.setItem(STORAGE_KEY,payload);this._lastSnapshot=payload;}
     catch(e){
