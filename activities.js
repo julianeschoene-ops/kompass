@@ -243,7 +243,10 @@ async function creativeRefreshFromCloud(){
  if(typeof Sync==='undefined'||!Sync.enabled()){toast('Keine Cloud-Verbindung aktiv. Bitte mit einem Lehrkraftkonto anmelden.',7000);return;}
  if(Sync.busy||Sync.dirty){toast('Es werden noch lokale Änderungen gespeichert. Bitte kurz warten und erneut versuchen.',7000);return;}
  try{
-  await Sync.pull();
+  // Read the dedicated attendance tables instead of pulling and rewriting the
+  // complete school snapshot (which can exceed Safari's localStorage quota).
+  if(typeof CreativeSyncV2==='undefined'||!CreativeSyncV2.ready){throw new Error('Besuchs-Synchronisierung noch nicht bereit. Keine vollständige Cloud-Kopie laden.');}
+  await CreativeSyncV2.refresh();
   const visits=Object.values(Store.dailyCreativeVisits||{}),roster=new Map((Store.pupils||[]).map(p=>[String(p.id),p]));
   const count=visits.filter(v=>v&&v.date&&v.pupilId&&Number(roster.get(String(v.pupilId))?.year)===Number(State.year)).length;
   const orphaned=visits.filter(v=>v&&!roster.has(String(v.pupilId))).length;
