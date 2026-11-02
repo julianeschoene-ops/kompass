@@ -48,9 +48,11 @@ function listAreas(rows){return [...new Set(rows.slice(0,3).map(r=>cleanCompeten
 function cleanCompetencyText(text){return String(text||'').replace(/^Ich kann\s+/i,'').replace(/^I can\s+/i,'').replace(/\.$/,'');}
 function mostCommon(arr){ if(!arr.length)return null; const c={}; arr.forEach(x=>c[x]=(c[x]||0)+1); return Object.entries(c).sort((a,b)=>b[1]-a[1])[0][0];}
 function generateCreativeLebParagraph(pupil,activity,record){
- const a=record.creativeAssessment||{},status={green:'erfüllt die Anforderungen sicher',yellow:'erfüllt die Anforderungen teilweise',red:'benötigt bei den Anforderungen noch Unterstützung'}[a.color]||'arbeitet an den Anforderungen';
- let text=`Im Kreativband „${activity.name}“ ${status}`;
- if(a.level)text+=` auf ${a.level}-Niveau`;
+ const a=record.creativeAssessment||{},level=a.level?` auf ${a.level}-Niveau`:'';
+ let text=`${pupil.first} arbeitet im Kreativband „${activity.name}“${level}`;
+ if(a.color==='green')text+=' und erfüllt die Anforderungen sicher';
+ else if(a.color==='yellow')text+=' und erfüllt die Anforderungen bereits teilweise';
+ else if(a.color==='red')text+=' und benötigt bei der Umsetzung der Anforderungen noch Unterstützung';
  text+='.';
  const defs=typeof creativeCompetenciesFor==='function'?creativeCompetenciesFor(activity):[];
  const labels=new Map(defs),groups={green:[],yellow:[],red:[]};
