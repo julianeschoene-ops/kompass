@@ -28,13 +28,19 @@ function ensureSpecialOffers(){
 function ensureActivityDefaults(){const before=Store.activities.length;ensureCreativeRooms();ensureSpecialOffers();if(Store.activities.length!==before)Store.save('Standardangebote ergänzt');}
 function isCountableActivity(a){return !!a&&COUNTABLE_ACTIVITY_TYPES.has(a.type);}
 function activityRecord(a,p){const key=a+'|'+p;return Store.activityRecords[key]||{activityId:a,pupilId:p,active:false,count:0,note:'',licenses:[]};}
-function datedVisitsForActivity(activityId,pupilId){return Object.values(Store.dailyCreativeVisits||{}).filter(v=>v&&String(v.activityId)===String(activityId)&&String(v.pupilId)===String(pupilId)&&v.date);}
+function datedVisitsForActivity(activityId,pupilId){return Object.values(Store.dailyCreativeVisits||{}).filter(v=>v&&String(v.activityId)===String(activityId)&&String(v.pupilId)===String(pupilId)&&v.date&&!v.cancelledAt);}
 function combinedCookSewIds(){return (Store.activities||[]).filter(a=>a.type==='Kreativband'&&creativeStatsGroupName(a.name)==='Kochen & Nähstudio').map(a=>a.id);}
-function combinedCookSewVisits(pupilId){const ids=new Set(combinedCookSewIds().map(String));return Object.values(Store.dailyCreativeVisits||{}).filter(v=>v&&v.date&&ids.has(String(v.activityId))&&String(v.pupilId)===String(pupilId));}
+function combinedCookSewVisits(pupilId){const ids=new Set(combinedCookSewIds().map(String));return Object.values(Store.dailyCreativeVisits||{}).filter(v=>v&&v.date&&!v.cancelledAt&&ids.has(String(v.activityId))&&String(v.pupilId)===String(pupilId));}
 function combinedCookSewMode(id){return activityType==='Kreativband'&&combinedCookSewIds().includes(id);}
+function cancelledVisitsForActivity(activityId,pupilId){
+ return Object.values(Store.dailyCreativeVisits||{}).filter(v=>v?.cancelledAt&&String(v.activityId)===String(activityId)&&String(v.pupilId)===String(pupilId));
+}
+function activityNetCount(activityId,pupilId){
+ return Math.max(0,Number(activityRecord(activityId,pupilId).count||0)-cancelledVisitsForActivity(activityId,pupilId).length);
+}
 function activityAttendance(activityId,pupilId){
   const r=activityRecord(activityId,pupilId),dated=datedVisitsForActivity(activityId,pupilId).length;
-  const visits=combinedCookSewMode(activityId)?Math.max(combinedCookSewVisits(pupilId).length,...combinedCookSewIds().map(id=>Number(activityRecord(id,pupilId).count||0))):Math.max(0,Math.max(Number(r.count||0),dated));
+  const visits=combinedCookSewMode(activityId)?Math.max(combinedCookSewVisits(pupilId).length,...combinedCookSewIds().map(id=>activityNetCount(id,pupilId))):Math.max(0,Math.max(activityNetCount(activityId,pupilId),dated));
   const percent=Math.round(visits/ACTIVITY_MAX_COUNT*100),cfg=Store.settings?.scoreConfig||{redMax:24,yellowMax:74};
   return{visits,possible:ACTIVITY_MAX_COUNT,percent,status:scoreToStatus(percent,cfg.redMax,cfg.yellowMax)};
 }
@@ -142,7 +148,7 @@ function creativeAssessmentControls(a,p,r){
 function activityQuickRow(a,p){
   const r=activityRecord(a.id,p.id),att=isCountableActivity(a)?activityAttendance(a.id,p.id):null;
   const otherNotes=combinedCookSewMode(a.id)?combinedCookSewIds().filter(id=>id!==a.id).map(id=>({id,note:activityRecord(id,p.id).note||''})).filter(x=>x.note):[];
-  return`<div class="quickRow"><div><b>${esc(p.short)}</b><div class="mini">${esc(p.team)} · ${esc(p.className)}</div>${att?`<div class="mini">${activityAttendancePill(a.id,p.id)}</div>`:''}${creativeAssessmentControls(a,p,r)}</div><div class="quickActions">${isCountableActivity(a)?`<strong>${att.visits}/${ACTIVITY_MAX_COUNT}</strong><button class="visitBtn" onclick="addVisit('${a.id}','${p.id}',1)">+1</button><button class="miniBtn" onclick="addVisit('${a.id}','${p.id}',-1)">−</button>${a.type==='Kreativband'?`<button class="miniBtn" onclick="openQualification('${a.id}','${p.id}')">🏅</button>`:''}`:`<button class="memberBtn ${r.active?'selected':''}" onclick="toggleMember('${a.id}','${p.id}')">${r.active?'✓ dabei':'+ hinzufügen'}</button>`}<button class="miniBtn" onclick="editActivityNote('${a.id}','${p.id}')">📝</button></div>${r.licenses?.length?`<div class="licenseLine">${r.licenses.map(x=>`<span class="badge">${esc(x)}</span>`).join('')}</div>`:''}${r.note?`<div class="mini noteLine">${esc(r.note)}</div>`:''}${otherNotes.map(x=>`<div class="mini noteLine">${esc(x.note)} <button class="miniBtn" onclick="editActivityNote('${x.id}','${p.id}')">Notiz bearbeiten</button></div>`).join('')}</div>`;
+  return`<div class="quickRow"><div><b>${esc(p.short)}</b><div class="mini">${esc(p.team)} · ${esc(p.className)}</div>${att?`<div class="mini">${activityAttendancePill(a.id,p.id)}</div>`:''}${creativeAssessmentControls(a,p,r)}</div><div class="quickActions">${isCountableActivity(a)?`<strong>${att.visits}/${ACTIVITY_MAX_COUNT}</strong><button class="visitBtn" onclick="addVisit('${a.id}','${p.id}',1)">+1</button><button class="miniBtn" onclick="addVisit('${a.id}','${p.id}',-1)">−1</button>${a.type==='Kreativband'?`<button class="miniBtn" onclick="openQualification('${a.id}','${p.id}')">🏅</button>`:''}`:`<button class="memberBtn ${r.active?'selected':''}" onclick="toggleMember('${a.id}','${p.id}')">${r.active?'✓ dabei':'+ hinzufügen'}</button>`}<button class="miniBtn" onclick="editActivityNote('${a.id}','${p.id}')">📝</button></div>${r.licenses?.length?`<div class="licenseLine">${r.licenses.map(x=>`<span class="badge">${esc(x)}</span>`).join('')}</div>`:''}${r.note?`<div class="mini noteLine">${esc(r.note)}</div>`:''}${otherNotes.map(x=>`<div class="mini noteLine">${esc(x.note)} <button class="miniBtn" onclick="editActivityNote('${x.id}','${p.id}')">Notiz bearbeiten</button></div>`).join('')}</div>`;
 }
 function addVisit(a,p,delta){
   const pupil=(Store.pupils||[]).find(x=>String(x.id)===String(p));
@@ -153,30 +159,34 @@ function addVisit(a,p,delta){
   if(delta>0){
     if(!activityVisitDate){alert('Bitte zuerst ein Besuchsdatum auswählen.');return;}
     if(combinedCookSewMode(a)&&combinedCookSewVisits(p).filter(v=>v.date===activityVisitDate).length>=2){toast('Für diesen Tag sind im Koch- und Nähstudio bereits zwei Schulstunden erfasst');return;}
-    const dk=`${activityVisitDate}|${a}|${p}`;const dk2=dk+'|2';
-    if(Store.dailyCreativeVisits[dk]&&Store.dailyCreativeVisits[dk2]){toast('Für diesen Tag sind bereits zwei Schulstunden erfasst');return;}
-    const visitKey=Store.dailyCreativeVisits[dk]?dk2:dk;
+    const prefix=`${activityVisitDate}|${a}|${p}`;
+    const today=datedVisitsForActivity(a,p).filter(v=>v.date===activityVisitDate);
+    if(today.length>=2){toast('Für diesen Tag sind bereits zwei Schulstunden erfasst');return;}
+    let visitKey=prefix,index=2;
+    while(Store.dailyCreativeVisits[visitKey])visitKey=prefix+'|'+index++;
     Store.dailyCreativeVisits[visitKey]={date:activityVisitDate,activityId:a,pupilId:p,createdAt:new Date().toISOString(),recordedBy:Auth.currentUser()?.name||'Lehrkraft'};
-    // Use the same authoritative visit count as the UI, including dated visits.
-    // A stale legacy counter must not cause a newly recorded visit to appear unchanged.
-    r.count=Math.min(ACTIVITY_MAX_COUNT,Math.max(Number(r.count)||0,datedVisitsForActivity(a,p).length-1)+1);
+    const gross=Object.values(Store.dailyCreativeVisits).filter(v=>String(v?.activityId)===String(a)&&String(v?.pupilId)===String(p)).length;
+    r.count=Math.max(Number(r.count)||0,gross-1)+1;
   }else{
-    const dk=`${activityVisitDate}|${a}|${p}`;
-    if(Store.dailyCreativeVisits[dk+'|2']){toast('Korrektur der zweiten Stunde derzeit gesperrt, um Cloud-Daten zu schützen');return;}
-    if(Store.dailyCreativeVisits[dk]){toast('Korrektur datierter Besuche derzeit gesperrt, um Cloud-Daten zu schützen');return;}
-    r.count=Math.max(0,Number(r.count||0)-1);
+    if(!activityVisitDate){toast('Bitte zuerst das Besuchsdatum auswählen');return;}
+    const ids=combinedCookSewMode(a)?combinedCookSewIds().map(String):[String(a)];
+    const candidates=Object.entries(Store.dailyCreativeVisits||{}).filter(([key,v])=>v&&!v.cancelledAt&&v.date===activityVisitDate&&ids.includes(String(v.activityId))&&String(v.pupilId)===String(p)).sort(([ka,va],[kb,vb])=>String(vb.createdAt||kb).localeCompare(String(va.createdAt||ka)));
+    if(!candidates.length){toast('Für das gewählte Datum ist kein Besuch zum Stornieren vorhanden',5000);return;}
+    if(Auth.session?.mode==='cloud'&&(typeof CreativeSyncV2==='undefined'||!CreativeSyncV2.ready)){toast('Bitte warten, bis die Besuchs-Synchronisierung bereit ist');return;}
+    const [visitKey,visit]=candidates[0];
+    Store.dailyCreativeVisits[visitKey]={...visit,cancelledAt:new Date().toISOString(),cancelledBy:Auth.currentUser()?.name||'Lehrkraft'};
   }
   Store.activityRecords[k]=r;
   // Journal the visit before the legacy grade sync can replace the local snapshot.
   // A pending cloud write survives background pulls and can be retried safely.
-  if(delta>0&&typeof CreativeSyncV2!=='undefined'){
+  if(typeof CreativeSyncV2!=='undefined'){
     try{CreativeSyncV2.capture();}
     catch(error){console.error('Besuch konnte nicht für Cloud-Abgleich vorgemerkt werden',error);toast('Besuch lokal erfasst – Cloud-Abgleich ausstehend');}
   }
   try{Store.save('Angebotsbesuch geändert',{target:p,activity:a,date:activityVisitDate});}
   catch(error){console.error('Besuch: lokaler Speicher voll',error);toast('Gerätespeicher voll: Besuch nur im Arbeitsspeicher. Seite nicht schließen!',10000);}
   render();
-  if(delta>0&&typeof CreativeSyncV2!=='undefined'&&CreativeSyncV2.ready){
+  if(typeof CreativeSyncV2!=='undefined'&&CreativeSyncV2.ready){
     CreativeSyncV2.flush().catch(error=>{console.error('Besuch noch nicht in Cloud bestätigt',error);toast('Besuch lokal vorgemerkt – Cloud-Speicherung noch nicht bestätigt');});
   }
 }
@@ -214,7 +224,7 @@ function creativeWeekData(){
  const offerIds=new Set(offers.map(a=>String(a.id)));
  const counts={};const days={};
  Object.values(Store.dailyCreativeVisits||{}).forEach(v=>{
-   const date=creativeDateKey(v?.date);if(!date||date<start||date>endStr||!ids.has(String(v.pupilId))||!offerIds.has(String(v.activityId)))return;
+   const date=creativeDateKey(v?.date);if(v?.cancelledAt||!date||date<start||date>endStr||!ids.has(String(v.pupilId))||!offerIds.has(String(v.activityId)))return;
    const key=String(v.pupilId)+'|'+v.activityId;
    (days[key]??=[]).push(date);
  });
@@ -230,7 +240,7 @@ function creativeStatsGroups(d){
  const ids=new Set(d.pupils.map(p=>String(p.id))),byId=new Map(d.offers.map(a=>[String(a.id),creativeStatsGroupName(a.name)])),groups=new Map();
  for(const a of d.offers){const name=byId.get(String(a.id));if(!groups.has(name))groups.set(name,{name,week:0,all:0,children:new Set()});}
  for(const p of d.pupils)for(const a of d.offers)groups.get(byId.get(String(a.id))).week+=d.counts[String(p.id)+'|'+a.id]||0;
- Object.values(Store.dailyCreativeVisits||{}).forEach(v=>{const group=groups.get(byId.get(String(v?.activityId)));if(!v||!group||!ids.has(String(v.pupilId))||!creativeDateKey(v.date))return;group.all++;group.children.add(String(v.pupilId));});
+ Object.values(Store.dailyCreativeVisits||{}).forEach(v=>{const group=groups.get(byId.get(String(v?.activityId)));if(!v||v.cancelledAt||!group||!ids.has(String(v.pupilId))||!creativeDateKey(v.date))return;group.all++;group.children.add(String(v.pupilId));});
  return [...groups.values()].sort((a,b)=>a.name.localeCompare(b.name,'de'));
 }
 function creativeWeeklyCsv(){
