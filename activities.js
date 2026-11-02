@@ -173,7 +173,8 @@ function addVisit(a,p,delta){
     try{CreativeSyncV2.capture();}
     catch(error){console.error('Besuch konnte nicht für Cloud-Abgleich vorgemerkt werden',error);toast('Besuch lokal erfasst – Cloud-Abgleich ausstehend');}
   }
-  Store.save('Angebotsbesuch geändert',{target:p,activity:a,date:activityVisitDate});
+  try{Store.save('Angebotsbesuch geändert',{target:p,activity:a,date:activityVisitDate});}
+  catch(error){console.error('Besuch: lokaler Speicher voll',error);toast('Gerätespeicher voll: Besuch nur im Arbeitsspeicher. Seite nicht schließen!',10000);}
   render();
   if(delta>0&&typeof CreativeSyncV2!=='undefined'&&CreativeSyncV2.ready){
     CreativeSyncV2.flush().catch(error=>{console.error('Besuch noch nicht in Cloud bestätigt',error);toast('Besuch lokal vorgemerkt – Cloud-Speicherung noch nicht bestätigt');});
