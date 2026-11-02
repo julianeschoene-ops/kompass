@@ -18,11 +18,14 @@ const Store = {
       try{
         this.data = JSON.parse(current);
         this.migrate();
-        this.save();
+        // Reading existing data must not require writing the whole dataset again.
+        // A quota failure during migration is not evidence of corrupt data.
+        try{this.saveLocalOnly();}catch(error){console.warn('KOMPASS: lokale Speicherung beim Laden nicht möglich',error);}
         return;
       }catch(error){
         console.error('KOMPASS-Daten konnten nicht geladen werden:', error);
-        localStorage.setItem(STORAGE_KEY + '_fehlerhafte_sicherung_' + Date.now(), current);
+        // Never overwrite a valid snapshot or create a second huge copy when storage is full.
+        try{localStorage.setItem(STORAGE_KEY + '_fehlerhafte_sicherung_' + Date.now(), current);}catch(backupError){console.warn('KOMPASS: zusätzliche Sicherung nicht möglich',backupError);}
       }
     }
     const legacy = localStorage.getItem('kompass33_pupils');
@@ -128,7 +131,8 @@ const Store = {
     const u=(typeof Auth!=='undefined'&&Auth.currentUser)?Auth.currentUser():null;
     this.data.auditLog.push({id:uid('log'),at:new Date().toISOString(),userId:u?.id||null,user:u?.name||'System',role:u?.role||null,action,details,sections:details.sections||[]});
     if(this.data.auditLog.length>2500)this.data.auditLog=this.data.auditLog.slice(-2500);
-    localStorage.setItem(STORAGE_KEY,JSON.stringify(this.data));
+    // Audit entries are persisted by the next normal Store.save(); avoid an
+    // additional full-dataset write for every log entry.
   },
   save(action='Änderung gespeichert',details={}){
     let before={}; try{before=this._lastSnapshot?JSON.parse(this._lastSnapshot):JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(e){}
