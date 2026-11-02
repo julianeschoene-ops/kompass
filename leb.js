@@ -43,23 +43,32 @@ function generateFullLebText(pupil){
  const text=[subjectText,behaviourText,activityText].filter(Boolean).join('\n\n');
  return text||`${pupil.first} hat bisher noch keine dokumentierten Kompetenzbewertungen erhalten.`;
 }
-function generateSubjectParagraph(pupil,subject,items){ const green=items.filter(r=>r.record.current==='green'), yellow=items.filter(r=>r.record.current==='yellow'), red=items.filter(r=>r.record.current==='red'); const level=mostCommon(items.map(r=>r.record.level).filter(Boolean))||'dem gewählten'; let text=`${pupil.first} arbeitet im Fach ${subject} überwiegend auf ${level}-Niveau. `; if(green.length)text+=`${pupil.first} zeigt Sicherheit in ${listAreas(green)}. `; if(yellow.length)text+=`In ${listAreas(yellow)} gelingen die Anforderungen bereits teilweise; hier entwickelt ${pupil.first} zunehmend mehr Sicherheit. `; if(red.length)text+=`Bei ${listAreas(red)} benötigt ${pupil.first} noch klare Unterstützung und weitere Übung. `; const scores=items.filter(r=>r.record.score).slice(-2); if(scores.length)text+=`Die dokumentierten Punkteergebnisse (${scores.map(r=>r.record.score.points+'/'+r.record.score.max+' Punkte').join(', ')}) stützen diese Einschätzung. `; return text.trim();}
+function generateSubjectParagraph(pupil,subject,items){
+ const green=items.filter(r=>r.record.current==='green'),yellow=items.filter(r=>r.record.current==='yellow'),red=items.filter(r=>r.record.current==='red');
+ const level=mostCommon(items.map(r=>r.record.level).filter(Boolean));
+ let text=`${pupil.first} arbeitet im Fach ${subject}${level?` überwiegend auf ${level}-Niveau`:''}.`;
+ if(green.length)text+=` Folgende Kompetenzen sind sicher erreicht: ${listAreas(green)}.`;
+ if(yellow.length)text+=` Folgende Kompetenzen sind teilweise erreicht: ${listAreas(yellow)}. ${pupil.first} entwickelt hier zunehmend Sicherheit.`;
+ if(red.length)text+=` Folgende Kompetenzen sind noch nicht erreicht: ${listAreas(red)}. ${pupil.first} arbeitet mit gezielter Unterstützung und weiterer Übung an den nächsten Lernschritten.`;
+ const scores=items.filter(r=>r.record.score).slice(-2);
+ if(scores.length)text+=` Die dokumentierten Punkteergebnisse (${scores.map(r=>r.record.score.points+'/'+r.record.score.max+' Punkte').join(', ')}) stützen diese Einschätzung.`;
+ return text.trim();
+}
 function listAreas(rows){return [...new Set(rows.slice(0,3).map(r=>cleanCompetencyText(r.comp.text)))].join('; ');}
 function cleanCompetencyText(text){return String(text||'').replace(/^Ich kann\s+/i,'').replace(/^I can\s+/i,'').replace(/\.$/,'');}
 function mostCommon(arr){ if(!arr.length)return null; const c={}; arr.forEach(x=>c[x]=(c[x]||0)+1); return Object.entries(c).sort((a,b)=>b[1]-a[1])[0][0];}
 function generateCreativeLebParagraph(pupil,activity,record){
  const a=record.creativeAssessment||{},level=a.level?` auf ${a.level}-Niveau`:'';
- let text=`${pupil.first} arbeitet im Kreativband „${activity.name}“${level}`;
- if(a.color==='green')text+=' und erfüllt die Anforderungen sicher';
- else if(a.color==='yellow')text+=' und erfüllt die Anforderungen bereits teilweise';
- else if(a.color==='red')text+=' und benötigt bei der Umsetzung der Anforderungen noch Unterstützung';
- text+='.';
+ let text=`${pupil.first} arbeitet im Kreativband „${activity.name}“${level}.`;
+ if(a.color==='green')text+=' Die Anforderungen sind sicher erreicht.';
+ else if(a.color==='yellow')text+=` Die Anforderungen sind teilweise erreicht. ${pupil.first} entwickelt dabei zunehmend Sicherheit.`;
+ else if(a.color==='red')text+=` Die Anforderungen sind noch nicht erreicht. ${pupil.first} arbeitet mit gezielter Unterstützung und weiterer Übung an den nächsten Lernschritten.`;
  const defs=typeof creativeCompetenciesFor==='function'?creativeCompetenciesFor(activity):[];
  const labels=new Map(defs),groups={green:[],yellow:[],red:[]};
  for(const [id,value] of Object.entries(a.competencies||{}))if(groups[value])groups[value].push(cleanCompetencyText(labels.get(id)||id));
- if(groups.green.length)text+=` ${pupil.first} zeigt Sicherheit in ${groups.green.join('; ')}.`;
- if(groups.yellow.length)text+=` In ${groups.yellow.join('; ')} gelingen die Anforderungen bereits teilweise.`;
- if(groups.red.length)text+=` Bei ${groups.red.join('; ')} benötigt ${pupil.first} noch weitere Übung und Unterstützung.`;
+ if(groups.green.length)text+=` Folgende Kompetenzen sind sicher erreicht: ${groups.green.join('; ')}.`;
+ if(groups.yellow.length)text+=` Folgende Kompetenzen sind teilweise erreicht: ${groups.yellow.join('; ')}. ${pupil.first} entwickelt hier zunehmend Sicherheit.`;
+ if(groups.red.length)text+=` Folgende Kompetenzen sind noch nicht erreicht: ${groups.red.join('; ')}. ${pupil.first} arbeitet daran mit gezielter Unterstützung weiter.`;
  if(a.note)text+=' '+String(a.note).trim().replace(/([^.!?])$/,'$1.');
  return text;
 }
