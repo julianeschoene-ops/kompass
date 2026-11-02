@@ -166,7 +166,18 @@ function addVisit(a,p,delta){
     if(Store.dailyCreativeVisits[dk]){toast('Korrektur datierter Besuche derzeit gesperrt, um Cloud-Daten zu schützen');return;}
     r.count=Math.max(0,Number(r.count||0)-1);
   }
-  Store.activityRecords[k]=r;Store.save('Angebotsbesuch geändert',{target:p,activity:a,date:activityVisitDate});render();
+  Store.activityRecords[k]=r;
+  // Journal the visit before the legacy grade sync can replace the local snapshot.
+  // A pending cloud write survives background pulls and can be retried safely.
+  if(delta>0&&typeof CreativeSyncV2!=='undefined'){
+    try{CreativeSyncV2.capture();}
+    catch(error){console.error('Besuch konnte nicht für Cloud-Abgleich vorgemerkt werden',error);toast('Besuch lokal erfasst – Cloud-Abgleich ausstehend');}
+  }
+  Store.save('Angebotsbesuch geändert',{target:p,activity:a,date:activityVisitDate});
+  render();
+  if(delta>0&&typeof CreativeSyncV2!=='undefined'&&CreativeSyncV2.ready){
+    CreativeSyncV2.flush().catch(error=>{console.error('Besuch noch nicht in Cloud bestätigt',error);toast('Besuch lokal vorgemerkt – Cloud-Speicherung noch nicht bestätigt');});
+  }
 }
 function toggleMember(a,p){const k=a+'|'+p,r=activityRecord(a,p);r.active=!r.active;Store.activityRecords[k]=r;Store.save();render();}
 function editActivityNote(a,p){const k=a+'|'+p,r=activityRecord(a,p);const v=prompt('Notiz:',r.note||'');if(v===null)return;r.note=v.trim();r.active=true;Store.activityRecords[k]=r;Store.save();render();}
