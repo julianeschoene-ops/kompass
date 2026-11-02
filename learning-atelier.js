@@ -180,13 +180,13 @@ function laSetRoomInfo(kind,value){
  Store.save('Lernatelier-Tafel aktualisiert',{room:laSelectedRoom,kind});render();
 }
 const LA_STAR_SUBJECTS=[['en','Englisch','red'],['de','Deutsch','yellow'],['ma','Mathematik','blue']];
-function laStars(p){return Array.isArray(p.laStars)?p.laStars:[];}
+function laStars(p){return Array.isArray(p.laStarsV2)?p.laStarsV2:[];}
 function laToggleStar(id,subject){
  if(!Auth.canLead(laGrade)&&!Auth.isAdmin())return;
  if(!LA_STAR_SUBJECTS.some(x=>x[0]===subject))return;
  const p=laPupils().find(x=>String(x.id)===String(id));if(!p)return;
  const old=laStars(p);
- p.laStars=old.includes(subject)?old.filter(x=>x!==subject):[...old,subject];
+ p.laStarsV2=old.includes(subject)?old.filter(x=>x!==subject):[...old,subject];
  Store.save('Fach-Teamstar geändert',{pupilId:p.id,subject});render();
 }
 const LA_DUTIES=[['broom','🧹','Besen'],['book','📖','Buch'],['hall','🚪','Flur'],['trash','🗑️','Mülleimer']];
@@ -822,7 +822,7 @@ function laStudentPreview(){
  const info=laGradeSettings('laBoardInfo')?.[laSelectedRoom]||{};
  let html='<div class="laBoardTop laBoardTopClean">'+laGradeTabs()+'<div class="laRoomSwitcher laMainTabs"><button class="chip '+(laStudentTab==='news'?'dark':'')+'" onclick="laStudentTab=\'news\';laBoardSelectedId=\'\';render()">📰 News</button>'+LA_ROOMS.map(room=>'<button class="chip '+(laStudentTab==='room'&&room===laSelectedRoom?'dark':'')+'" onclick="laStudentTab=\'room\';laSelectedRoom=\''+room+'\';laBoardSelectedId=\'\';render()">'+room+'</button>').join('')+'</div><div class="laTopActions"><button class="chip" onclick="laExitStudentPreview()">🔒 Lehrkraftmodus</button></div></div>';
 
- if(laStudentTab==='room')html+='<div id="laNoiseScoreboard">'+laNoiseScoreboardHTML()+'</div><div class="laRoomTools">'+laNoiseMeterUI()+(laKioskLocked()?'':'<button class="chip" onclick="laResetRoomOccupancy()">↺ Alle zurück ins Lernatelier</button>')+'<button class="chip laSwitchAccount" onclick="laSwitchAccount()">⇄ Account wechseln</button></div>';
+ if(laStudentTab==='room')html+='<details id="laNoiseScoreboard" style="margin:4px 0 8px"><summary style="cursor:pointer;padding:6px 10px;font-weight:600">🏆 Lärm-Challenge · Punkte und Belohnungen anzeigen</summary>'+laNoiseScoreboardHTML()+'</details><div class="laRoomTools">'+laNoiseMeterUI()+(laKioskLocked()?'':'<button class="chip" onclick="laResetRoomOccupancy()">↺ Alle zurück ins Lernatelier</button>')+'<button class="chip laSwitchAccount" onclick="laSwitchAccount()">⇄ Account wechseln</button></div>';
  if(laStudentTab==='news'){
   const dateNav='<div class="laTodayDateNav"><button class="chip" onclick="laMoveBoardDay(-1)">‹ Vortag</button><button class="chip" onclick="laBoardDate=\'\';render()">Heute</button><button class="chip" onclick="laMoveBoardDay(1)">Nächster Tag ›</button><button class="chip laSwitchAccount" onclick="laSwitchAccount()">⇄ Account wechseln</button></div>';
   const todayHtml=Auth.isLernatelier()?laLimitedNews():laTodayBoard();
