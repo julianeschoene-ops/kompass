@@ -157,7 +157,9 @@ function addVisit(a,p,delta){
     if(Store.dailyCreativeVisits[dk]&&Store.dailyCreativeVisits[dk2]){toast('Für diesen Tag sind bereits zwei Schulstunden erfasst');return;}
     const visitKey=Store.dailyCreativeVisits[dk]?dk2:dk;
     Store.dailyCreativeVisits[visitKey]={date:activityVisitDate,activityId:a,pupilId:p,createdAt:new Date().toISOString(),recordedBy:Auth.currentUser()?.name||'Lehrkraft'};
-    r.count=Math.max(0,Number(r.count||0)+1);
+    // Use the same authoritative visit count as the UI, including dated visits.
+    // A stale legacy counter must not cause a newly recorded visit to appear unchanged.
+    r.count=Math.min(ACTIVITY_MAX_COUNT,Math.max(Number(r.count)||0,datedVisitsForActivity(a,p).length-1)+1);
   }else{
     const dk=`${activityVisitDate}|${a}|${p}`;
     if(Store.dailyCreativeVisits[dk+'|2']){toast('Korrektur der zweiten Stunde derzeit gesperrt, um Cloud-Daten zu schützen');return;}
