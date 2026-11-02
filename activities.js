@@ -97,7 +97,7 @@ async function confirmCreativeAssessment(activityId,pupilId){
   const grade=CreativeSyncV2.pupilGrade(pupilId);
   const result=await Auth.cloudClient.from('kompass_creative_assessments_v2').select('assessment').eq('grade',grade).eq('record_key',key).maybeSingle();
   if(result.error)throw result.error;
-  if(!result.data||JSON.stringify(result.data.assessment)!==JSON.stringify(assessment))throw new Error('Cloud-Bestätigung stimmt nicht überein');
+  if(!result.data||!creativeSameValue(result.data.assessment,assessment))throw new Error('Cloud-Bestätigung stimmt nicht überein');
   if(el)el.textContent=creativeAssessmentSummary(assessment)+' · Cloud gespeichert';
   toast('Bewertung und Notiz gespeichert',3500);
  }catch(e){
