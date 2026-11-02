@@ -111,7 +111,17 @@ const Store = {
 
   },
   _lastSnapshot:null,
-  saveLocalOnly(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data)); this._lastSnapshot=JSON.stringify(this.data); },
+  saveLocalOnly(){
+    const payload=JSON.stringify(this.data);
+    try{localStorage.setItem(STORAGE_KEY,payload);this._lastSnapshot=payload;}
+    catch(e){
+      // Never remove attendance, pending sync journals or recovery copies to make room.
+      if(e?.name==='QuotaExceededError'||e?.code===22){
+        throw new Error('Lokaler Gerätespeicher voll. Änderungen bleiben nur bis zum Schließen dieser Seite im Arbeitsspeicher. Bitte keine Browserdaten löschen und die IT informieren.');
+      }
+      throw e;
+    }
+  },
   changedSections(before,after){ const keys=new Set([...Object.keys(before||{}),...Object.keys(after||{})]); return [...keys].filter(k=>k!=='auditLog'&&JSON.stringify(before?.[k])!==JSON.stringify(after?.[k])); },
   log(action='Änderung gespeichert',details={}){
     this.data.auditLog=this.data.auditLog||[];
