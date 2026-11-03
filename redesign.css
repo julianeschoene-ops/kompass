@@ -27,3 +27,15 @@ main{padding:24px 28px;min-width:0}
 .dashboardTools select{max-width:210px}
 @media(max-width:1050px){.app{grid-template-columns:215px minmax(0,1fr)}main{padding:18px}.dashboardModules{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:680px){.dashboardModules{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboardModule{padding:12px;min-height:100px}.dashboardModule b{font-size:14px}}
+
+/* Student list: prioritize names and profiles, not administration */
+.studentManagement{margin:0 0 12px;max-width:max-content}
+.studentManagement summary{cursor:pointer;color:#53647d;font-size:12px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.studentManagementActions{display:flex;gap:8px;flex-wrap:wrap;padding-top:8px}
+.studentCards{display:grid;gap:7px}
+.studentCard{border-radius:13px;box-shadow:none;padding:10px 14px}
+.studentCard .mini{font-size:12px}
+.studentCard .chip{padding:8px 12px}
+.studentCard .studentMain{min-width:0}
+.coreTeamstarSuggestions{margin-top:20px}
+.coreTeamstarSuggestions details{border-radius:14px;box-shadow:none}
