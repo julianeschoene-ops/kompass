@@ -534,3 +534,40 @@ main{padding:24px 28px;min-width:0}
 .section-core .workshopAssignmentToggle{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:500;text-transform:none;letter-spacing:normal}
 .section-core .workshopAssignmentToggle input{width:auto;margin:0}
 @media(max-width:760px){.section-core .subjectAssessmentTheme.subjectColor-other .toolbar.workshopFilters{grid-template-columns:1fr;padding:15px}.section-core .workshopAssessmentHeading{align-items:flex-start;flex-direction:column}}
+
+
+/* Fachidentitäten: ruhige, fachbezogene Pastellpalette – unabhängig von Teamfarben. */
+.section-core .subjectTone-language{--subject-tone:#f5e5e9;--subject-tone-hover:#eed7de}
+.section-core .subjectTone-math{--subject-tone:#dceafa;--subject-tone-hover:#cbdff6}
+.section-core .subjectTone-nature,.section-core .subjectTone-science{--subject-tone:#ddefe4;--subject-tone-hover:#cbe6d5}
+.section-core .subjectTone-society{--subject-tone:#e9e3f5;--subject-tone-hover:#ded5ef}
+.section-core .subjectTone-informatics{--subject-tone:#dceef0;--subject-tone-hover:#cbe5e9}
+.section-core .subjectTone-creative{--subject-tone:#f5e5d8;--subject-tone-hover:#eed8c7}
+.section-core .subjectTone-sport{--subject-tone:#e0f0e9;--subject-tone-hover:#cfe8dd}
+.section-core .subjectTone-values{--subject-tone:#f0e6dc;--subject-tone-hover:#e9d9c9}
+.section-core .subjectTone-elective{--subject-tone:#e7e8f0;--subject-tone-hover:#d9dbe7}
+/* Farbige Fachkacheln, ohne die bekannten Kernfachfarben zu überschreiben. */
+.section-core .subjectGrid .subjectTile.subjectTone-nature,
+.section-core .subjectGrid .subjectTile.subjectTone-science{background:#ddefe4!important;color:#355d49!important}
+.section-core .subjectGrid .subjectTile.subjectTone-society{background:#e9e3f5!important;color:#55466f!important}
+.section-core .subjectGrid .subjectTile.subjectTone-informatics{background:#dceef0!important;color:#315c65!important}
+.section-core .subjectGrid .subjectTile.subjectTone-creative{background:#f5e5d8!important;color:#73533e!important}
+.section-core .subjectGrid .subjectTile.subjectTone-sport{background:#e0f0e9!important;color:#386554!important}
+.section-core .subjectGrid .subjectTile.subjectTone-values{background:#f0e6dc!important;color:#6a5545!important}
+.section-core .subjectGrid .subjectTile.subjectTone-elective{background:#e7e8f0!important;color:#53576c!important}
+/* Einheitliche Fachfarbe auch in Unterseiten und Bewertungsdialogen. */
+.app.section-core:has(.subjectColor-englisch.subjectPageTitle)>.appWorkspace,
+.app.section-core:has(.subjectAssessmentTheme.subjectColor-englisch)>.appWorkspace{background:#fdf0f1!important}
+.app.section-core:has(.subjectColor-deutsch.subjectPageTitle)>.appWorkspace,
+.app.section-core:has(.subjectAssessmentTheme.subjectColor-deutsch)>.appWorkspace{background:#fff7df!important}
+.app.section-core:has(.subjectColor-mathe.subjectPageTitle)>.appWorkspace,
+.app.section-core:has(.subjectAssessmentTheme.subjectColor-mathe)>.appWorkspace{background:#edf5ff!important}
+/* Sekundärfächer: Fachfamilie durch sichtbare Tonklasse auf Fachkacheln übernehmen. */
+.app.section-core:has(.subjectTools .subjectTone-nature)>.appWorkspace,
+.app.section-core:has(.subjectTools .subjectTone-science)>.appWorkspace{background:#f0f8f2!important}
+.app.section-core:has(.subjectTools .subjectTone-society)>.appWorkspace{background:#f5f1fb!important}
+.app.section-core:has(.subjectTools .subjectTone-informatics)>.appWorkspace{background:#eef8f9!important}
+.app.section-core:has(.subjectTools .subjectTone-creative)>.appWorkspace{background:#fcf5ee!important}
+.app.section-core:has(.subjectTools .subjectTone-sport)>.appWorkspace{background:#f0f9f5!important}
+.app.section-core:has(.subjectTools .subjectTone-values)>.appWorkspace{background:#f9f4ee!important}
+.app.section-core:has(.subjectTools .subjectTone-elective)>.appWorkspace{background:#f5f5f9!important}
