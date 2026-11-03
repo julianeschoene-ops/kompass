@@ -442,3 +442,34 @@ main{padding:24px 28px;min-width:0}
 .section-core .subjectTone-neutral{--subject-tone:#e7edf4;--subject-tone-hover:#d9e4f0}
 @media(max-width:1100px){.section-core .subjectField .subjectGrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:760px){.section-core .subjectField .subjectGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.section-core .subjectField .subjectTile{min-height:72px}}
+
+/* School subjects: pale blue canvas, restrained white group panels, existing subject colors. */
+.app.section-core>.appWorkspace{background:#eaf3f9!important}
+.app.section-core>.appWorkspace>.globalBar{background:#f5f9fc!important}
+.app.section-core>.appWorkspace>main{background:transparent!important}
+.section-core .schoolPageHead:not(.subjectPageTitle){border:0!important;margin-bottom:12px;padding-bottom:5px!important}
+.section-core .subjectFields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:12px}
+.section-core .subjectField{background:rgba(255,255,255,.72);border:1px solid #dbe8f1;border-radius:15px;padding:14px 15px;min-width:0}
+.section-core .subjectFieldHeading{margin:0 0 10px;font-size:13px;line-height:1.35;color:#4b6275;font-weight:780}
+.section-core .subjectField .subjectGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.section-core .subjectField .subjectTile{min-height:64px;padding:12px 14px!important;border-radius:10px!important;box-shadow:none!important}
+.section-core .subjectField .subjectTile strong{font-size:14px;line-height:1.25;overflow-wrap:anywhere}
+.section-core .subjectGrid .subjectTile.subjectColor-deutsch,
+.section-core .subjectTools .subjectToolTile.subjectColor-deutsch{background:#fff1c6!important;border-color:#efdb9e!important;color:#715524!important}
+.section-core .subjectGrid .subjectTile.subjectColor-englisch,
+.section-core .subjectTools .subjectToolTile.subjectColor-englisch{background:#f9dee0!important;border-color:#f1c3c8!important;color:#873f4e!important}
+.section-core .subjectGrid .subjectTile.subjectColor-mathe,
+.section-core .subjectTools .subjectToolTile.subjectColor-mathe{background:#d9e9fa!important;border-color:#bcd5ef!important;color:#315a83!important}
+.section-core .subjectGrid .subjectTile.subjectColor-deutsch:hover,
+.section-core .subjectTools .subjectToolTile.subjectColor-deutsch:hover{background:#ffe7a5!important}
+.section-core .subjectGrid .subjectTile.subjectColor-englisch:hover,
+.section-core .subjectTools .subjectToolTile.subjectColor-englisch:hover{background:#f4cdd3!important}
+.section-core .subjectGrid .subjectTile.subjectColor-mathe:hover,
+.section-core .subjectTools .subjectToolTile.subjectColor-mathe:hover{background:#c6dff8!important}
+.section-core .subjectGrid .subjectTile[class*="subjectColor-"] strong,
+.section-core .subjectTools .subjectToolTile[class*="subjectColor-"] strong{color:inherit}
+.section-core .subjectPageTitle.subjectColor-deutsch{border-bottom-color:#efcf73!important}
+.section-core .subjectPageTitle.subjectColor-englisch{border-bottom-color:#df9aa6!important}
+.section-core .subjectPageTitle.subjectColor-mathe{border-bottom-color:#9fc6e9!important}
+@media(max-width:900px){.section-core .subjectFields{grid-template-columns:1fr 1fr}.section-core .subjectField .subjectGrid{grid-template-columns:1fr}}
+@media(max-width:680px){.section-core .subjectFields{grid-template-columns:1fr}.section-core .subjectField .subjectGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
