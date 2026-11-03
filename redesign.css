@@ -732,3 +732,17 @@ main{padding:24px 28px;min-width:0}
 .laMoveHere{width:100%;padding:9px 11px;margin:0 0 12px;border:1px dashed #7b9db9;border-radius:9px;background:#f0f7fd;color:#315777;cursor:pointer;font-weight:700}
 @media(max-width:1000px){.laBoardModern{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){.laBoardModern{grid-template-columns:1fr}.laBoardHeading{align-items:flex-start;flex-direction:column}}
+
+/* Lernatelier landing screen: one working area at a time. */
+.laLandingTiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0 22px}
+.laLandingTile{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:7px;min-height:112px;padding:18px;border:1px solid #dbe4ed;border-radius:15px;background:#fff;color:#34485e;cursor:pointer;transition:border-color .15s,background .15s}
+.laLandingTile:hover{background:#f6f9fc;border-color:#b6c8d9}
+.laLandingTile.active{background:#edf3f9;border-color:#8eaac6;box-shadow:inset 0 0 0 1px #8eaac6}
+.laLandingTile strong{font-size:16px}
+.laLandingTile small{font-size:12px;color:#718197;line-height:1.4}
+.laTileIcon{font-size:22px;color:#607c9a;line-height:1.1}
+.laPanelView{display:none}
+.laShow-overview .laPanel-overview,.laShow-places .laPanel-places,.laShow-requests .laPanel-requests,.laShow-pupils .laPanel-pupils,.laShow-preparation .laPanel-preparation{display:block}
+.laPanelView>.laSection:first-child{margin-top:0}
+@media(max-width:850px){.laLandingTiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.laLandingTiles{grid-template-columns:1fr 1fr;gap:8px}.laLandingTile{padding:12px;min-height:100px}.laLandingTile strong{font-size:14px}}
