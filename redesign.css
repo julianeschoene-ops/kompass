@@ -392,3 +392,35 @@ main{padding:24px 28px;min-width:0}
 .section-core .subjectToolTile{min-height:106px}
 .section-core .subjectToolTile strong{font-size:16px}
 @media(max-width:760px){.subjectResourceItem{padding:12px}.subjectResourceNew{padding:12px}.subjectResourceForm .formgrid{grid-template-columns:1fr}}
+
+/* Fächer: a single elegant blue family, organized by related subjects.
+   All tones share the same ink, contrast and interaction. */
+.section-core{
+ --subject-blue-ink:#314e66;
+}
+.section-core .subjectTone-language{--subject-tone:#d9e8f5;--subject-tone-hover:#cbdff0}
+.section-core .subjectTone-stem{--subject-tone:#dfebf3;--subject-tone-hover:#d2e3ef}
+.section-core .subjectTone-nature{--subject-tone:#e0eff1;--subject-tone-hover:#d2e5e9}
+.section-core .subjectTone-society{--subject-tone:#e5eaf5;--subject-tone-hover:#d8e1ef}
+.section-core .subjectTone-creative{--subject-tone:#e7edf6;--subject-tone-hover:#dbe5f2}
+.section-core .subjectGrid{gap:12px;grid-template-columns:repeat(4,minmax(0,1fr))}
+.section-core .subjectGrid .subjectTile,
+.section-core .subjectTools .subjectToolTile{
+ background:var(--subject-tone,#e0ebf4)!important;
+ border:1px solid rgba(46,83,111,.09)!important;
+ color:var(--subject-blue-ink)!important;
+ box-shadow:none!important;
+}
+.section-core .subjectGrid .subjectTile:hover,
+.section-core .subjectTools .subjectToolTile:hover{
+ background:var(--subject-tone-hover,#d5e5f1)!important;
+ border-color:rgba(46,83,111,.22)!important;
+}
+.section-core .subjectGrid .subjectTile strong,
+.section-core .subjectTools .subjectToolTile strong{color:var(--subject-blue-ink)}
+.section-core .subjectGrid .subjectTile{min-height:110px;padding:17px 19px}
+.section-core .subjectGrid .subjectTile strong{font-size:17px;letter-spacing:-.015em}
+.section-core .subjectGrid .subjectTile .subjectIcon{font-size:17px;opacity:.5}
+.section-core .subjectPageTitle{border-bottom:3px solid var(--subject-tone,#dce8f2)!important}
+@media(max-width:1150px){.section-core .subjectGrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:820px){.section-core .subjectGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
