@@ -908,8 +908,16 @@ function learningAtelier(){
   html+='</div><div class="card"><h2>✋ Hilfehand</h2>';
   html+=help.length?help.map(p=>'<div class="laQueue"><b>'+esc(p.short||p.first+' '+p.last)+'</b><button class="chip" onclick="laSetHelp(\''+esc(p.id)+'\',false)">Erledigt ✓</button></div>').join(''):'<p class="mini">Niemand wartet auf Hilfe</p>';
   html+='</div></div></section>';
-  html+='<section id="la-places" class="laSection"><div class="section">Standortübersicht</div><div class="laBoard">';
-  for(const place of laPlaces()){const ps=current.filter(p=>(p.learningPlace||'Lernatelier')===place);html+=`<div class="card"><h2>${esc(place)} <span class="mini">(${ps.length})</span></h2><div class="laNames">${ps.map(p=>`<span class="laName"><span class="dot ${teamColor(p.team)}"></span>${esc(p.short||p.first+' '+p.last)}</span>`).join('')||'<span class="mini">Niemand eingetragen</span>'}</div></div>`;}
+  html+='<section id="la-places" class="laSection"><div class="laBoardHeading"><div><h2 class="laSectionTitle">Standortübersicht</h2><p class="mini">Kind auswählen und anschließend den gewünschten Lernort anklicken.</p></div><button class="chip" onclick="laBoardSelectedId=\'\';render()">Auswahl aufheben</button></div>';
+  const chosen=current.find(p=>String(p.id)===String(laBoardSelectedId));
+  if(chosen)html+=`<div class="laBoardSelection">Ausgewählt: <strong>${esc(chosen.short||chosen.first+' '+chosen.last)}</strong> · Zielort auswählen</div>`;
+  html+='<div class="laBoard laBoardModern">';
+  for(const place of laPlaces()){
+    const ps=current.filter(p=>(p.learningPlace||'Lernatelier')===place);
+    html+=`<div class="laPlaceCard"><div class="laPlaceHeader"><h3>${esc(place)}</h3><span class="laPlaceCount">${ps.length}</span></div>`;
+    if(chosen&&(chosen.learningPlace||'Lernatelier')!==place)html+=`<button class="laMoveHere" onclick="laBoardMove('${laSafeId(chosen.id)}','${esc(place)}')">↳ Hierher verschieben</button>`;
+    html+=`<div class="laPlaceNames">${ps.map(p=>`<button type="button" class="laPlacePupil ${String(p.id)===String(laBoardSelectedId)?'selected':''}" onclick="laBoardSelectedId='${laSafeId(p.id)}';render()"><span class="dot ${teamColor(p.team)}"></span><span>${esc(p.short||p.first+' '+p.last)}</span>${p.laNeedsHelp?' ✋':''}</button>`).join('')||'<span class="laPlaceEmpty">Noch niemand hier</span>'}</div></div>`;
+  }
   html+='</div></section><section id="la-pupils" class="laSection"><div class="section">Schülerverwaltung</div>';
   if(!can)html+='<div class="card">Die Zuordnungen und Graduierungen können nur durch die Stufenleitung geändert werden.</div>';
   html+='<div class="laPupilCards">';
