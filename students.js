@@ -90,7 +90,7 @@ function studentProfile(){
  else if(profileSection==='practice')content+='<h2>English Practice · Übungsübersicht</h2><p class="mini">Übungen, Übungspunkte und selbst gemeldete Kontrollen. Testergebnisse stehen bei den Kompetenzen unter Kernfächer → Englisch.</p>'+(EnglishPractice.practiceReport(p)||'<div class="card empty">Noch keine Übungsberichte übermittelt.</div>')+EnglishPractice.access(p);
  else if(profileSection==='workshop')content+=renderWorkshopLearningOverview(p,workshop);
  else if(profileSection==='offers')content+=renderProfileOffers(p,acts);
- else if(profileSection==='development')content+=`<h2>Coaching & Entwicklung</h2><div class="card"><h3>Arbeits- & Sozialverhalten</h3><p>${Number(b.teamStars)||0} volle TeamStar-Karten</p>${(b.observations||[]).map(x=>`<p>${esc(x)}</p>`).join('')||'<p class="mini">Noch keine Beobachtungen.</p>'}${b.note?`<h3>Notiz</h3><p class="profileNote">${esc(b.note)}</p>`:''}<button class="chip" onclick="State.view='behaviour';behaviourPupil='${p.id}';resetBehaviourDraft();render()">Beobachtungen bearbeiten</button><div class="section">Verlauf</div>${behaviourHistoryHtml(b.history)}</div>`;
+ else if(profileSection==='development')content+=`<h2>Coaching & Entwicklung</h2><div class="card"><h3>Arbeits- & Sozialverhalten</h3>${(b.observations||[]).map(x=>`<p>${esc(x)}</p>`).join('')||'<p class="mini">Noch keine Beobachtungen.</p>'}${b.note?`<h3>Notiz</h3><p class="profileNote">${esc(b.note)}</p>`:''}<button class="chip" onclick="State.view='behaviour';behaviourPupil='${p.id}';resetBehaviourDraft();render()">Beobachtungen bearbeiten</button><div class="section">Verlauf</div>${behaviourHistoryHtml(b.history)}</div>`;
  else if(profileSection==='leb')content+=`<h2>Lernentwicklungsbericht</h2><div class="card"><p>${Store.lebDrafts[p.id]?'Ein gespeicherter Entwurf liegt vor.':'Noch kein Entwurf gespeichert.'}</p><button class="chip dark" onclick="State.view='leb';lebMode='schueler';State.pupil='${p.id}';render()">LEB öffnen</button></div>`;
  else content+='<p class="mini">Wähle einen Bereich, um Lernstände, Teilnahmen oder Rückmeldungen anzusehen.</p>';
  content+='</section>';shell(content);
@@ -101,8 +101,7 @@ function renderProfileTiles(p,entries,acts,b){
  ['core','📚','Kernfächer','Lernstand, Kompetenzen & Nachweise',subjects.length?subjects.join(' · '):'Deutsch · Mathematik · Englisch','blueTile'],
  ['workshop','🧭','Themenfeldunterricht','Sprints, Labs & Vertiefungen','Zuordnungen und Werkstattweg','violetTile'],
  ['offers','🎨','Angebote','Clubs, Flexstunden & Kreativband','Teilnahmen und Rückmeldungen','mintTile'],
- ['development','⭐','Coaching & Entwicklung','Arbeits- und Sozialverhalten',`${(b.observations||[]).length} Beobachtungen · ${Number(b.teamStars)||0} TeamStar-Karten`,'amberTile'],
- ['practice','🇬🇧','English Practice','Übungen, Punkte & Kontrollen','Übermittelte Übungsberichte','blueTile'],
+ ['development','⭐','Coaching & Entwicklung','Arbeits- und Sozialverhalten',`${(b.observations||[]).length} Beobachtungen`,'amberTile'],
  ['leb','📝','LEB','Lernentwicklungsbericht',Store.lebDrafts[p.id]?'Entwurf gespeichert':'Noch kein Entwurf gespeichert','roseTile']
  ];
  return `<div class="section">Schülerprofil</div><nav class="profileAreas" aria-label="Profilbereiche">${tiles.map(([id,icon,title,desc,summary,color])=>`<button type="button" class="profileArea ${color} ${profileSection===id?'isActive':''}" aria-pressed="${profileSection===id}" aria-controls="profileContent" onclick="openProfileSection('${id}')"><span class="profileAreaIcon" aria-hidden="true">${icon}</span><b>${title}</b><span>${desc}</span><small>${esc(summary)}</small><span class="profileAreaOpen">${profileSection===id?'Geöffnet':'Öffnen →'}</span></button>`).join('')}</nav>`;
