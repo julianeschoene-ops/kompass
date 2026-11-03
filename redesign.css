@@ -231,3 +231,55 @@ main{padding:24px 28px;min-width:0}
 @media(min-width:1500px){.homeDashboard .schoolHomeGrid{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
 @media(max-width:900px){.homeDashboard .schoolHomeGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.homeDashboard .schoolHomeTile{height:106px!important;min-height:106px!important}}
 @media(max-width:560px){.globalBar{height:62px}.globalBarLeft,.globalBarActions{gap:8px}.globalLogo{font-size:16px}.globalBack{font-size:17px;padding-left:9px}.globalBack span{display:none}.globalYear{min-width:0;width:114px;font-size:11px!important;padding:8px!important}.globalMenu>summary{font-size:12px;padding:9px}.app>main,.app.section-dashboard>main{padding:18px 14px!important}.homeDashboard .schoolHomeTile{height:102px!important;min-height:102px!important;padding:13px!important}.homeDashboard .schoolHomeTile strong{font-size:17px!important}}
+
+/* November dashboard polish: brighter professional pastel, clear header, modest cards. */
+:root{
+ --area-core:#dcebf4; --area-core-ink:#294e68;
+ --area-students:#e4e5f4; --area-students-ink:#464b7a;
+ --area-coaching:#dcefe5; --area-coaching-ink:#315e4b;
+ --area-learningAtelier:#ebe3f5; --area-learningAtelier-ink:#5c4d7d;
+ --area-activities:#faebd6; --area-activities-ink:#755630;
+ --area-leb:#f6e2e6; --area-leb-ink:#7b4d5b;
+}
+.tone-organization{--tile-bg:#dcecee;--tile-ink:#35636c}
+.tone-admin{--tile-bg:#ece4dc;--tile-ink:#635548}
+.globalBar{justify-content:space-between;border-bottom:1px solid #e7edf4;background:#fff}
+.globalBarLeft{gap:14px}
+.globalMenu{order:1}
+.globalBack{order:2;border-left:1px solid #e3e8ed}
+.globalMenuPanel{left:0;right:auto;top:calc(100% + 11px);box-shadow:0 16px 34px rgba(34,53,73,.13)}
+.globalMenu>summary{background:#eff5f9;border-color:#e1eaf2;color:#334e65}
+.globalMenu>summary:hover{background:#e1ecf4}
+.globalYear{background:#fff;border-color:#e1e9f1}
+.app,.app.section-dashboard{background:#f8fafc}
+.app>main,.app.section-dashboard>main{max-width:1600px!important;padding-top:26px!important}
+.homeDashboard{max-width:none!important}
+.homeDashboard .schoolHomeTop{margin-bottom:19px!important}
+.homeDashboard .schoolHomeTop h1{font-size:31px;font-weight:750;color:#243d54}
+.homeDashboard .schoolHomeTop .mini{font-size:13px;color:#77899c;display:block;margin-top:3px}
+.homeAgenda>.card{border-radius:17px;padding:18px 22px;box-shadow:none;border:1px solid #e6ecf1;background:#fff}
+.homeAgenda>.card h2{font-size:19px;margin:0 0 12px;letter-spacing:-.015em}
+.homeAgenda .quickRow{background:#f8fafc;border-radius:11px;border:1px solid #edf1f5;padding:11px 14px;gap:12px}
+.homeTilesHeading{font-size:13px;text-transform:uppercase;letter-spacing:.07em;font-weight:800;color:#718395;margin:24px 0 11px}
+.homeDashboard .schoolHomeGrid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:13px!important;margin-top:0!important}
+.homeDashboard .schoolHomeTile{
+ height:128px!important;min-height:128px!important;padding:17px 19px!important;
+ border:1px solid rgba(57,77,96,.065);border-radius:16px!important;
+ display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;
+ box-shadow:0 2px 7px rgba(35,60,82,.028);
+}
+.homeDashboard .schoolHomeTile strong{font-size:19px!important;letter-spacing:-.025em}
+.homeDashboard .schoolHomeTile>span{font-size:11px!important;opacity:.6}
+.homeDashboard .schoolHomeTile:hover{transform:translateY(-1px);box-shadow:0 9px 20px rgba(34,56,79,.06)}
+@media(max-width:1150px){.homeDashboard .schoolHomeGrid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+@media(max-width:820px){.homeDashboard .schoolHomeGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.homeDashboard .schoolHomeTile{height:116px!important;min-height:116px!important}}
+@media(max-width:560px){
+ .globalBarLeft{gap:7px}
+ .globalMenu>summary{padding:9px}
+ .globalMenu .menuText{display:none}
+ .globalMenuPanel{left:-60px}
+ .homeDashboard .schoolHomeTile{height:105px!important;min-height:105px!important;padding:13px!important}
+ .homeDashboard .schoolHomeTile strong{font-size:17px!important}
+ .homeAgenda>.card{padding:14px}
+ .homeAgenda>.card h2{font-size:17px}
+}
