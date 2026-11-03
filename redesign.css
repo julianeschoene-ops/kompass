@@ -39,3 +39,5 @@ main{padding:24px 28px;min-width:0}
 .studentCard .studentMain{min-width:0}
 .coreTeamstarSuggestions{margin-top:20px}
 .coreTeamstarSuggestions details{border-radius:14px;box-shadow:none}
+
+.coachingEntries{display:grid;gap:10px;margin-top:12px}.coachingEntry{padding:15px 18px}.coachingEntryTop{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.coachingBody{white-space:pre-wrap;line-height:1.5}.coachingEntry .chip{margin-top:10px}@media(max-width:720px){.coachingEntryTop{align-items:flex-start;flex-direction:column}}
