@@ -3,6 +3,7 @@ import datetime
 import json
 import re
 import urllib.request
+import concurrent.futures
 from html.parser import HTMLParser
 from zoneinfo import ZoneInfo
 from pathlib import Path
@@ -54,7 +55,7 @@ def extract(page):
         if item['url'] not in seen:
             items.append(item)
             seen.add(item['url'])
-        if len(items) == 5:
+        if len(items) == 24:
             break
     if not items:
         raise RuntimeError('Keine logo!-Schlagzeilen gefunden; bestehende Datei bleibt erhalten')
@@ -94,7 +95,11 @@ def enrich(item, page, previous=None):
     if not published:
         match = re.search(r'"datePublished"\s*:\s*"(\d{4}-\d{2}-\d{2})', page)
         published = match.group(1) if match else (previous or {}).get('published', '')
-    return {**item, 'summary': summary, **({'published': published} if published else {})}
+    modified = article.metadata.get('article:modified_time', '')[:10]
+    if not modified:
+        match = re.search(r'"dateModified"\s*:\s*"(\d{4}-\d{2}-\d{2})', page)
+        modified = match.group(1) if match else ''
+    return {**item, 'summary': summary, **({'published': published} if published else {}), **({'modified': modified} if modified else {})}
 
 
 def fetch_page(url):
@@ -106,21 +111,40 @@ def main():
     target = Path('daily-kids-news.json')
     old = json.loads(target.read_text(encoding='utf-8')) if target.exists() else {}
     previous = {item['url']: item for item in old.get('items', []) if item.get('summary')}
-    items = []
-    for item in extract(fetch_page('https://www.logo.de/')):
+    today = datetime.datetime.now(ZoneInfo('Europe/Berlin')).date().isoformat()
+    candidates = extract(fetch_page('https://www.logo.de/'))
+    def read_article(item):
         try:
             result = enrich(item, fetch_page(item['url']), previous.get(item['url']))
             if result:
-                items.append(result)
+                return result
         except Exception as error:
             print('Artikel nicht geladen:', item['url'], str(error))
+        return None
+    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
+        items = [item for item in pool.map(read_article, candidates) if item]
     if not items:
         raise RuntimeError('Keine Kindernachrichten mit Kurztext gefunden; vorhandene Texte bleiben erhalten')
-    today = datetime.datetime.now(ZoneInfo('Europe/Berlin')).date().isoformat()
+    # Prefer recent editorial articles, rather than the first permanent homepage tile.
+    cutoff = (datetime.date.fromisoformat(today) - datetime.timedelta(days=14)).isoformat()
+    recent = [item for item in items if cutoff <= max(item.get('published', ''), item.get('modified', '')) <= today]
+    if recent:
+        items = sorted(recent, key=lambda item: max(item.get('published', ''), item.get('modified', '')), reverse=True)
+    else:
+        # Unknown dates may be current; explicitly old evergreen articles are not daily news.
+        items = [item for item in items if not item.get('published') and not item.get('modified')]
+    if not items:
+        raise RuntimeError('Keine aktuellen Kindernachrichten gefunden; vorhandenes Datum bleibt erhalten')
+    previous_lead = old.get('leadUrl') or (old.get('items') or [{}])[0].get('url')
+    if old.get('updated') == today and any(item['url'] == previous_lead for item in items):
+        lead = previous_lead
+    else:
+        lead = next((item['url'] for item in items if item['url'] != previous_lead), items[0]['url'])
     temporary = target.with_suffix('.json.tmp')
-    temporary.write_text(json.dumps({'updated': today, 'source': 'ZDF logo!', 'items': items}, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+    temporary.write_text(json.dumps({'updated': today, 'fetchedAt': datetime.datetime.now(ZoneInfo('Europe/Berlin')).isoformat(), 'leadUrl': lead, 'source': 'ZDF logo!', 'items': items[:10]}, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     temporary.replace(target)
 
 
 if __name__ == '__main__':
     main()
+

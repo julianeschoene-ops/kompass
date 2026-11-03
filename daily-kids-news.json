@@ -1,34 +1,78 @@
 {
-  "updated": "2026-11-02",
+  "updated": "2026-11-03",
+  "fetchedAt": "2026-11-03T07:52:35.397660+01:00",
+  "leadUrl": "https://www.logo.de/3d-karte-usa-vereinigte-staaten-von-amerika-bundesstaaten-100.html",
   "source": "ZDF logo!",
   "items": [
     {
-      "title": "Wie es nach den Protesten weiterging",
-      "url": "https://www.logo.de/demo-ausschreitung-genz-regelt-100.html",
-      "summary": "Junge Menschen demonstrierten für bessere Bildung und Klimaschutz. Meist friedlich, doch später gab es in einigen Städten Gewalt. Was war los?"
+      "title": "Reist durch die USA und ihre 50 Staaten",
+      "url": "https://www.logo.de/3d-karte-usa-vereinigte-staaten-von-amerika-bundesstaaten-100.html",
+      "summary": "Entdeckt die USA und all ihre Bundesstaaten - von Kalifornien bis New York! Und findet heraus, welche Stadt zu gar keinem Staat gehört!",
+      "published": "2026-11-03",
+      "modified": "2026-11-03"
     },
     {
-      "title": "Das fordern Jugendliche von der Politik",
-      "url": "https://www.logo.de/genz-bewegung-demonstration-deutschland-100.html",
-      "summary": "Bessere Schulen, mehr Klimaschutz: Junge Menschen gehen in vielen Städten auf die Straße. Wir haben gefragt, was sie verändern wollen."
+      "title": "Testet euer USA-Wissen!",
+      "url": "https://www.logo.de/quiz-usa-vereinigte-staaten-von-amerika-100.html",
+      "summary": "Wo liegt der höchste Berg der USA? Und wo die größte Stadt? Wie gut ihr euch wirklich mit dem Land auskennt, könnt ihr mit unserem Quiz checken!",
+      "published": "2026-11-03",
+      "modified": "2026-11-03"
     },
     {
-      "title": "Was es mit den Gen-Z-Demos auf sich hat",
-      "url": "https://www.logo.de/genz-demonstriert-100.html",
-      "summary": "In Frankreich gab es zuletzt große Demonstrationen. Jugendliche protestierten für bessere Bildung. Auch in Deutschland wurde jetzt demonstriert.",
-      "published": "2026-10-29"
-    },
-    {
-      "title": "Wisst ihr, was los war?",
-      "url": "https://www.logo.de/nachrichten-quiz-der-woche-100.html",
-      "summary": "Habt ihr alle wichtigen Nachrichten der Woche mitbekommen? Testet mit unseren spannenden Quizfragen euer Wissen zu den aktuellen Themen!",
-      "published": "2025-05-17"
+      "title": "So könnt ihr nach Hilfe rufen",
+      "url": "https://www.logo.de/alternativen-sos-signal-100.html",
+      "summary": "Der SOS-Notruf wird 120 Jahre alt. Diese verschiedenen Zeichen gibt es, um im Alltag und im Notfall nach Hilfe zu rufen.",
+      "published": "2026-11-02",
+      "modified": "2026-11-02"
     },
     {
       "title": "Tierisch gutes Comeback",
       "url": "https://www.logo.de/foto-des-monats-oktober-134.html",
       "summary": "Beim logo!-Fotowettbewerb springt ein Luchs vor die Kamera. Zuschauer Jakob freut sich über die gute Nachricht aus dem Thüringer Wald.",
-      "published": "2022-04-30"
+      "published": "2022-04-30",
+      "modified": "2026-11-01"
+    },
+    {
+      "title": "Was es mit den Gen-Z-Demos auf sich hat",
+      "url": "https://www.logo.de/genz-demonstriert-100.html",
+      "summary": "In Frankreich gab es zuletzt große Demonstrationen. Jugendliche protestierten für bessere Bildung. Auch in Deutschland wurde jetzt demonstriert.",
+      "published": "2026-10-29",
+      "modified": "2026-10-31"
+    },
+    {
+      "title": "Eine Nacht zum Gruseln!",
+      "url": "https://www.logo.de/halloween-108.html",
+      "summary": "Halloween wird jedes Jahr in der Nacht vom 31. Oktober auf den 1. November gefeiert. Der Brauch ist wohl schon mehr als 2.000 Jahr alt.",
+      "published": "2026-10-31",
+      "modified": "2026-10-31"
+    },
+    {
+      "title": "Die Anfänge der evangelischen Kirche",
+      "url": "https://www.logo.de/was-wird-am-reformationstag-gefeiert-100.html",
+      "summary": "Am 31. Oktober 1517 nagelte Martin Luther eine Liste mit Ideen an die Schlosskirche von Wittenberg. Der Beginn der sogenannten Reformation.",
+      "published": "2022-09-06",
+      "modified": "2026-10-31"
+    },
+    {
+      "title": "Wisst ihr, was los war?",
+      "url": "https://www.logo.de/nachrichten-quiz-der-woche-100.html",
+      "summary": "Habt ihr alle wichtigen Nachrichten der Woche mitbekommen? Testet mit unseren spannenden Quizfragen euer Wissen zu den aktuellen Themen!",
+      "published": "2025-05-17",
+      "modified": "2026-10-30"
+    },
+    {
+      "title": "Dieser Vertrag hat Deutschland verändert",
+      "url": "https://www.logo.de/abkommen-tuerkei-deutschland-100.html",
+      "summary": "Vor 65 Jahren suchte Deutschland Arbeitskräfte. Viele Menschen aus der Türkei kamen und fanden hier ein neues Zuhause.",
+      "published": "2026-10-30",
+      "modified": "2026-10-30"
+    },
+    {
+      "title": "Verliert Trump seine Macht?",
+      "url": "https://www.logo.de/midterms-wahlkampf-usa-100.html",
+      "summary": "Donald Trump steht mal wieder im Mittelpunkt: Für die Zwischenwahlen macht er Wahlkampf für seine Politik. Das Ergebnis ist auch für uns wichtig.",
+      "published": "2026-10-29",
+      "modified": "2026-10-29"
     }
   ]
 }
