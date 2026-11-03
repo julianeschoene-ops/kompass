@@ -201,3 +201,33 @@ main{padding:24px 28px;min-width:0}
 @media(min-width:1450px){.homeDashboard .schoolHomeGrid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:1100px){.app.section-dashboard{grid-template-columns:210px minmax(0,1fr)}.homeDashboard .schoolHomeGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.app.section-dashboard{grid-template-columns:0 minmax(0,1fr)}.app.section-dashboard>aside{display:none}.app.section-dashboard>main{padding:18px 14px}.homeDashboard .schoolHomeTile{min-height:104px;height:104px;padding:13px}.homeDashboard .schoolHomeTile strong{font-size:16px!important}}
+
+/* Unified header on every page: never duplicate the left navigation. */
+.app,.app.section-dashboard{display:block!important;grid-template-columns:none!important;min-height:100vh;background:#f6f7fa}
+.app>aside,.app.section-dashboard>aside{display:none!important}
+.app>main,.app.section-dashboard>main{width:100%!important;max-width:1460px!important;margin:0 auto!important;min-height:0!important;padding:24px clamp(18px,3.2vw,48px)!important}
+.globalBar{height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(18px,3.2vw,48px);background:#fff;border-bottom:1px solid #e3e8ed;gap:16px;position:relative;z-index:40}
+.globalBarLeft,.globalBarActions{display:flex;align-items:center;gap:14px;min-width:0}
+.globalLogo{background:none;border:0;cursor:pointer;color:#28384e;font:inherit;font-size:20px;font-weight:850;letter-spacing:.045em;padding:4px 0}
+.globalBack{display:inline-flex;gap:7px;align-items:center;background:none;border:0;border-left:1px solid #e3e8ed;cursor:pointer;color:#596b81;font:inherit;font-size:13px;font-weight:680;padding:8px 0 8px 15px}
+.globalBack:hover,.globalLogo:hover{color:#204e83}
+.globalYear{min-width:144px;width:auto;margin:0!important;background:#f8fafc;border-radius:10px!important;padding:8px 11px!important;font-size:13px!important}
+.globalMenu{position:relative}
+.globalMenu>summary{list-style:none;cursor:pointer;border:1px solid #dce4eb;border-radius:10px;padding:10px 15px;background:#fff;color:#34465d;font-weight:700;font-size:13px;white-space:nowrap}
+.globalMenu>summary::-webkit-details-marker{display:none}
+.globalMenu>summary span{margin-left:7px;font-size:11px;color:#8391a2}
+.globalMenuPanel{position:absolute;top:calc(100% + 10px);right:0;min-width:280px;width:min(340px,calc(100vw - 28px));max-height:min(75vh,680px);overflow:auto;background:#fff;border:1px solid #dfe5ec;box-shadow:0 16px 44px rgba(28,42,61,.16);padding:12px;border-radius:15px;display:grid;gap:5px}
+.globalMenuGroup{padding:4px 2px 9px;border-bottom:1px solid #edf0f4;display:grid;gap:2px}
+.globalMenuGroup:last-child{border-bottom:0}
+.globalMenuLabel{font-size:11px;letter-spacing:.07em;text-transform:uppercase;font-weight:800;color:#7c8898;padding:9px 10px 4px}
+.globalMenuGroup button{border:0;border-radius:8px;background:transparent;text-align:left;padding:9px 10px;font:inherit;font-size:13px;color:#38475b;cursor:pointer}
+.globalMenuGroup button:hover,.globalMenuGroup button.isCurrent{background:#eef2f6}
+.homeDashboard{max-width:none!important;margin:0!important;padding:0!important}
+.homeDashboard .schoolHomeGrid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;grid-template-rows:none!important;min-height:0!important;gap:12px!important;margin-top:16px!important}
+.homeDashboard .schoolHomeTile{height:115px!important;min-height:115px!important;padding:17px 20px!important}
+.homeDashboard .schoolHomeTile strong{font-size:19px!important}
+.homeDashboard .schoolHomeTile>span{font-size:11px!important}
+.homeDashboard .schoolHomeTop{margin-bottom:14px!important}
+@media(min-width:1500px){.homeDashboard .schoolHomeGrid{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+@media(max-width:900px){.homeDashboard .schoolHomeGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.homeDashboard .schoolHomeTile{height:106px!important;min-height:106px!important}}
+@media(max-width:560px){.globalBar{height:62px}.globalBarLeft,.globalBarActions{gap:8px}.globalLogo{font-size:16px}.globalBack{font-size:17px;padding-left:9px}.globalBack span{display:none}.globalYear{min-width:0;width:114px;font-size:11px!important;padding:8px!important}.globalMenu>summary{font-size:12px;padding:9px}.app>main,.app.section-dashboard>main{padding:18px 14px!important}.homeDashboard .schoolHomeTile{height:102px!important;min-height:102px!important;padding:13px!important}.homeDashboard .schoolHomeTile strong{font-size:17px!important}}
