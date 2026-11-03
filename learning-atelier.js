@@ -877,7 +877,7 @@ function laFindResults(){
 }
 function laFindPanel(){return '<div class="card"><h2>🔎 Schüler finden · gesamte Stufe '+laGrade+'</h2><label for="laFindInput">Name suchen – LA 1, LA 2 und LA 3</label><input id="laFindInput" type="search" autocomplete="off" placeholder="Schülername eingeben …" value="'+esc(laFindQuery)+'" oninput="laFindPupil(this.value)"><div id="laFindResults">'+laFindResults()+'</div></div>';}
 let laExpandedPupilId='';
-let laActivePanel='overview';
+let laActivePanel='home';
 function laShowPanel(panel){laActivePanel=panel;render();window.scrollTo?.(0,0);}
 function learningAtelier(){
   if(!Auth.canAccessGrade(laGrade)&&Auth.allowedGrades().length)laGrade=Auth.allowedGrades()[0];
@@ -892,8 +892,9 @@ function learningAtelier(){
   const can=Auth.canLead(laGrade)||Auth.isAdmin();
   let html=header('Lernatelier','Jahrgang '+laGrade+' · alle Farbteams gemeinsam · Lehrkraftansicht');html+=laGradeTabs();
   html+='<div class="toolbar"><button class="chip dark" onclick="laEnterStudentKiosk()">👩‍🎓 Zur Schülersicht wechseln</button><button class="chip" onclick="laTeacherRefresh()">↻ Cloud aktualisieren</button></div>';
-  const laPanels=[['overview','Übersicht','Suchen und aktueller Status','⌕'],['places','Lernorte','Standorte und Lärmampel','⌖'],['requests','Anfragen & Hilfe','Genehmigungen und Hilfehand','✋'],['pupils','Schülerverwaltung','Graduierung, Dienste und Teamstars','♙'],['preparation','Vorbereitung','Tagesübersicht und Wochendienste','▤']];
-  html+='<div class="laLandingTiles">'+laPanels.map(([key,title,description,icon])=>`<button type="button" class="laLandingTile ${laActivePanel===key?'active':''}" onclick="laShowPanel('${key}')"><span class="laTileIcon">${icon}</span><strong>${title}</strong><small>${description}</small></button>`).join('')+'</div>';
+  const laPanels=[['overview','Übersicht','Schüler finden und Status','users'],['places','Lernorte','Standorte und Belegung','map'],['noise','Lärmampel','Lautstärke einstellen','activity'],['requests','Anfragen & Hilfe','Genehmigungen und Hilfehand','message'],['pupils','Schülerverwaltung','Graduierung, Dienste und Teamstars','clipboard'],['preparation','Vorbereitung','Tagesübersicht und Wochendienste','calendar']];
+  html+='<div class="laLandingTiles">'+laPanels.map(([key,title,description,icon])=>`<button type="button" class="laLandingTile laTone-${key}" onclick="laShowPanel('${key}')"><span class="laTileIcon">${schoolTileIcon(icon)}</span><strong>${title}</strong><small>${description}</small></button>`).join('')+'</div>';
+  if(laActivePanel!=='home')html+='<div class="laPanelBack"><button class="chip" onclick="laShowPanel(\'home\')">← Lernatelier-Übersicht</button><h2>'+esc(laPanels.find(p=>p[0]===laActivePanel)?.[1]||'Lernatelier')+'</h2></div>';
   html+='<div class="laPanelView laPanel-overview">';
   html+='<section id="la-overview" class="laSection"><h2 class="laSectionTitle">Lernatelier im Blick</h2>'+laFindPanel()+'</section>';
   html+='</div><div class="laPanelView laPanel-preparation">';
@@ -905,9 +906,11 @@ function learningAtelier(){
   html+='<details class="laCollapsible laPlaceSettings"><summary>Lernorte bearbeiten <span>Standorte hinzufügen oder umbenennen</span></summary><div class="card"><h2>📍 Lernorte der Tafel</h2><p class="mini">Ein Standort pro Zeile. Du kannst Lernorte hinzufügen, umbenennen oder aus der Liste entfernen. Bereits belegte Standorte bleiben sichtbar, bis die Kinder umgezogen sind.</p><textarea id="laPlaceEditor" rows="8" '+(can?'':'disabled')+'>'+esc((laGradeSettings('laPlaces')?.[laSelectedRoom]||LA_DEFAULT_PLACES).join('\n'))+'</textarea>'+(can?'<button class="chip dark" onclick="laSavePlaces()">Lernorte speichern</button>':'')+'</div></details>';
   const boardInfo=laGradeSettings('laBoardInfo')?.[laSelectedRoom]||{};
 
+  html+='</div><div class="laPanelView laPanel-noise">';
   html+=`<div class="card"><h2>Lärmampel · ${esc(laSelectedRoom)}</h2><div class="laLights">${[['green','🟢','Leise sprechen'],['yellow','🟡','Flüstern'],['red','🔴','Ruhe']].map(([v,i,l])=>`<button class="chip ${noise===v?'dark':''}" ${can?'':'disabled'} onclick="laNoise(laSelectedRoom,'${v}')">${i} ${l}</button>`).join('')}</div></div>`;
   const pending=current.filter(p=>p.laRequest?.status==='pending');
   const help=current.filter(p=>p.laNeedsHelp);
+  html+='</div><div class="laPanelView laPanel-places">';
   html+='<div class="laMetrics"><div class="card"><b>'+current.length+'</b><span>SuS in '+esc(laSelectedRoom)+'</span></div><div class="card"><b>'+current.filter(p=>(p.learningPlace||'Lernatelier')==='Lernatelier').length+'</b><span>Im Lernatelier</span></div><div class="card"><b>'+pending.length+'</b><span>Offene Anfragen</span></div><div class="card"><b>'+help.length+'</b><span>Hilfe benötigt</span></div></div>';
   html+='</div><div class="laPanelView laPanel-requests">';
   html+='<section id="la-requests" class="laSection"><h2 class="laSectionTitle">Anfragen & Hilfe</h2><div class="laDashboardGrid"><div class="card"><h2>🔔 Genehmigungen</h2>';
