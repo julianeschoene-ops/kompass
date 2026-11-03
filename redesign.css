@@ -140,3 +140,44 @@ main{padding:24px 28px;min-width:0}
  .schoolHomeTile{min-height:115px;padding:14px;gap:17px}
  .schoolHomeTile strong{font-size:18px!important}
 }
+
+/* Calm full-width home, with the same section colors and less unused space. */
+.app.section-dashboard{display:block;min-height:100vh;background:#f6f7fa}
+.app.section-dashboard>aside{display:none}
+.app.section-dashboard>main{padding:0;max-width:none;min-height:100vh;width:100%}
+.homeDashboard{max-width:1540px;margin:0 auto;padding:0 clamp(22px,4vw,64px) 28px}
+.homeTopbar{height:76px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e3e6eb;margin-bottom:23px;gap:18px}
+.homeLogo{font-weight:850;font-size:22px;letter-spacing:.045em;color:#253246}
+.homeTopbarActions{display:flex;align-items:center;gap:14px}
+.homeTopbar .topYearSelect{border-radius:11px;background:#fff;font-size:13px}
+.homeMenu{position:relative;z-index:15}
+.homeMenu>summary{list-style:none;cursor:pointer;padding:10px 15px;min-height:40px;background:#fff;border:1px solid #dfe4ed;border-radius:11px;font-weight:680;color:#344257;font-size:13px;white-space:nowrap}
+.homeMenu>summary::-webkit-details-marker{display:none}
+.homeMenu>summary span{margin-left:8px;color:#7b8798}
+.homeMenuPanel{position:absolute;right:0;top:calc(100% + 8px);background:white;border:1px solid #dfe4ed;border-radius:13px;box-shadow:0 14px 36px rgba(32,42,56,.12);min-width:225px;padding:7px;display:grid;gap:2px;max-height:calc(100vh - 105px);overflow:auto}
+.homeMenuPanel button{background:transparent;border:0;text-align:left;border-radius:8px;padding:10px 12px;font:inherit;font-size:13px;color:#374151;cursor:pointer}
+.homeMenuPanel button:hover{background:#eef2f6}
+.homeDashboard .schoolHomeTop{margin:0 0 19px}
+.homeDashboard .schoolHomeTop h1{font-size:31px}
+.homeDashboard .schoolHomeGrid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(3,minmax(145px,1fr));gap:14px;min-height:max(492px,calc(100vh - 435px));margin-top:20px}
+.homeDashboard .schoolHomeTile{height:100%;min-height:145px;padding:24px 28px}
+.homeDashboard .schoolHomeTile strong{font-size:23px!important}
+.homeDashboard .schoolHomeTile>span{font-size:12px!important}
+@media(min-width:1550px){.homeDashboard .schoolHomeGrid{min-height:max(510px,calc(100vh - 430px))}}
+@media(max-width:900px){
+ .homeDashboard{padding:0 22px 25px}
+ .homeDashboard .schoolHomeGrid{min-height:max(460px,calc(100vh - 460px));gap:10px}
+ .homeDashboard .schoolHomeTile{min-height:140px;padding:20px}
+ .homeDashboard .schoolHomeTile strong{font-size:20px!important}
+}
+@media(max-width:540px){
+ .homeTopbar{height:66px;margin-bottom:18px}
+ .homeLogo{font-size:18px}
+ .homeTopbarActions{gap:6px}
+ .homeTopbar .topYearSelect{min-width:0;width:116px;font-size:12px;padding:8px}
+ .homeMenu>summary{padding:9px;font-size:12px}
+ .homeDashboard{padding:0 14px 18px}
+ .homeDashboard .schoolHomeGrid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(3,minmax(120px,1fr));min-height:0;gap:9px}
+ .homeDashboard .schoolHomeTile{min-height:120px;padding:14px}
+ .homeDashboard .schoolHomeTile strong{font-size:18px!important}
+}
