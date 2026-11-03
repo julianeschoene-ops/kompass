@@ -181,3 +181,23 @@ main{padding:24px 28px;min-width:0}
  .homeDashboard .schoolHomeTile{min-height:120px;padding:14px}
  .homeDashboard .schoolHomeTile strong{font-size:18px!important}
 }
+
+/* Restored navigation, compact daily dashboard; preserves business-pastel tones. */
+.app.section-dashboard{display:grid;grid-template-columns:238px minmax(0,1fr);min-height:100vh}
+.app.section-dashboard>aside{display:block;position:sticky;top:0;height:100vh;overflow-y:auto}
+.app.section-dashboard>main{max-width:none;padding:24px clamp(20px,2.5vw,38px);min-height:100vh;width:100%}
+.homeDashboard{max-width:none;margin:0;padding:0}
+.homeDashboard .schoolHomeTop{margin:0 0 16px}
+.homeDashboard .schoolHomeGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:none;gap:12px;margin-top:16px;min-height:0}
+.homeDashboard .schoolHomeTile{min-height:112px;height:112px;padding:17px 20px;gap:12px}
+.homeDashboard .schoolHomeTile strong{font-size:18px!important}
+.homeDashboard .schoolHomeTile>span{font-size:11px!important}
+.tone-organization{--tile-bg:#e7edf1;--tile-ink:#3c5462}
+.tone-admin{--tile-bg:#ebe7e1;--tile-ink:#635648}
+.app.section-organization{--section-bg:#e7edf1;--section-ink:#3c5462}
+.app.section-admin{--section-bg:#ebe7e1;--section-ink:#635648}
+.section-organization .subjectToolTile{background:#eef2f5;border-color:#dfe6eb;color:#3c5462}
+.section-organization .subjectToolTile:hover{background:#e7edf1}
+@media(min-width:1450px){.homeDashboard .schoolHomeGrid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:1100px){.app.section-dashboard{grid-template-columns:210px minmax(0,1fr)}.homeDashboard .schoolHomeGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.app.section-dashboard{grid-template-columns:0 minmax(0,1fr)}.app.section-dashboard>aside{display:none}.app.section-dashboard>main{padding:18px 14px}.homeDashboard .schoolHomeTile{min-height:104px;height:104px;padding:13px}.homeDashboard .schoolHomeTile strong{font-size:16px!important}}
