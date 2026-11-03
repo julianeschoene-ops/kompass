@@ -27,7 +27,7 @@ function coreSubjects(){
 }
 function compCard(comp){if(!comp)return`<div class="card empty"><h2>Noch keine Kompetenz</h2><p>Lege sie in der Kompetenzverwaltung an.</p></div>`;return`<div class="card focusCard"><div><span class="badge">${comp.type==='core'?(comp.unit||'Kernfach'):(comp.phase==='base'?'Basiskompetenz':'Vertiefung')}</span><h2>${esc(comp.text)}</h2><p>${esc(comp.subject)} · ${esc(comp.category)} · Zielniveau ${esc(comp.level)}</p>${comp.topic?`<p class="mini"><b>Thema:</b> ${esc(comp.topic)}</p>`:''}</div>${comp.maxPoints?`<div class="scoreHint">max. ${comp.maxPoints} P.</div>`:''}</div>`;}
 function workshopLabMatchesSubject(lab,subject){
- const clean=v=>String(v||'').toLocaleLowerCase('de').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+ const clean=v=>String(v||'').toLocaleLowerCase('de').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
  const l=clean(lab),s=clean(subject);
  if(!l||!s)return false;
  if(l===s||l.includes(s)||s.includes(l))return true;
@@ -52,7 +52,7 @@ function workshopLabAssignment(p,year,sprint){
  return group||(Store.workshopPaths||{})[`${p.id}|${year}|${sprint}`]?.lab||'';
 }
 function workshopAssessmentPupils(comp){
- let pupils=filteredPupils();
+ let pupils=State.search?(Store.pupils||[]).filter(p=>!p.archived&&Number(p.year||String(p.className||'').charAt(0))===Number(State.year)).filter(p=>`${p.first||''} ${p.last||''} ${p.short||''}`.toLocaleLowerCase('de').includes(State.search.toLocaleLowerCase('de'))).sort((a,b)=>String(a.last||'').localeCompare(String(b.last||''),'de')):filteredPupils();
  if(comp?.type!=='workshop'||comp.phase!=='lab'||!workshopAssignedOnly||State.search)return pupils;
  const assignments=pupils.map(p=>({p,lab:workshopLabAssignment(p,State.year,State.sprint)}));
  const matched=assignments.filter(({lab})=>workshopLabMatchesSubject(lab,comp.subject)).map(({p})=>p);
