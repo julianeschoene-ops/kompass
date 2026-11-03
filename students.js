@@ -68,7 +68,7 @@ function autoShortName(){ const first=document.getElementById('new_first')?.valu
 function saveNewPupil(){ const first=document.getElementById('new_first').value.trim(), last=document.getElementById('new_last').value.trim(), short=document.getElementById('new_short').value.trim()||`${first} ${last.charAt(0)}.`, className=document.getElementById('new_class').value, team=document.getElementById('new_team').value, coach=document.getElementById('new_coach').value.trim(); if(!first||!last||!coach){alert('Bitte Vorname, Nachname und Coach eintragen.');return;} Store.pupils.push({id:uid('p'),first,last,short,className,team,color:teamColor(team),coach}); Store.save(); showAddPupil=false; toast(); render(); }
 let profileSection='overview',profileSectionPupil=null,profileSubject='Englisch';
 function openProfileSection(section){profileSection=section;render();document.getElementById('profileContent')?.focus();document.getElementById('profileContent')?.scrollIntoView({block:'start'});}
-function selectProfileSubject(subject){profileSubject=subject;render();}
+function selectProfileSubject(subject){profileSubject=subject;profileCoreTool='';render();}
 function studentProfile(){
  const p=(Store.pupils||[]).find(x=>x.id===State.pupil);
  if(!p){State.pupil=null;return students();}
@@ -92,19 +92,12 @@ function studentProfile(){
  else if(profileSection==='offers')content+=renderProfileOffers(p,acts);
  else if(profileSection==='development')content+=`<h2>Coaching & Entwicklung</h2><div class="card"><h3>Arbeits- & Sozialverhalten</h3>${(b.observations||[]).map(x=>`<p>${esc(x)}</p>`).join('')||'<p class="mini">Noch keine Beobachtungen.</p>'}${b.note?`<h3>Notiz</h3><p class="profileNote">${esc(b.note)}</p>`:''}<button class="chip" onclick="State.view='behaviour';behaviourPupil='${p.id}';resetBehaviourDraft();render()">Beobachtungen bearbeiten</button><div class="section">Verlauf</div>${behaviourHistoryHtml(b.history)}</div>`;
  else if(profileSection==='leb')content+=`<h2>Lernentwicklungsbericht</h2><div class="card"><p>${Store.lebDrafts[p.id]?'Ein gespeicherter Entwurf liegt vor.':'Noch kein Entwurf gespeichert.'}</p><button class="chip dark" onclick="State.view='leb';lebMode='schueler';State.pupil='${p.id}';render()">LEB öffnen</button></div>`;
- else content+='<p class="mini">Wähle einen Bereich, um Lernstände, Teilnahmen oder Rückmeldungen anzusehen.</p>';
+ else content+='';
  content+='</section>';shell(content);
 }
 function renderProfileTiles(p,entries,acts,b){
- const subjects=[...new Set(entries.map(([key])=>Store.competencies.find(c=>c.id===key.split('|')[0])).filter(c=>c&&!c.sprint).map(c=>c.subject))];
- const tiles=[
- ['core','📚','Kernfächer','Lernstand, Kompetenzen & Nachweise',subjects.length?subjects.join(' · '):'Deutsch · Mathematik · Englisch','blueTile'],
- ['workshop','🧭','Themenfeldunterricht','Sprints, Labs & Vertiefungen','Zuordnungen und Werkstattweg','violetTile'],
- ['offers','🎨','Angebote','Clubs, Flexstunden & Kreativband','Teilnahmen und Rückmeldungen','mintTile'],
- ['development','⭐','Coaching & Entwicklung','Arbeits- und Sozialverhalten',`${(b.observations||[]).length} Beobachtungen`,'amberTile'],
- ['leb','📝','LEB','Lernentwicklungsbericht',Store.lebDrafts[p.id]?'Entwurf gespeichert':'Noch kein Entwurf gespeichert','roseTile']
- ];
- return `<div class="section">Schülerprofil</div><nav class="profileAreas" aria-label="Profilbereiche">${tiles.map(([id,icon,title,desc,summary,color])=>`<button type="button" class="profileArea ${color} ${profileSection===id?'isActive':''}" aria-pressed="${profileSection===id}" aria-controls="profileContent" onclick="openProfileSection('${id}')"><span class="profileAreaIcon" aria-hidden="true">${icon}</span><b>${title}</b><span>${desc}</span><small>${esc(summary)}</small><span class="profileAreaOpen">${profileSection===id?'Geöffnet':'Öffnen →'}</span></button>`).join('')}</nav>`;
+ const tiles=[['core','Kernfächer'],['workshop','Themenfeldunterricht'],['offers','Angebote'],['development','Sozialverhalten'],['leb','LEB']];
+ return '<nav class="profileAreas profileAreaTabs" aria-label="Schülerprofil">'+tiles.map(([id,title])=>'<button type="button" class="profileArea '+(profileSection===id?'isActive':'')+'" onclick="openProfileSection(\''+id+'\')">'+title+'</button>').join('')+'</nav>';
 }
 function renderProfileWorkshop(p){
  const history=Store.sprintHistory[p.id]||[];
@@ -119,7 +112,7 @@ function renderProfileWorkshop(p){
   if(!lab&&!match)return '';
   return `<div class="history"><b>Sprint ${s.number}${s.name&&s.name!=='Sprint '+s.number?' · '+esc(s.name):''}</b><br>${lab?'Zuteilung: '+esc(lab):'Noch keine Zuteilung'}${match?.priority?' · Wunsch '+esc(match.priority):''}</div>`;
  }).filter(Boolean);
- return '<h2>Werkstatt</h2>'+(cards.length?'<div class="card"><h3>Sprintzuordnungen</h3>'+cards.join('')+'</div>':'<div class="card empty">Noch keine Sprintzuteilung gespeichert.</div>');
+ return '<h2>Themenfeldunterricht</h2>'+(cards.length?'<div class="card"><h3>Sprintzuordnungen</h3>'+cards.join('')+'</div>':'<div class="card empty">Noch keine Sprintzuteilung gespeichert.</div>');
 }
 function creativeCompetencyProfileHtml(a){const labels={red:'🔴 Noch nicht erreicht',yellow:'🟡 Teilweise erreicht',green:'🟢 Erreicht'};const defs=typeof IT_STUDIO_COMPETENCIES!=='undefined'?IT_STUDIO_COMPETENCIES:[];const entries=defs.filter(([id])=>a?.competencies?.[id]);return entries.length?'<div class="profileNote"><b>IT-Studio · Kompetenzen</b>'+entries.map(([id,t])=>'<p class="mini">'+esc(t)+' · '+esc(labels[a.competencies[id]])+'</p>').join('')+'</div>':'';}
 function renderProfileOffers(p,acts){
@@ -206,30 +199,28 @@ function profileAwardSubjectStar(id,subject){
  render();
 }
 function renderProfileCore(p,entries){
- const subjects=[...new Set(['Deutsch','Mathematik','Englisch',...entries.map(([key])=>Store.competencies.find(c=>c.id===key.split('|')[0])?.subject).filter(Boolean)])];
+ const subjects=['Deutsch','Mathematik','Englisch'];
  if(!subjects.includes(profileSubject))profileSubject='Englisch';
  const grade=Number(p.year||String(p.className||'').charAt(0));
- const selected=Store.competencies.filter(c=>c.subject===profileSubject&&c.type!=='workshop'&&!c.sprint&&Number(c.year)>=5&&Number(c.year)<=Math.max(8,grade)).map(c=>[c.id+'|'+p.id,Store.records[c.id+'|'+p.id]||{}]);
- const assessedRows=selected.filter(([,r])=>['green','yellow','red'].includes(r.current));
- const achieved=assessedRows.filter(([,r])=>r.current==='green').length;
- const graded=assessedRows.length;
- const summary='<div class="card"><h3>'+esc(profileSubject)+' · Lernstand</h3><p><strong>'+achieved+' erreicht</strong> · '+(graded-achieved)+' in Arbeit · '+graded+' bewertet</p><p class="mini">Zuerst siehst du vorhandene Bewertungen. Noch offene Kompetenzen sind separat eingeklappt.</p></div>';
- const byYear=[5,6,7,8].map(year=>{
+ const selected=(Store.competencies||[]).filter(c=>c.subject===profileSubject&&c.type!=='workshop'&&!c.sprint&&Number(c.year)>=5&&Number(c.year)<=Math.max(8,grade)).map(c=>[c.id+'|'+p.id,Store.records[c.id+'|'+p.id]||{}]);
+ const assessed=selected.filter(([,r])=>['green','yellow','red'].includes(r.current));
+ const green=assessed.filter(([,r])=>r.current==='green').length;
+ const tools='<div class="profileCoreTools"><button class="chip" onclick="profileToggleTool(\'teamstar\')">⭐ TeamStars</button>'+(profileSubject==='Englisch'?'<button class="chip" onclick="profileToggleTool(\'practice\')">English Practice</button>':'')+'</div>';
+ const detail=profileCoreTool==='teamstar'?'<div class="profileToolPanel">'+profileSubjectTeamstar(p,profileSubject)+'</div>':profileCoreTool==='practice'&&profileSubject==='Englisch'?'<div class="profileToolPanel">'+(EnglishPractice.practiceReport(p)||'<div class="card empty">Keine Übungsberichte vorhanden.</div>')+EnglishPractice.access(p)+'</div>':'';
+ const years=[5,6,7,8].map(year=>{
   const rows=selected.filter(([key])=>Number(Store.competencies.find(c=>c.id===key.split('|')[0])?.year)===year);
   if(!rows.length)return '';
-  const done=rows.filter(([,r])=>r.current==='green').length;
-  const evaluated=rows.filter(([,r])=>['green','yellow','red'].includes(r.current));
-  const open=rows.filter(([,r])=>!['green','yellow','red'].includes(r.current));
-  return '<details class="card" '+(year===grade?'open':'')+'><summary><strong>Stufe '+year+'</strong> · '+evaluated.length+' bewertet · '+done+' erreicht</summary>'+
-   (evaluated.length?'<h4>Bewertete Kompetenzen</h4>'+renderGroupedCompetencies(evaluated):'<p class="mini">Noch keine Bewertungen</p>')+
-   (open.length?'<details><summary>'+open.length+' noch offene Kompetenzen anzeigen</summary>'+renderGroupedCompetencies(open)+'</details>':'')+'</details>';
+  const rated=rows.filter(([,r])=>['green','yellow','red'].includes(r.current));
+  return '<section class="profileYear"><h3>Klasse '+year+' <span class="mini">'+rated.length+' von '+rows.length+' bewertet</span></h3>'+renderGroupedCompetencies(rows)+'</section>';
  }).join('');
- return profileSubjectTeamstar(p,profileSubject)+'<h2>Kernfächer · Kompetenzraster</h2>'+ `<div class="profileSubjectNav" aria-label="Fach auswählen">${subjects.map(subject=>`<button class="chip ${subject===profileSubject?'dark':''}" aria-pressed="${subject===profileSubject}" onclick="selectProfileSubject(${esc(JSON.stringify(subject))})">${esc(subject)}</button>`).join('')}</div>`+summary+byYear;
+ return '<div class="profileCoreHeading"><div><h2>Kompetenzraster</h2><div class="mini">'+assessed.length+' bewertet · '+green+' erreicht</div></div>'+tools+'</div><div class="profileSubjectNav">'+subjects.map(subject=>'<button class="chip '+(subject===profileSubject?'dark':'')+'" onclick="selectProfileSubject('+esc(JSON.stringify(subject))+')">'+esc(subject)+'</button>').join('')+'</div>'+detail+years;
 }
+let profileCoreTool='';
+function profileToggleTool(tool){profileCoreTool=profileCoreTool===tool?'':tool;render();}
 function renderGroupedCompetencies(entries){
  const groups={};entries.forEach(([key,r])=>{const c=Store.competencies.find(x=>x.id===key.split('|')[0]);if(!c)return;(groups[c.subject]||(groups[c.subject]=[])).push({c,r});});
  const subjects=Object.keys(groups).sort((a,b)=>a.localeCompare(b,'de'));
- return subjects.length?subjects.map(sub=>`<div class="profileRaster"><h3>${esc(sub)}</h3><div class="profileRasterScroll"><table class="profileRasterTable"><thead><tr><th scope="col">Kompetenz</th><th scope="col">Niveau</th><th scope="col">Stand</th><th scope="col">Nachweise & Verlauf</th></tr></thead><tbody>${groups[sub].sort((a,b)=>(a.c.order||0)-(b.c.order||0)).map(({c,r})=>{
+ return subjects.length?subjects.map(sub=>`<div class="profileRaster"><div class="profileRasterScroll"><table class="profileRasterTable"><thead><tr><th scope="col">Kompetenz</th><th scope="col">Niveau</th><th scope="col">Bewertung</th><th scope="col">Nachweise</th></tr></thead><tbody>${groups[sub].sort((a,b)=>(a.c.order||0)-(b.c.order||0)).map(({c,r})=>{
   const history=(r.history||[]).filter(h=>!h.removed&&h.source!=='english_practice');
   return `<tr><th scope="row"><b>${esc(c.text)}</b><div class="mini">${esc(c.category||'')}${c.unit?' · '+esc(c.unit):''}${c.sprint?' · Sprint '+esc(c.sprint):''}</div></th><td>${esc(r.level||'—')}</td><td>${r.current?statusLabel(r.current):'<span class="mini">noch nicht bewertet</span>'}</td><td>${EnglishPractice.evidence(r)}${history.length?`<details><summary>Bewertungsverlauf (${history.length})</summary>${history.slice().reverse().map(h=>`<div class="history">${esc(h.date||'')} · ${esc(h.teacher||'')} · ${esc(h.level||'')}${h.value?' · '+statusLabel(h.value):''}${h.score?`<br>${Number(h.score.points)}/${Number(h.score.max)} Punkte`:''}${h.topic?'<br>'+esc(h.topic):''}${h.note?'<p class="profileNote">'+esc(h.note)+'</p>':''}</div>`).join('')}</details>`:''}${!(r.practiceResults||[]).length&&!history.length?'<span class="mini">—</span>':''}</td></tr>`;
  }).join('')}</tbody></table></div></div>`).join(''):'<div class="card empty">Für dieses Fach sind noch keine Kompetenzen hinterlegt.</div>';
