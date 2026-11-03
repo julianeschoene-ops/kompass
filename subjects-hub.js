@@ -6,7 +6,8 @@ function subjectHubToolOpen(tool){subjectHubTool=tool;subjectHubMode='tool';rend
 function subjectHubBack(){subjectHubMode=subjectHubMode==='tool'?'subject':'home';render();}
 function subjectHub(){if(subjectHubMode==='home'||!subjectHubSubject)return subjectHubHome();if(subjectHubMode==='subject')return subjectHubSubjectPage();return subjectHubToolPage();}
 function subjectTone(subject){
- if(['Deutsch','Englisch','Religion','Ethik'].includes(subject))return 'language';
+ if(['Deutsch','Englisch','Französisch'].includes(subject))return 'language';
+ if(['Religion','Ethik'].includes(subject))return 'values';
  if(['Mathematik','Informatik & Medienbildung','Technik','Physik'].includes(subject))return 'stem';
  if(['Biologie','Geographie','AES','Sport'].includes(subject))return 'nature';
  if(['Geschichte','Gemeinschaftskunde','WBS'].includes(subject))return 'society';
