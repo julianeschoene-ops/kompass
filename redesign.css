@@ -643,3 +643,33 @@ main{padding:24px 28px;min-width:0}
 .app.section-core:has(.subjectAssessmentTheme.subjectColor-mathe)>.appWorkspace{background:#edf5ff!important}
 .app.section-core:has(.subjectPageTitle.subjectColor-mathe)>.appWorkspace>.globalBar,
 .app.section-core:has(.subjectAssessmentTheme.subjectColor-mathe)>.appWorkspace>.globalBar{background:#f7faff!important}
+
+/* 2026-11-03: Ruhige, kontrastreiche Fachflächen. Fachübersicht bleibt neutral. */
+.app.section-core:not(:has(.subjectPageTitle)):not(:has(.subjectAssessmentTheme))>.appWorkspace{background:#f8fafc!important}
+.app.section-core:not(:has(.subjectPageTitle)):not(:has(.subjectAssessmentTheme))>.appWorkspace>.globalBar{background:#fff!important}
+/* Die Fachfarbe liegt auf den Kacheln; die Seitenfläche ist nur ein Hauch davon. */
+.app.section-core:has(.subjectPageTitle.subjectColor-englisch)>.appWorkspace,
+.app.section-core:has(.subjectAssessmentTheme.subjectColor-englisch)>.appWorkspace{background:#fffafb!important}
+.app.section-core:has(.subjectPageTitle.subjectColor-deutsch)>.appWorkspace,
+.app.section-core:has(.subjectAssessmentTheme.subjectColor-deutsch)>.appWorkspace{background:#fffdf5!important}
+.app.section-core:has(.subjectPageTitle.subjectColor-mathe)>.appWorkspace,
+.app.section-core:has(.subjectAssessmentTheme.subjectColor-mathe)>.appWorkspace{background:#f9fbff!important}
+.app.section-core:has(.subjectPageTitle.subjectTone-science)>.appWorkspace,
+.app.section-core:has(.subjectAssessmentTheme.subjectTone-science)>.appWorkspace{background:#f9fcfa!important}
+.app.section-core:has(.subjectPageTitle.subjectTone-society)>.appWorkspace,
+.app.section-core:has(.subjectAssessmentTheme.subjectTone-society)>.appWorkspace{background:#fbfaff!important}
+.app.section-core:has(.subjectPageTitle.subjectTone-informatics)>.appWorkspace,
+.app.section-core:has(.subjectAssessmentTheme.subjectTone-informatics)>.appWorkspace{background:#f9fcfd!important}
+.app.section-core:has(.subjectPageTitle.subjectTone-creative)>.appWorkspace,
+.app.section-core:has(.subjectAssessmentTheme.subjectTone-creative)>.appWorkspace{background:#fefbf8!important}
+.app.section-core:has(.subjectPageTitle.subjectTone-sport)>.appWorkspace,
+.app.section-core:has(.subjectAssessmentTheme.subjectTone-sport)>.appWorkspace{background:#f9fcfb!important}
+.app.section-core:has(.subjectPageTitle.subjectTone-values)>.appWorkspace,
+.app.section-core:has(.subjectAssessmentTheme.subjectTone-values)>.appWorkspace{background:#fdfbf9!important}
+.app.section-core:has(.subjectPageTitle.subjectTone-elective)>.appWorkspace,
+.app.section-core:has(.subjectAssessmentTheme.subjectTone-elective)>.appWorkspace{background:#fbfbfd!important}
+.app.section-core:has(.subjectPageTitle.subjectTone-neutral)>.appWorkspace,
+.app.section-core:has(.subjectAssessmentTheme.subjectTone-neutral)>.appWorkspace{background:#fafbfd!important}
+/* Weißer Kasten bleibt als ruhige Ebene vor dem sehr hellen Hintergrund. */
+.section-core .subjectField{background:#fff!important;border:1px solid #e3e9f0!important}
+.section-core .subjectField .subjectTile{box-shadow:inset 0 0 0 1px rgba(50,65,85,.035)}
