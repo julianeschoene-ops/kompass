@@ -365,3 +365,30 @@ main{padding:24px 28px;min-width:0}
  .app.section-dashboard > .appWorkspace,
  .app > .appWorkspace{display:block!important;width:100%!important}
 }
+
+/* Subject workspaces · material, exercises and planning */
+.subjectResourcePanel{max-width:1120px;margin:18px 0 30px}
+.subjectResourceHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}
+.subjectResourceHeader h2{margin:0;font-size:20px;color:#314b60}
+.subjectResourceHeader .chip{margin:0;padding:7px 12px}
+.subjectResourceNew{border:1px solid #dfe7ed;background:#f9fbfc;border-radius:12px;padding:12px 16px;margin-bottom:12px}
+.subjectResourceNew>summary{cursor:pointer;list-style:none;color:#385b73;font-size:14px;font-weight:750}
+.subjectResourceNew>summary::-webkit-details-marker{display:none}
+.subjectResourceForm{margin-top:16px}
+.subjectResourceForm input,.subjectResourceForm textarea{border-radius:9px}
+.subjectResourceForm .chip{margin-bottom:0}
+.subjectResourcesList{display:grid;gap:9px}
+.subjectResourceItem{background:#fff;border:1px solid #e0e7ed;border-radius:12px;padding:16px 18px}
+.subjectResourceItemTop{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.subjectResourceItemTop strong{font-size:15px;color:#273f54}
+.subjectResourceItem>p{color:#53667a;white-space:pre-wrap;margin:12px 0}
+.subjectResourceActions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+.subjectResourceActions a{font-size:13px;font-weight:720;color:#355c7b;text-decoration:none}
+.subjectResourceActions .chip{padding:7px 11px;font-size:12px;margin:0}
+.englishToolsBar{max-width:1120px;margin:14px 0 20px}
+.englishToolsBar h2{font-size:17px}
+.englishToolsBar .toolbar{box-shadow:none;border-radius:12px}
+.section-core .subjectResourceNew{border-color:#dce5eb;background:#f7fafc}
+.section-core .subjectToolTile{min-height:106px}
+.section-core .subjectToolTile strong{font-size:16px}
+@media(max-width:760px){.subjectResourceItem{padding:12px}.subjectResourceNew{padding:12px}.subjectResourceForm .formgrid{grid-template-columns:1fr}}
