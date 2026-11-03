@@ -1,0 +1,41 @@
+/* KOMPASS navigation and dashboard visual refresh; no permissions or storage changes */
+.app{grid-template-columns:250px minmax(0,1fr)}
+aside{padding:18px 14px;overflow-y:auto;scrollbar-width:thin}
+.brand{font-size:24px;letter-spacing:.055em;padding-left:8px}
+aside .sub{font-size:12px;padding-left:8px;margin:4px 0 12px}
+.userbox{padding:12px;border-radius:15px;margin-bottom:14px;box-shadow:none}
+.userbox .mini{font-size:12px;overflow-wrap:anywhere}
+.userbox .chip{font-size:11px;padding:7px 9px;margin-top:7px}
+.navGroup{margin:6px 0 10px}
+.nav .navGroupHead{padding:9px 11px;margin:0;width:100%;border-radius:9px;font-size:11px;font-weight:800;letter-spacing:.055em;text-transform:uppercase;color:#64748b;justify-content:space-between}
+.nav .navGroupHead:hover{background:#eef2f8}
+.navGroup>button:not(.navGroupHead){padding:9px 11px;margin:1px 0;border-radius:10px;font-size:13px;line-height:1.25;gap:9px}
+.navGroup .navIcon{width:21px;flex-shrink:0;text-align:center;font-size:16px}
+.navGroup>button.active{background:#24344f;color:white;font-weight:750}
+main{padding:24px 28px;min-width:0}
+.pageHead{margin-bottom:14px}
+.pageHead h1{font-size:29px}
+.card,.toolbar,.tile{border-radius:16px;box-shadow:0 4px 16px rgba(31,41,55,.045)}
+.dashboardModules{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.dashboardModule{min-height:116px;display:flex;align-items:flex-start;justify-content:center;gap:8px;text-align:left;background:#fff;box-shadow:none;padding:16px;cursor:pointer;border:1px solid var(--line);font:inherit;color:var(--ink)}
+.dashboardModule:hover{border-color:#9caec8;background:#f9fbff}
+.dashboardModuleIcon{font-size:22px!important;line-height:1}
+.dashboardModule b{font-size:16px}
+.dashboardModule span:last-child{font-size:12px}
+.dashboardTools{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:22px}
+.dashboardTools .section{margin:0}
+.dashboardTools select{max-width:210px}
+@media(max-width:1050px){.app{grid-template-columns:215px minmax(0,1fr)}main{padding:18px}.dashboardModules{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:680px){.dashboardModules{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboardModule{padding:12px;min-height:100px}.dashboardModule b{font-size:14px}}
+
+/* Student list: prioritize names and profiles, not administration */
+.studentManagement{margin:0 0 12px;max-width:max-content}
+.studentManagement summary{cursor:pointer;color:#53647d;font-size:12px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.studentManagementActions{display:flex;gap:8px;flex-wrap:wrap;padding-top:8px}
+.studentCards{display:grid;gap:7px}
+.studentCard{border-radius:13px;box-shadow:none;padding:10px 14px}
+.studentCard .mini{font-size:12px}
+.studentCard .chip{padding:8px 12px}
+.studentCard .studentMain{min-width:0}
+.coreTeamstarSuggestions{margin-top:20px}
+.coreTeamstarSuggestions details{border-radius:14px;box-shadow:none}
