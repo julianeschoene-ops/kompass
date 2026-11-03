@@ -713,3 +713,22 @@ main{padding:24px 28px;min-width:0}
 .laPupilHelp{display:flex;align-items:end}
 @media(max-width:900px){.laPupilDetails{grid-template-columns:repeat(2,minmax(0,1fr))}.laPupilMeta{display:none}}
 @media(max-width:600px){.laPupilDetails{grid-template-columns:1fr}.laPupilIdentity{flex-wrap:wrap}.laPupilEdit{margin-left:auto}}
+
+/* Learning atelier: compact, scannable location board. */
+.laBoardHeading{display:flex;justify-content:space-between;align-items:center;gap:14px;margin:16px 0}
+.laBoardHeading .laSectionTitle{margin:0}
+.laBoardHeading .mini{margin:5px 0 0}
+.laBoardSelection{background:#edf4fa;border:1px solid #cbddeb;border-radius:11px;padding:11px 15px;margin-bottom:12px;color:#334d66}
+.laBoardModern{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start}
+.laPlaceCard{background:#fff;border:1px solid #dce5ed;border-radius:15px;padding:15px;min-width:0}
+.laPlaceHeader{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
+.laPlaceHeader h3{margin:0;font-size:15px;color:#334a62}
+.laPlaceCount{border-radius:99px;background:#edf2f7;padding:3px 9px;font-size:12px;font-weight:700}
+.laPlaceNames{display:flex;flex-wrap:wrap;gap:7px}
+.laPlacePupil{display:inline-flex;align-items:center;gap:7px;border:1px solid #e0e7ef;border-radius:9px;background:#f8fafc;color:#334a62;padding:8px 10px;cursor:pointer;font-size:12px;text-align:left}
+.laPlacePupil.selected{border-color:#537fa9;background:#e5f0fb;box-shadow:0 0 0 1px #537fa9}
+.laPlacePupil:hover{background:#eaf2fa}
+.laPlaceEmpty{font-size:12px;color:#8391a0}
+.laMoveHere{width:100%;padding:9px 11px;margin:0 0 12px;border:1px dashed #7b9db9;border-radius:9px;background:#f0f7fd;color:#315777;cursor:pointer;font-weight:700}
+@media(max-width:1000px){.laBoardModern{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.laBoardModern{grid-template-columns:1fr}.laBoardHeading{align-items:flex-start;flex-direction:column}}
