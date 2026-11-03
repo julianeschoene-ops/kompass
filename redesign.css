@@ -508,3 +508,19 @@ main{padding:24px 28px;min-width:0}
 .subjectAssessmentTheme .assessmentDialogActions{display:flex;flex-wrap:wrap;gap:8px}
 .assessmentDialogActions{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 8px}
 .assessmentDialogActions .chip{margin:0}
+
+/* Secondary subjects: one restrained pastel identity per subject family.
+   School colors for Deutsch/Englisch/Mathematik remain authoritative. */
+.section-core .subjectAssessmentTheme.subjectColor-other,
+.section-core .subjectPageTitle.subjectColor-other{--secondary-accent:var(--subject-tone,#e6edf4)}
+.app.section-core:has(.subjectAssessmentTheme.subjectColor-other)>.appWorkspace,
+.app.section-core:has(.subjectPageTitle.subjectColor-other)>.appWorkspace{background:#f1f6fa!important}
+.app.section-core:has(.subjectAssessmentTheme.subjectColor-other) .globalBar,
+.app.section-core:has(.subjectPageTitle.subjectColor-other) .globalBar{background:#f9fbfd!important}
+.section-core .subjectPageTitle.subjectColor-other{border-bottom:3px solid var(--secondary-accent,var(--subject-tone,#dce8f2))!important}
+.section-core .subjectAssessmentTheme.subjectColor-other .subjectContext{border-left:4px solid var(--secondary-accent,var(--subject-tone,#dce8f2));padding:9px 13px;background:rgba(255,255,255,.75);border-radius:9px}
+.section-core .subjectTools .subjectToolTile.subjectColor-other{background:var(--subject-tone,#e7edf4)!important;border-color:#d6e1eb!important;color:#344b63!important}
+.section-core .subjectTools .subjectToolTile.subjectColor-other:hover{background:var(--subject-tone-hover,#d9e4f0)!important}
+.section-core .subjectTools .subjectToolTile.subjectColor-other strong{color:inherit!important}
+.section-core .subjectAssessmentTheme .focusCard{padding:14px 18px}
+.section-core .subjectAssessmentTheme .focusCard h2{font-size:17px;line-height:1.4}
