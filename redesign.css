@@ -427,3 +427,18 @@ main{padding:24px 28px;min-width:0}
 
 /* Religion & Ethik: own subject family, separate from languages */
 .section-core .subjectTone-values{--subject-tone:#e2eaf2;--subject-tone-hover:#d3e0ec}
+
+/* Bildungsplan BW: readable subject fields, each subject remains a direct entry. */
+.section-core .subjectFields{display:grid;gap:22px}
+.section-core .subjectFieldHeading{font-size:14px;font-weight:760;letter-spacing:.015em;color:#4d6478;margin:0 0 10px}
+.section-core .subjectField .subjectGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.section-core .subjectField .subjectTile{min-height:82px;padding:15px 17px;justify-content:center;gap:0}
+.section-core .subjectField .subjectTile strong{font-size:16px;line-height:1.3}
+.section-core .subjectTone-math{--subject-tone:#dce9f4;--subject-tone-hover:#d0e1ef}
+.section-core .subjectTone-science{--subject-tone:#deedf4;--subject-tone-hover:#d1e4ee}
+.section-core .subjectTone-informatics{--subject-tone:#dceaf2;--subject-tone-hover:#cce1ed}
+.section-core .subjectTone-sport{--subject-tone:#d8edf3;--subject-tone-hover:#c8e3ed}
+.section-core .subjectTone-elective{--subject-tone:#e6eaf4;--subject-tone-hover:#d9e0f0}
+.section-core .subjectTone-neutral{--subject-tone:#e7edf4;--subject-tone-hover:#d9e4f0}
+@media(max-width:1100px){.section-core .subjectField .subjectGrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:760px){.section-core .subjectField .subjectGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.section-core .subjectField .subjectTile{min-height:72px}}
