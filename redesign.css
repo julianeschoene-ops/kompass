@@ -41,3 +41,33 @@ main{padding:24px 28px;min-width:0}
 .coreTeamstarSuggestions details{border-radius:14px;box-shadow:none}
 
 .coachingEntries{display:grid;gap:10px;margin-top:12px}.coachingEntry{padding:15px 18px}.coachingEntryTop{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.coachingBody{white-space:pre-wrap;line-height:1.5}.coachingEntry .chip{margin-top:10px}@media(max-width:720px){.coachingEntryTop{align-items:flex-start;flex-direction:column}}
+
+/* November profile refinement: competency raster first, secondary actions unobtrusive */
+.app{grid-template-columns:238px minmax(0,1fr);background:#f6f8fc}
+.app>main{max-width:none;width:100%;padding:24px clamp(20px,3vw,42px);background:transparent}
+.app>aside{background:#fff}
+.pageHead .badge{font-size:11px;padding:6px 9px;align-self:flex-start}
+.profileAreas.profileAreaTabs{display:flex!important;flex-wrap:wrap!important;gap:6px!important;margin:10px 0 18px!important}
+.profileAreaTabs .profileArea{display:inline-flex!important;flex:0 0 auto!important;width:auto!important;min-height:0!important;padding:10px 14px!important;border:1px solid var(--line)!important;border-radius:10px!important;background:#fff!important;box-shadow:none!important;font-size:13px!important;font-weight:700!important;color:#475467!important}
+.profileAreaTabs .profileArea.isActive{background:#24344f!important;color:#fff!important}
+.profileCoreHeading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:12px 0 8px}
+.profileCoreHeading h2{margin:0 0 3px;font-size:22px}
+.profileCoreTools{display:flex;gap:6px;flex-wrap:wrap}
+.profileCoreTools .chip{margin:0;padding:8px 12px;font-size:12px}
+.profileSubjectNav{margin:12px 0 20px;gap:6px}
+.profileSubjectNav .chip{padding:8px 14px;font-size:13px}
+.profileToolPanel{margin:0 0 16px}.profileToolPanel>.card{padding:14px 18px;box-shadow:none}.profileToolPanel h3{font-size:15px}
+.profileYear{margin:0 0 22px}.profileYear>h3{display:flex;align-items:baseline;gap:12px;margin:0 0 9px;font-size:16px}
+.profileYear .profileRaster{margin:0;border-radius:12px;box-shadow:none}
+.profileYear .profileRasterScroll{margin:0}
+.profileYear .profileRasterTable{table-layout:auto}
+.profileYear .profileRasterTable th,.profileYear .profileRasterTable td{padding:11px 12px;line-height:1.4;font-size:13px}
+.profileYear .profileRasterTable th:first-child{width:48%}.profileYear .profileRasterTable th:nth-child(2){width:9%}.profileYear .profileRasterTable th:nth-child(3){width:19%}.profileYear .profileRasterTable th:nth-child(4){width:24%}
+.profileYear .profileRasterTable th[scope=row]{min-width:0;font-weight:500}
+.profileYear .profileRasterTable thead{background:#f1f4f9}
+.profileYear .profileRasterTable tbody tr:nth-child(even){background:#fafbfd}
+.profileYear .profileRasterTable .statusPill{font-size:11px;padding:4px 7px}
+.profileYear .profileRasterTable .mini{font-size:11px;line-height:1.3}
+.dashboardModule{min-height:100px;justify-content:flex-start;gap:6px;padding:15px}
+.dashboardModule b{font-size:15px}.dashboardModuleIcon{font-size:19px!important}
+@media(max-width:850px){.app{grid-template-columns:205px minmax(0,1fr)}.app>main{padding:18px}.profileYear .profileRasterTable{min-width:680px}}
