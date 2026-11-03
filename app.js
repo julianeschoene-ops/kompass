@@ -41,11 +41,42 @@ async function doLogin(){try{if(Auth.cloudConfigured()){if(!Auth.cloudClient)awa
 function showSignup(){loginErr(new Error('Neue Kollegiumskonten werden durch einen Admin in Verwaltung → Benutzer angelegt.'));}
 async function doSignup(){loginErr(new Error('Neue Kollegiumskonten werden durch einen Admin angelegt.'));}
 async function saveCloudSetup(){try{await Auth.saveCloudConfig(document.getElementById('cloud_url').value,document.getElementById('cloud_key').value)}catch(e){loginErr(e)}}
+/* Unified monochrome line icons for dashboard and subject tiles only. */
+function schoolTileIcon(name){
+ const paths={
+ book:'<path d="M4 5.5c3-1.5 5.5-1.5 8 0v14c-2.5-1.5-5-1.5-8 0z"/><path d="M12 5.5c2.5-1.5 5-1.5 8 0v14c-3-1.5-5.5-1.5-8 0z"/>',
+ users:'<circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2"/><path d="M16 5a3 3 0 0 1 0 6m2 3a5 5 0 0 1 3 5v1"/>',
+ clipboard:'<rect x="5" y="4" width="14" height="17" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 11h6m-6 4h6"/>',
+ school:'<path d="m3 10 9-7 9 7v11H3z"/><path d="M9 21v-8h6v8M3 10h18"/>',
+ palette:'<path d="M12 3a9 9 0 1 0 0 18h2a2 2 0 0 0 1.5-3.4A2 2 0 0 1 17 14h1a4 4 0 0 0 4-4A9 9 0 0 0 12 3z"/><circle cx="7" cy="10" r="1"/><circle cx="10" cy="6.5" r="1"/><circle cx="16" cy="7" r="1"/>',
+ file:'<path d="M6 3h8l4 4v14H6zM14 3v5h4M9 12h6m-6 4h6"/>',
+ calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18m-12 4h2m3 0h2"/>',
+ settings:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M4.9 4.9 7 7m10 10 2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/>',
+ text:'<path d="M4 6h16M9 6v13m6-13v13M6 19h6m0 0h6"/>',
+ message:'<path d="M4 5h16v12H9l-5 4z"/><path d="M8 10h8m-8 3h5"/>',
+ calculator:'<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M8 6h8v4H8zM8 14h1m3 0h1m3 0h1m-9 4h1m3 0h1m3 0h1"/>',
+ clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/>',
+ map:'<path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3zM9 3v15m6-12v15"/>',
+ landmark:'<path d="m3 9 9-6 9 6M5 10h14M6 19V11m4 8v-8m4 8v-8m4 8v-8M3 21h18"/>',
+ chart:'<path d="M4 20V4m0 16h16M8 16l4-5 3 2 5-7"/>',
+ leaf:'<path d="M20 4C9 4 4 9 4 15a5 5 0 0 0 5 5c6 0 11-5 11-16zM4 20l11-11"/>',
+ atom:'<circle cx="12" cy="12" r="2"/><ellipse cx="12" cy="12" rx="10" ry="4.5"/><ellipse cx="12" cy="12" rx="10" ry="4.5" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4.5" transform="rotate(120 12 12)"/>',
+ monitor:'<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4m-3-13-2 2 2 2m6-4 2 2-2 2"/>',
+ brush:'<path d="m14 4 6 6-8 8-6-6zM5 15c-3 0-3 4-3 6 4 0 7-1 7-4"/>',
+ music:'<path d="M9 18V5l12-2v13M9 9l12-2"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+ activity:'<circle cx="12" cy="12" r="9"/><path d="m12 3 3 6-3 4-6-1-2 4m8-3 5 2 1 5"/>',
+ candle:'<path d="M8 21h8m-7-2h6v-8H9zM12 9c-3-3 1-5 0-7 4 3 4 5 0 7z"/>',
+ scale:'<path d="M12 3v18M5 7h14M7 7l-4 7h8zM17 7l-4 7h8zM8 21h8"/>',
+ home:'<path d="m3 11 9-8 9 8M5 10v11h14V10M9 21v-7h6v7"/>',
+ wrench:'<path d="M20 6a6 6 0 0 1-8 7l-7 7a2 2 0 0 1-3-3l7-7a6 6 0 0 1 7-8l-4 4 4 4z"/>'
+ };
+ return '<svg class="schoolLineIcon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+(paths[name]||paths.book)+'</svg>';
+}
 function dashboard(){
- const tiles=[['core','01','Fächer'],['students','02','Schüler*innen'],['coaching','03','Meine Klassen'],['learningAtelier','04','Lernatelier'],['activities','05','Angebote'],['leb','06','LEB'],['organization','07','Organisation']];
- if(Auth.isAdmin())tiles.push(['admin','08','Verwaltung']);
+ const tiles=[['core','book','Fächer'],['students','users','Schüler*innen'],['coaching','clipboard','Meine Klassen'],['learningAtelier','school','Lernatelier'],['activities','palette','Angebote'],['leb','file','LEB'],['organization','calendar','Organisation']];
+ if(Auth.isAdmin())tiles.push(['admin','settings','Verwaltung']);
  const heading='<div class="schoolHomeTop"><div><h1>Mein Schulalltag</h1><span class="mini">Alles Wichtige auf einen Blick</span></div></div>';
- const cards='<div class="schoolHomeGrid">'+tiles.map(([id,icon,label])=>'<button class="schoolHomeTile tone-'+id+'" onclick="State.view=\''+id+'\';if(\''+id+'\'===\'core\')subjectHubMode=\'home\';if(\''+id+'\'===\'coaching\')Coaching.section=\'home\';render()"><span>'+icon+'</span><strong>'+label+'</strong></button>').join('')+'</div>';
+ const cards='<div class="schoolHomeGrid">'+tiles.map(([id,icon,label])=>'<button class="schoolHomeTile tone-'+id+'" onclick="State.view=\''+id+'\';if(\''+id+'\'===\'core\')subjectHubMode=\'home\';if(\''+id+'\'===\'coaching\')Coaching.section=\'home\';render()"><span class="schoolTileIcon">'+schoolTileIcon(icon)+'</span><strong>'+label+'</strong></button>').join('')+'</div>';
  shell('<div class="homeDashboard">'+heading+'<section class="homeAgenda">'+coachReminderHtml(State.year)+'</section><div class="homeTilesHeading">Meine Bereiche</div>'+cards+'</div>');
 }
 function organization(){
