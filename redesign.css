@@ -482,3 +482,29 @@ main{padding:24px 28px;min-width:0}
 .section-core .subjectField .subjectGrid .subjectTile .subjectTileIcon{display:flex;flex:none;align-items:center;justify-content:center;color:inherit;opacity:.72}
 .section-core .subjectField .subjectGrid .subjectTile .subjectTileIcon .schoolLineIcon{width:19px;height:19px}
 .section-core .subjectField .subjectGrid .subjectTile strong{flex:1;min-width:0}
+
+/* Main subjects: a little more prominence in the subject chooser. */
+.section-core .subjectField:has(.subjectColor-deutsch) .subjectTile,
+.section-core .subjectField:has(.subjectColor-mathe) .subjectTile{min-height:80px!important}
+.section-core .subjectField:has(.subjectColor-deutsch),
+.section-core .subjectField:has(.subjectColor-mathe){padding-top:17px;padding-bottom:17px}
+.section-core .subjectField:has(.subjectColor-deutsch) .subjectTile strong,
+.section-core .subjectField:has(.subjectColor-mathe) .subjectTile strong{font-size:15px}
+
+/* Subject identity carries into the whole content area, without overpowering white forms. */
+.app.section-core:has(.subjectColor-englisch.subjectPageTitle)>.appWorkspace,
+.app.section-core:has(.subjectAssessmentTheme.subjectColor-englisch)>.appWorkspace{background:#fdf0f1!important}
+.app.section-core:has(.subjectColor-deutsch.subjectPageTitle)>.appWorkspace,
+.app.section-core:has(.subjectAssessmentTheme.subjectColor-deutsch)>.appWorkspace{background:#fff7df!important}
+.app.section-core:has(.subjectColor-mathe.subjectPageTitle)>.appWorkspace,
+.app.section-core:has(.subjectAssessmentTheme.subjectColor-mathe)>.appWorkspace{background:#edf5ff!important}
+.app.section-core:has(.subjectColor-englisch.subjectPageTitle) .globalBar,
+.app.section-core:has(.subjectAssessmentTheme.subjectColor-englisch) .globalBar{background:#fff8f8!important}
+.app.section-core:has(.subjectColor-deutsch.subjectPageTitle) .globalBar,
+.app.section-core:has(.subjectAssessmentTheme.subjectColor-deutsch) .globalBar{background:#fffbef!important}
+.app.section-core:has(.subjectColor-mathe.subjectPageTitle) .globalBar,
+.app.section-core:has(.subjectAssessmentTheme.subjectColor-mathe) .globalBar{background:#f7faff!important}
+.subjectAssessmentTheme{min-width:0}
+.subjectAssessmentTheme .assessmentDialogActions{display:flex;flex-wrap:wrap;gap:8px}
+.assessmentDialogActions{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 8px}
+.assessmentDialogActions .chip{margin:0}
