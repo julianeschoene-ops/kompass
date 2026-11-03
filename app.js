@@ -35,7 +35,12 @@ async function saveCloudSetup(){try{await Auth.saveCloudConfig(document.getEleme
 function dashboard(){
  const tiles=[['core','01','Fächer'],['students','02','Schüler*innen'],['coaching','03','Meine Klassen'],['learningAtelier','04','Lernatelier'],['activities','05','Angebote'],['leb','06','LEB']];
  const year='<select class="topYearSelect" aria-label="Jahrgang" onchange="State.year=Number(this.value);State.team=\'alle\';render()">'+visibleYears().map(y=>'<option value="'+y+'" '+(State.year===y?'selected':'')+'>Jahrgang '+y+'</option>').join('')+'</select>';
- shell('<div class="schoolHomeTop"><div><h1>Übersicht</h1><span class="mini">Mein Schulalltag</span></div>'+year+'</div>'+coachReminderHtml(State.year)+'<div class="schoolHomeGrid">'+tiles.map(([id,icon,label])=>'<button class="schoolHomeTile tone-'+id+'" onclick="State.view=\''+id+'\';if(\''+id+'\'===\'core\')subjectHubMode=\'home\';render()"><span>'+icon+'</span><strong>'+label+'</strong></button>').join('')+'</div><div class="schoolHomeFoot"><button class="chip" onclick="reloadTeacherCloudData()">↻ Aktualisieren</button></div>');
+ const extras=[['calendar','Kalender'],['roomOccupancy','Raum- & Wochenpläne'],['teams','Teams & Coaching'],['admin','Verwaltung']].filter(([v])=>!['admin','roomOccupancy'].includes(v)||Auth.isAdmin()).filter(([v])=>v!=='teams'||Auth.isAdmin()||Auth.canLead(State.year));
+ const menu='<details class="homeMenu"><summary aria-label="Menü öffnen">Menü <span aria-hidden="true">⌄</span></summary><div class="homeMenuPanel">'+extras.map(([v,label])=>'<button onclick="State.view=\''+v+'\';render()">'+esc(label)+'</button>').join('')+'<button onclick="reloadTeacherCloudData()">Daten aktualisieren</button><button onclick="openPasswordDialog()">Passwort ändern</button><button onclick="Auth.logout()">Konto wechseln</button></div></details>';
+ const navigation='<div class="homeTopbar"><div class="homeLogo">KOMPASS</div><div class="homeTopbarActions">'+year+menu+'</div></div>';
+ const heading='<div class="schoolHomeTop"><div><h1>Übersicht</h1><span class="mini">Mein Schulalltag</span></div></div>';
+ const cards='<div class="schoolHomeGrid">'+tiles.map(([id,icon,label])=>'<button class="schoolHomeTile tone-'+id+'" onclick="State.view=\''+id+'\';if(\''+id+'\'===\'core\')subjectHubMode=\'home\';if(\''+id+'\'===\'coaching\')Coaching.section=\'home\';render()"><span>'+icon+'</span><strong>'+label+'</strong></button>').join('')+'</div>';
+ shell('<div class="homeDashboard">'+navigation+heading+coachReminderHtml(State.year)+cards+'</div>');
 }
 async function reloadTeacherCloudData(){
  if(typeof Sync==='undefined'||!Sync.enabled()){toast('Cloud-Verbindung derzeit nicht verfügbar.');return;}
