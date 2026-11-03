@@ -524,3 +524,13 @@ main{padding:24px 28px;min-width:0}
 .section-core .subjectTools .subjectToolTile.subjectColor-other strong{color:inherit!important}
 .section-core .subjectAssessmentTheme .focusCard{padding:14px 18px}
 .section-core .subjectAssessmentTheme .focusCard h2{font-size:17px;line-height:1.4}
+
+/* Secondary assessment: neutral canvas and compact controls. */
+.app.section-core:has(.subjectAssessmentTheme.subjectColor-other)>.appWorkspace{background:#f4f6f8!important}
+.app.section-core:has(.subjectAssessmentTheme.subjectColor-other)>.appWorkspace>.globalBar{background:#fafbfd!important}
+.section-core .subjectAssessmentTheme.subjectColor-other .toolbar.workshopFilters{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding:20px 22px}
+.section-core .workshopFilters select{width:100%;min-width:0;text-overflow:ellipsis}
+.section-core .workshopAssessmentHeading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.section-core .workshopAssignmentToggle{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:500;text-transform:none;letter-spacing:normal}
+.section-core .workshopAssignmentToggle input{width:auto;margin:0}
+@media(max-width:760px){.section-core .subjectAssessmentTheme.subjectColor-other .toolbar.workshopFilters{grid-template-columns:1fr;padding:15px}.section-core .workshopAssessmentHeading{align-items:flex-start;flex-direction:column}}
