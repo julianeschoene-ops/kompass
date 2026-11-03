@@ -309,3 +309,59 @@ main{padding:24px 28px;min-width:0}
 @media(min-width:1600px){.app>.appWorkspace>main .homeDashboard .schoolHomeGrid{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
 @media(max-width:1000px){.app:has(> .persistentNav){grid-template-columns:208px minmax(0,1fr)!important}.app>.persistentNav{padding:18px 10px}.sidebarLogo{font-size:19px}.app>.appWorkspace>main .homeDashboard .schoolHomeGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media(max-width:660px){.app:has(> .persistentNav){display:block!important}.app>.persistentNav{display:none!important}.app>.appWorkspace>.globalBar .mobileLogo,.app>.appWorkspace>.globalBar .mobileMenu{display:block}.app>.appWorkspace>.globalBar{background:#fff;padding:0 14px}.app>.appWorkspace>main{padding:18px 14px!important}.app>.appWorkspace>main .homeDashboard .schoolHomeGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.app>.appWorkspace>.globalBar .globalBarLeft{gap:7px}}
+
+/* Critical Safari fix: older dashboard rules must never hide the new sidebar.
+   Hidden first grid child caused the workspace to occupy the 238px sidebar column. */
+.app.section-dashboard:has(> .persistentNav),
+.app:has(> .persistentNav){
+ display:grid!important;
+ grid-template-columns:238px minmax(0,1fr)!important;
+ width:100%!important;
+ min-width:0!important;
+ align-items:start!important;
+}
+.app.section-dashboard > aside.persistentNav,
+.app > aside.persistentNav{
+ display:flex!important;
+ grid-column:1!important;
+ grid-row:1!important;
+ width:238px!important;
+ max-width:238px!important;
+ min-width:0!important;
+ position:sticky!important;
+ top:0;
+ height:100vh!important;
+ visibility:visible!important;
+}
+.app.section-dashboard > .appWorkspace,
+.app > .appWorkspace{
+ display:block!important;
+ grid-column:2!important;
+ grid-row:1!important;
+ width:100%!important;
+ max-width:none!important;
+ min-width:0!important;
+ overflow:visible!important;
+}
+.app.section-dashboard > .appWorkspace > main,
+.app > .appWorkspace > main{
+ display:block!important;
+ width:100%!important;
+ min-width:0!important;
+ max-width:1480px!important;
+ margin:0 auto!important;
+}
+@media(max-width:1000px) and (min-width:661px){
+ .app.section-dashboard:has(> .persistentNav),
+ .app:has(> .persistentNav){grid-template-columns:208px minmax(0,1fr)!important}
+ .app.section-dashboard > aside.persistentNav,
+ .app > aside.persistentNav{width:208px!important;max-width:208px!important}
+}
+@media(max-width:660px){
+ .app.section-dashboard:has(> .persistentNav),
+ .app:has(> .persistentNav){display:block!important;width:100%!important}
+ .app.section-dashboard > aside.persistentNav,
+ .app > aside.persistentNav{display:none!important}
+ .app.section-dashboard > .appWorkspace,
+ .app > .appWorkspace{display:block!important;width:100%!important}
+}
