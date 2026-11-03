@@ -768,3 +768,13 @@ main{padding:24px 28px;min-width:0}
 .laShow-noise .laPanel-noise{display:block}
 @media(max-width:850px){.laLandingTiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.laLandingTile{padding:14px;min-height:116px}.laLandingTile strong{font-size:15px}.laPanelBack{flex-wrap:wrap}}
+
+/* Lernatelier: compact noise control and reward overview */
+.laNoiseTeacherHub{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px;align-items:start;margin-top:16px}
+.laNoiseTeacherHub>.card,.laNoiseTeacherHub>#laNoiseScoreboard>.card{margin:0;min-width:0}
+.laNoiseTeacherHub .laNoiseMeter{max-width:100%}
+.laNoiseTeacherHub #laNoiseScoreboard .laMetrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.laNoiseTeacherHub #laNoiseScoreboard .laMetrics>.card{padding:12px;min-width:0}
+.laNoiseTeacherHub #laNoiseScoreboard .laMetrics>.card p{margin:7px 0}
+@media(max-width:1050px){.laNoiseTeacherHub{grid-template-columns:1fr}}
+@media(max-width:600px){.laNoiseTeacherHub #laNoiseScoreboard .laMetrics{grid-template-columns:1fr}}
