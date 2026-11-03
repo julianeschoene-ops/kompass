@@ -877,6 +877,8 @@ function laFindResults(){
 }
 function laFindPanel(){return '<div class="card"><h2>🔎 Schüler finden · gesamte Stufe '+laGrade+'</h2><label for="laFindInput">Name suchen – LA 1, LA 2 und LA 3</label><input id="laFindInput" type="search" autocomplete="off" placeholder="Schülername eingeben …" value="'+esc(laFindQuery)+'" oninput="laFindPupil(this.value)"><div id="laFindResults">'+laFindResults()+'</div></div>';}
 let laExpandedPupilId='';
+let laActivePanel='overview';
+function laShowPanel(panel){laActivePanel=panel;render();window.scrollTo?.(0,0);}
 function learningAtelier(){
   if(!Auth.canAccessGrade(laGrade)&&Auth.allowedGrades().length)laGrade=Auth.allowedGrades()[0];
   if(Auth.canAccessGrade(laGrade)&&laPupils().some(p=>laRoom(p)))laEnsureCloudWeeklyDuties();
@@ -890,9 +892,13 @@ function learningAtelier(){
   const can=Auth.canLead(laGrade)||Auth.isAdmin();
   let html=header('Lernatelier','Jahrgang '+laGrade+' · alle Farbteams gemeinsam · Lehrkraftansicht');html+=laGradeTabs();
   html+='<div class="toolbar"><button class="chip dark" onclick="laEnterStudentKiosk()">👩‍🎓 Zur Schülersicht wechseln</button><button class="chip" onclick="laTeacherRefresh()">↻ Cloud aktualisieren</button></div>';
-  html+='<nav class="laQuickNav" aria-label="Lernatelier-Bereiche"><a href="#la-overview">Übersicht</a><a href="#la-requests">Anfragen & Hilfe</a><a href="#la-places">Lernorte</a><a href="#la-pupils">Schülerverwaltung</a><a href="#la-preparation">Vorbereitung</a></nav>';
+  const laPanels=[['overview','Übersicht','Suchen und aktueller Status','⌕'],['places','Lernorte','Standorte und Lärmampel','⌖'],['requests','Anfragen & Hilfe','Genehmigungen und Hilfehand','✋'],['pupils','Schülerverwaltung','Graduierung, Dienste und Teamstars','♙'],['preparation','Vorbereitung','Tagesübersicht und Wochendienste','▤']];
+  html+='<div class="laLandingTiles">'+laPanels.map(([key,title,description,icon])=>`<button type="button" class="laLandingTile ${laActivePanel===key?'active':''}" onclick="laShowPanel('${key}')"><span class="laTileIcon">${icon}</span><strong>${title}</strong><small>${description}</small></button>`).join('')+'</div>';
+  html+='<div class="laPanelView laPanel-overview">';
   html+='<section id="la-overview" class="laSection"><h2 class="laSectionTitle">Lernatelier im Blick</h2>'+laFindPanel()+'</section>';
+  html+='</div><div class="laPanelView laPanel-preparation">';
   html+='<section id="la-preparation" class="laPreparation"><details class="laCollapsible"><summary>Tagesübersicht vorbereiten <span>Hinweise, Nachrichten und Veröffentlichung</span></summary>'+laDailyEditor()+'</details><details class="laCollapsible"><summary>Wochendienste <span>Wöchentliche Einteilung und Synchronisierung</span></summary>'+laDutyOverview()+'</details></section>';
+  html+='</div><div class="laPanelView laPanel-places">';
   html+='<div class="toolbar"><div class="laTabs">'+LA_ROOMS.map(r=>`<button class="chip ${laSelectedRoom===r?'dark':''}" onclick="laSelectedRoom='${r}';laPreviewPupilId='';render()">${r} · ${all.filter(p=>laRoom(p)===r).length}</button>`).join('')+'</div><p class="mini">Die Zuordnung zum Lernatelier bleibt auch bei einem Standortwechsel bestehen.</p></div>';
   if(unknown.length&&can)html+='<div class="card"><b>Sammelzuordnung</b><p class="mini">Noch nicht zugeordnet: '+unknown.length+' SuS aus Stufe '+laGrade+'. Bestehende Lernatelier-Zuordnungen bleiben unverändert.</p><button class="chip dark" onclick="laAssignUnassigned(\'LA 1\')">Alle noch nicht zugeordneten SuS → LA 1</button></div>';
   if(unknown.length)html+='<div class="card"><b>Hinweis: '+unknown.length+' SuS sind noch keinem Lernatelier zugeordnet.</b><p class="mini">Bitte unten im Bereich „Noch keinem Lernatelier zugeordnet“ die Zuordnung vornehmen. Die bisherige Auswahl wurde möglicherweise wegen eines Fehlers nicht gespeichert.</p></div>';
@@ -903,11 +909,13 @@ function learningAtelier(){
   const pending=current.filter(p=>p.laRequest?.status==='pending');
   const help=current.filter(p=>p.laNeedsHelp);
   html+='<div class="laMetrics"><div class="card"><b>'+current.length+'</b><span>SuS in '+esc(laSelectedRoom)+'</span></div><div class="card"><b>'+current.filter(p=>(p.learningPlace||'Lernatelier')==='Lernatelier').length+'</b><span>Im Lernatelier</span></div><div class="card"><b>'+pending.length+'</b><span>Offene Anfragen</span></div><div class="card"><b>'+help.length+'</b><span>Hilfe benötigt</span></div></div>';
+  html+='</div><div class="laPanelView laPanel-requests">';
   html+='<section id="la-requests" class="laSection"><h2 class="laSectionTitle">Anfragen & Hilfe</h2><div class="laDashboardGrid"><div class="card"><h2>🔔 Genehmigungen</h2>';
   html+=pending.length?pending.map(p=>'<div class="laQueue"><div><b>'+esc(p.short||p.first+' '+p.last)+'</b><div class="mini">'+esc(p.laRequest.place)+' · '+esc(p.graduation||'Hiker')+'</div></div><div><button class="chip dark" onclick="laAnswerRequest(\''+esc(p.id)+'\',true)">✓</button><button class="chip" onclick="laAnswerRequest(\''+esc(p.id)+'\',false)">✕</button></div></div>').join(''):'<p class="mini">Keine offenen Anfragen</p>';
   html+='</div><div class="card"><h2>✋ Hilfehand</h2>';
   html+=help.length?help.map(p=>'<div class="laQueue"><b>'+esc(p.short||p.first+' '+p.last)+'</b><button class="chip" onclick="laSetHelp(\''+esc(p.id)+'\',false)">Erledigt ✓</button></div>').join(''):'<p class="mini">Niemand wartet auf Hilfe</p>';
   html+='</div></div></section>';
+  html+='</div><div class="laPanelView laPanel-places">';
   html+='<section id="la-places" class="laSection"><div class="laBoardHeading"><div><h2 class="laSectionTitle">Standortübersicht</h2><p class="mini">Kind auswählen und anschließend den gewünschten Lernort anklicken.</p></div><button class="chip" onclick="laBoardSelectedId=\'\';render()">Auswahl aufheben</button></div>';
   const chosen=current.find(p=>String(p.id)===String(laBoardSelectedId));
   if(chosen)html+=`<div class="laBoardSelection">Ausgewählt: <strong>${esc(chosen.short||chosen.first+' '+chosen.last)}</strong> · Zielort auswählen</div>`;
@@ -920,6 +928,7 @@ function learningAtelier(){
   }
   html+='</div></section><section id="la-pupils" class="laSection"><div class="section">Schülerverwaltung</div>';
   if(!can)html+='<div class="card">Die Zuordnungen und Graduierungen können nur durch die Stufenleitung geändert werden.</div>';
+  html+='</div><div class="laPanelView laPanel-pupils">';
   html+='<div class="laPupilCards">';
   for(const p of current){
     const id=laSafeId(p.id),name=esc(p.short||p.first+' '+p.last);
@@ -938,6 +947,8 @@ function learningAtelier(){
   html+='</div></section>';
   if(unknown.length)html+=`<div class="section">Noch keinem Lernatelier zugeordnet · ${unknown.length}</div><div class="card"><p class="mini">Diese SuS sind bereits in Kompass vorhanden und müssen nur einem Lernatelier zugeordnet werden.</p><div class="laTableWrap"><table class="studentTable"><tbody>${unknown.map(p=>`<tr><td>${esc(p.short||p.first+' '+p.last)}</td><td>${esc(p.team||'')}</td><td><select ${can?'':'disabled'} onchange="laUpdate('${laSafeId(p.id)}','learningAtelier',this.value)"><option value="">Bitte wählen</option>${LA_ROOMS.map(r=>`<option value="${r}">${r}</option>`).join('')}</select></td></tr>`).join('')}</tbody></table></div></div>`;
   html+='<p class="mini">Erste Ausbaustufe: Die Standortänderung erfolgt durch berechtigte Lehrkräfte. Schüler-Selbstbuchung und digitale Genehmigungen werden erst nach Einrichtung gesicherter Schülerzugänge freigeschaltet.</p>';
+  html+='</div>';
+  html='<div class="laPanelShell laShow-'+laActivePanel+'">'+html+'</div>';
   shell(html);
 }
 
