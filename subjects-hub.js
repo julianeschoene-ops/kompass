@@ -18,6 +18,7 @@ const SUBJECT_FIELDS=[
  ['Religion & Ethik',['Religion','Ethik'],'values'],
  ['Wahlpflichtfächer',['Französisch','AES','Technik'],'elective']
 ];
+function subjectSchoolColor(subject){return ({Deutsch:'deutsch',Englisch:'englisch',Mathematik:'mathe'})[subject]||'other';}
 function subjectTone(subject){
  const field=SUBJECT_FIELDS.find(([,names])=>names.includes(subject));
  return field?field[2]:'neutral';
@@ -28,13 +29,13 @@ function subjectHubHome(){
   const entries=members.filter(n=>names.includes(n));
   entries.forEach(n=>shown.add(n));
   if(!entries.length)return '';
-  return '<section class="subjectField"><h2 class="subjectFieldHeading">'+esc(heading)+'</h2><div class="subjectGrid">'+entries.map(n=>'<button class="subjectTile subjectTone-'+tone+'" onclick="subjectHubOpen('+JSON.stringify(n).replace(/"/g,'&quot;')+')"><strong>'+esc(n)+'</strong></button>').join('')+'</div></section>';
+  return '<section class="subjectField"><h2 class="subjectFieldHeading">'+esc(heading)+'</h2><div class="subjectGrid">'+entries.map(n=>'<button class="subjectTile subjectTone-'+tone+' subjectColor-'+subjectSchoolColor(n)+'" onclick="subjectHubOpen('+JSON.stringify(n).replace(/"/g,'&quot;')+')"><strong>'+esc(n)+'</strong></button>').join('')+'</div></section>';
  }).join('');
  const remaining=names.filter(n=>!shown.has(n));
- const other=remaining.length?'<section class="subjectField"><h2 class="subjectFieldHeading">Weitere Fächer</h2><div class="subjectGrid">'+remaining.map(n=>'<button class="subjectTile subjectTone-neutral" onclick="subjectHubOpen('+JSON.stringify(n).replace(/"/g,'&quot;')+')"><strong>'+esc(n)+'</strong></button>').join('')+'</div></section>':'';
+ const other=remaining.length?'<section class="subjectField"><h2 class="subjectFieldHeading">Weitere Fächer</h2><div class="subjectGrid">'+remaining.map(n=>'<button class="subjectTile subjectTone-neutral subjectColor-'+subjectSchoolColor(n)+'" onclick="subjectHubOpen('+JSON.stringify(n).replace(/"/g,'&quot;')+')"><strong>'+esc(n)+'</strong></button>').join('')+'</div></section>':'';
  shell('<div class="schoolPageHead"><h1>Fächer</h1><span class="mini">Jahrgang '+State.year+'</span></div><div class="subjectFields">'+sections+other+'</div>');
 }
-function subjectHubSubjectPage(){const s=subjectHubSubject;const work=WORKSHOP_SUBJECTS.includes(s);const items=[['bewertungen','Bewertungen','▤'],['material','Material','▣'],['uebungen','Übungen & Links','↗'],['planung','Planung','▦']];if(['Deutsch','Mathematik','Englisch'].includes(s))items.push(['teamstars','TeamStars','☆']);shell('<div class="schoolPageHead subjectPageTitle subjectTone-'+subjectTone(s)+'"><div><button class="schoolBack" onclick="subjectHubBack()">← Fächer</button><h1>'+esc(s)+'</h1></div><span class="mini">Jahrgang '+State.year+(work?' · Werkstatt / Themenfeldunterricht':'')+'</span></div><div class="subjectTools">'+items.map(([id,label,icon])=>'<button class="subjectToolTile subjectTone-'+subjectTone(s)+'" onclick="subjectHubToolOpen(\''+id+'\')"><span>'+icon+'</span><strong>'+label+'</strong></button>').join('')+'</div>');}
+function subjectHubSubjectPage(){const s=subjectHubSubject;const work=WORKSHOP_SUBJECTS.includes(s);const items=[['bewertungen','Bewertungen','▤'],['material','Material','▣'],['uebungen','Übungen & Links','↗'],['planung','Planung','▦']];if(['Deutsch','Mathematik','Englisch'].includes(s))items.push(['teamstars','TeamStars','☆']);shell('<div class="schoolPageHead subjectPageTitle subjectTone-'+subjectTone(s)+' subjectColor-'+subjectSchoolColor(s)+'"><div><button class="schoolBack" onclick="subjectHubBack()">← Fächer</button><h1>'+esc(s)+'</h1></div><span class="mini">Jahrgang '+State.year+(work?' · Werkstatt / Themenfeldunterricht':'')+'</span></div><div class="subjectTools">'+items.map(([id,label,icon])=>'<button class="subjectToolTile subjectTone-'+subjectTone(s)+' subjectColor-'+subjectSchoolColor(s)+'" onclick="subjectHubToolOpen(\''+id+'\')"><span>'+icon+'</span><strong>'+label+'</strong></button>').join('')+'</div>');}
 function subjectHubToolPage(){const s=subjectHubSubject,tool=subjectHubTool,core=CORE_SUBJECTS.includes(s),work=WORKSHOP_SUBJECTS.includes(s);State.subject=s;
  if(tool==='bewertungen'||tool==='werkstatt'){const workshopMode=tool==='werkstatt'||!core;if(workshopMode&&!work){subjectHubMode='subject';return subjectHubSubjectPage();}const prev=shell;shell=function(content){prev('<div class="subjectContext"><button class="schoolBack" onclick="subjectHubBack()">← '+esc(s)+'</button><span>'+esc(workshopMode?'Werkstatt / Themenfeldunterricht':'Bewertungen')+'</span></div>'+content);};try{if(workshopMode)workshop();else coreSubjects();}finally{shell=prev;}return;}
  const head='<div class="schoolPageHead"><div><button class="schoolBack" onclick="subjectHubBack()">← '+esc(s)+'</button><h1>'+esc(tool==='uebungen'?'Übungen & Links':tool==='teamstars'?'TeamStars':tool==='material'?'Material':'Planung')+'</h1></div></div>';
