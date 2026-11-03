@@ -78,7 +78,7 @@ async function confirmCreativeAssessment(activityId,pupilId){
  const note=document.getElementById('assessmentNote_'+activityId+'_'+pupilId)?.value||'';
  const pupil=(Store.pupils||[]).find(p=>String(p.id)===String(pupilId));
  const activity=Store.activities.find(a=>String(a.id)===String(activityId));
- if(!pupil||activity?.type!=='Kreativband'||!Auth.canAccessGrade(Number(pupil.year||String(pupil.className||'').charAt(0)))){toast('Keine Berechtigung für diese Bewertung',6000);return;}
+ if(!pupil||activity?.type!=='Kreativband'||!(Auth.isAdmin()||Auth.currentUser()?.role==='teacher'||Auth.canAccessGrade(Number(pupil.year||String(pupil.className||'').charAt(0))))){toast('Keine Berechtigung für diese Bewertung',6000);return;}
  if(!['','G','M','E'].includes(level)||!['','red','yellow','green'].includes(color)){toast('Ungültige Bewertung',6000);return;}
  const old=activityRecord(activityId,pupilId);
  const competencyValues={...(old.creativeAssessment?.competencies||{})};
@@ -154,7 +154,7 @@ function creativeTodayDate(){return new Date().toLocaleDateString('sv-SE',{timeZ
 function addVisit(a,p,delta){
   const pupil=(Store.pupils||[]).find(x=>String(x.id)===String(p));
   const pupilGrade=Number(pupil?.year||String(pupil?.className||'').charAt(0));
-  if(!pupil||Auth.isLernatelier()||!Auth.canAccessGrade(pupilGrade)){toast('Keine Berechtigung für diesen Jahrgang');return;}
+  if(!pupil||Auth.isLernatelier()||!(Auth.isAdmin()||Auth.currentUser()?.role==='teacher'||Auth.canAccessGrade(pupilGrade))){toast('Keine Berechtigung für diesen Jahrgang');return;}
   const act=Store.activities.find(x=>x.id===a);if(!isCountableActivity(act))return;
   const k=a+'|'+p,r=activityRecord(a,p);r.active=true;
   if(delta>0){
