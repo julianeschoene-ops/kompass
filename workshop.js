@@ -26,17 +26,38 @@ function coreSubjects(){
  let content=header(State.subject+' · Bewertungen');content+=`<div class="toolbar formgrid"><div><label>Stufe der Schüler*innen</label><select onchange="State.year=Number(this.value);State.team='alle';State.competency=null;render()">${visibleYears().map(y=>`<option value="${y}" ${State.year===y?'selected':''}>Stufe ${y}</option>`).join('')}</select></div><div><label>Kompetenzen aus Stufe</label><select onchange="coreCompetencyYear=Number(this.value);coreCategory='alle';coreUnit='alle';State.competency=null;render()">${[...new Set([5,6,7,...Store.competencies.filter(c=>c.type==='core'&&c.subject===State.subject).map(c=>Number(c.year))])].sort((a,b)=>a-b).map(y=>`<option value="${y}" ${coreCompetencyYear===y?'selected':''}>Stufe ${y}</option>`).join('')}</select></div><div><label>Bereich</label><select onchange="coreCategory=this.value;State.competency=null;render()"><option value="alle">alle Bereiche</option>${cats.map(c=>`<option ${coreCategory===c?'selected':''}>${esc(c)}</option>`).join('')}</select></div><div><label>Unit / Lernteil</label><select onchange="coreUnit=this.value;State.competency=null;render()"><option value="alle">alle Units</option>${units.map(x=>`<option ${coreUnit===x?'selected':''}>${esc(x)}</option>`).join('')}</select></div><div><label>Kompetenz</label><select onchange="State.competency=this.value;render()">${comps.map(c=>`<option value="${c.id}" ${State.competency===c.id?'selected':''}>${esc(c.unit||'')} · ${esc(c.text)}</option>`).join('')}</select></div><div><label>Team</label><select onchange="State.team=this.value;render()"><option value="alle">alle Teams</option>${TEAMS.map(t=>`<option ${State.team===t?'selected':''}>${t}</option>`).join('')}</select></div></div>`;const comp=Store.competencies.find(c=>c.id===State.competency);content+=renderPupilAssessmentList(comp);shell(content);
 }
 function compCard(comp){if(!comp)return`<div class="card empty"><h2>Noch keine Kompetenz</h2><p>Lege sie in der Kompetenzverwaltung an.</p></div>`;return`<div class="card focusCard"><div><span class="badge">${comp.type==='core'?(comp.unit||'Kernfach'):(comp.phase==='base'?'Basiskompetenz':'Vertiefung')}</span><h2>${esc(comp.text)}</h2><p>${esc(comp.subject)} · ${esc(comp.category)} · Zielniveau ${esc(comp.level)}</p>${comp.topic?`<p class="mini"><b>Thema:</b> ${esc(comp.topic)}</p>`:''}</div>${comp.maxPoints?`<div class="scoreHint">max. ${comp.maxPoints} P.</div>`:''}</div>`;}
+function workshopLabMatchesSubject(lab,subject){
+ const clean=v=>String(v||'').toLocaleLowerCase('de').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+ const l=clean(lab),s=clean(subject);
+ if(!l||!s)return false;
+ if(l===s||l.includes(s)||s.includes(l))return true;
+ const aliases={
+ 'informatikmedienbildung':['itlab','it','medialab','medienlab','informatik','digital'],
+ 'geographie':['geolab','geo','geografie'],
+ 'geschichte':['historylab','history','geschichtslab'],
+ 'biologie':['biolab','bio','nawilab'],
+ 'bildendekunst':['kunstlab','artlab','kunst','bk'],
+ 'musik':['musiklab','musiclab','musik'],
+ 'technik':['techniklab','techlab','technik'],
+ 'aes':['aeslab','lifelab','life','alltagskultur'],
+ 'wbs':['wbslab','wirtschaftslab','wirtschaft'],
+ 'gemeinschaftskunde':['gklab','politiklab'],
+ 'physik':['physiklab']
+ };
+ return (aliases[s]||[]).some(alias=>l===alias||l.startsWith(alias));
+}
+function workshopLabAssignment(p,year,sprint){
+ const assigned=(Store.assignments||[]).filter(a=>a.type==='Sprint'&&Number(a.year)===Number(year)&&Number(a.sprint||a.sprintNumber||1)===Number(sprint)).slice().reverse().find(a=>Object.values(a.groups||{}).some(ids=>Array.isArray(ids)&&ids.some(id=>String(id)===String(p.id))));
+ const group=assigned?Object.entries(assigned.groups||{}).find(([name,ids])=>name!=='Nicht zugeteilt'&&Array.isArray(ids)&&ids.some(id=>String(id)===String(p.id)))?.[0]:'';
+ return group||(Store.workshopPaths||{})[`${p.id}|${year}|${sprint}`]?.lab||'';
+}
 function workshopAssessmentPupils(comp){
  let pupils=filteredPupils();
- if(comp?.type==='workshop'&&comp.phase==='lab'&&workshopAssignedOnly&&!State.search){
-  const assignments=Store.workshopPaths||{};
-  const hasLab=Object.keys(assignments).some(k=>k.endsWith('|'+State.year+'|'+State.sprint)&&assignments[k]?.lab);
-  if(hasLab&&comp.lab){
-   const assigned=pupils.filter(p=>assignments[`${p.id}|${State.year}|${State.sprint}`]?.lab===comp.lab);
-   if(assigned.length)pupils=assigned;
-  }
- }
- return pupils;
+ if(comp?.type!=='workshop'||comp.phase!=='lab'||!workshopAssignedOnly||State.search)return pupils;
+ const assignments=pupils.map(p=>({p,lab:workshopLabAssignment(p,State.year,State.sprint)}));
+ const matched=assignments.filter(({lab})=>workshopLabMatchesSubject(lab,comp.subject)).map(({p})=>p);
+ // Do not silently exclude pupils when assignments are absent or no lab maps to this subject.
+ return matched.length?matched:pupils;
 }
 function renderPupilAssessmentList(comp){if(!comp)return'<div class="card empty">Für diese Auswahl sind noch keine Kompetenzen angelegt.</div>';const pupils=comp.type==='workshop'?workshopAssessmentPupils(comp):filteredPupils();const phaseFilter=comp.type==='workshop'&&comp.phase==='lab'?'<label class="workshopAssignmentToggle"><input type="checkbox" '+(workshopAssignedOnly?'checked':'')+' onchange="workshopAssignedOnly=this.checked;render()"> Zugeordnete Schüler*innen bevorzugen</label>':'';return`<div class="section workshopAssessmentHeading"><span>Bewertung · ${pupils.length} Schüler*innen</span>${phaseFilter}</div><div class="studentCards">${pupils.map(p=>renderPupilRowCard(p,comp)).join('')||'<div class="card empty">Keine Schüler*innen für die gewählten Filter gefunden. Bitte Team oder Suche prüfen.</div>'}</div>`;}
 
