@@ -746,3 +746,25 @@ main{padding:24px 28px;min-width:0}
 .laPanelView>.laSection:first-child{margin-top:0}
 @media(max-width:850px){.laLandingTiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.laLandingTiles{grid-template-columns:1fr 1fr;gap:8px}.laLandingTile{padding:12px;min-height:100px}.laLandingTile strong{font-size:14px}}
+
+/* Learning atelier matches the subject hub: tiles are the entry point, not a tab bar. */
+.laLandingTiles{grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin:20px 0}
+.laLandingTile{min-height:128px;padding:20px 21px;background:#f6f8fa;border:1px solid #e0e7ed;border-radius:15px;box-shadow:none}
+.laLandingTile:hover{border-color:#b8c8d7;filter:brightness(.99)}
+.laLandingTile strong{font-size:17px;color:#35475e}
+.laLandingTile small{font-size:13px;color:#66778d}
+.laTileIcon{display:block;width:25px;height:25px;color:#62768e}
+.laTileIcon .schoolLineIcon{display:block;width:24px;height:24px}
+.laLandingTile.laTone-overview{background:#eaf1f9;border-color:#d9e5f1}
+.laLandingTile.laTone-places{background:#e9f3ee;border-color:#d9e8df}
+.laLandingTile.laTone-noise{background:#f8f0db;border-color:#eee5ca}
+.laLandingTile.laTone-requests{background:#f4ebef;border-color:#eadfe6}
+.laLandingTile.laTone-pupils{background:#eeeaf6;border-color:#e3ddee}
+.laLandingTile.laTone-preparation{background:#eaf1f3;border-color:#dce8eb}
+.laPanelBack{display:flex;align-items:center;gap:20px;margin:12px 0 22px}
+.laPanelBack h2{font-size:24px;margin:0;color:#35475e}
+.laPanelShell:not(.laShow-home) .laLandingTiles{display:none}
+.laShow-home .laPanelView{display:none}
+.laShow-noise .laPanel-noise{display:block}
+@media(max-width:850px){.laLandingTiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.laLandingTile{padding:14px;min-height:116px}.laLandingTile strong{font-size:15px}.laPanelBack{flex-wrap:wrap}}
