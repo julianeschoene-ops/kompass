@@ -1,4 +1,4 @@
-const CORE_SUBJECTS = ['Deutsch','Mathematik','Englisch','Religion'];
+const CORE_SUBJECTS = ['Deutsch','Mathematik','Englisch','Französisch','Religion'];
 const WORKSHOP_SUBJECTS = ['Geographie','Geschichte','Informatik & Medienbildung','Bildende Kunst','Musik','Biologie','Physik','Technik','AES','WBS','Gemeinschaftskunde','Ethik','Sport'];
 const TEAMS = ['Blau','Rot','Gelb','Violett','Grün'];
 const LEVELS = ['G','M','E'];
