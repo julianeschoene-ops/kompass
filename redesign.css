@@ -283,3 +283,29 @@ main{padding:24px 28px;min-width:0}
  .homeAgenda>.card{padding:14px}
  .homeAgenda>.card h2{font-size:17px}
 }
+
+/* Persistent navigation matching the previous "Bereiche" menu, without a popover. */
+.app:has(> .persistentNav){display:grid!important;grid-template-columns:238px minmax(0,1fr)!important;align-items:stretch!important;min-height:100vh!important}
+.app>.persistentNav{display:flex!important;flex-direction:column;gap:0;position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;overflow-x:hidden;padding:22px 14px 16px;background:#fff;border-right:1px solid #e5eaf0;box-shadow:none;z-index:20;scrollbar-width:thin}
+.sidebarLogo{display:block;width:100%;background:none;border:0;text-align:left;padding:4px 10px 17px;color:#283c53;font:inherit;font-size:21px;font-weight:850;letter-spacing:.045em;cursor:pointer}
+.sidebarMenu{display:grid;gap:2px}
+.persistentNav .globalMenuGroup{display:grid;gap:1px;padding:7px 0 12px;border-bottom:1px solid #edf0f4}
+.persistentNav .globalMenuLabel{padding:10px 10px 6px;font-size:10px;letter-spacing:.085em;color:#8290a1}
+.persistentNav .globalMenuGroup>button{width:100%;background:transparent;border:0;border-radius:9px;padding:9px 11px;text-align:left;line-height:1.2;font:inherit;font-size:13px;font-weight:540;color:#42546b;cursor:pointer}
+.persistentNav .globalMenuGroup>button:hover{background:#f0f5f9}
+.persistentNav .globalMenuGroup>button.isCurrent{background:#e7eef5;color:#294a69;font-weight:760}
+.sidebarAccount{margin-top:auto;padding:15px 9px 3px;display:grid;gap:4px}
+.sidebarAccountName{font-size:13px;font-weight:750;color:#314257;overflow-wrap:anywhere}
+.sidebarAccountRole{font-size:11px;color:#7d8a99;margin-bottom:6px}
+.sidebarAccount>button{background:transparent;border:0;text-align:left;font:inherit;color:#66788d;font-size:12px;padding:6px 0;cursor:pointer}
+.app>.appWorkspace{min-width:0;min-height:100vh}
+.app>.appWorkspace>.globalBar{height:62px;padding:0 clamp(20px,2.6vw,40px);justify-content:space-between;background:#f8fafc;border-bottom:1px solid #e6ebf1}
+.app>.appWorkspace>.globalBar .globalBarLeft{gap:9px}
+.app>.appWorkspace>.globalBar .globalBack{order:0;border-left:0;padding:8px 0;white-space:nowrap}
+.app>.appWorkspace>.globalBar .mobileLogo,.app>.appWorkspace>.globalBar .mobileMenu{display:none}
+.app>.appWorkspace>main{width:100%!important;max-width:1480px!important;min-height:0!important;margin:0 auto!important;padding:22px clamp(20px,2.6vw,40px)!important}
+.app>.appWorkspace>main .homeDashboard{max-width:none!important}
+.app>.appWorkspace>main .homeDashboard .schoolHomeGrid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+@media(min-width:1600px){.app>.appWorkspace>main .homeDashboard .schoolHomeGrid{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+@media(max-width:1000px){.app:has(> .persistentNav){grid-template-columns:208px minmax(0,1fr)!important}.app>.persistentNav{padding:18px 10px}.sidebarLogo{font-size:19px}.app>.appWorkspace>main .homeDashboard .schoolHomeGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:660px){.app:has(> .persistentNav){display:block!important}.app>.persistentNav{display:none!important}.app>.appWorkspace>.globalBar .mobileLogo,.app>.appWorkspace>.globalBar .mobileMenu{display:block}.app>.appWorkspace>.globalBar{background:#fff;padding:0 14px}.app>.appWorkspace>main{padding:18px 14px!important}.app>.appWorkspace>main .homeDashboard .schoolHomeGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.app>.appWorkspace>.globalBar .globalBarLeft{gap:7px}}
