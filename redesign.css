@@ -125,7 +125,7 @@ main{padding:24px 28px;min-width:0}
 .section-core .subjectTile:hover,.section-core .subjectToolTile:hover{background:var(--area-core)}
 .section-coaching .subjectToolTile{background:#eef3ee;color:var(--area-coaching-ink);border-color:#dce7df}
 .section-coaching .subjectToolTile:hover{background:var(--area-coaching)}
-.section-learningAtelier .laTabs .chip.dark{background:var(--area-learningAtelier-ink);color:#fff}
+.laTabs .chip.dark{background:var(--area-learningAtelier-ink);color:#fff}
 .section-activities .chip.dark{background:var(--area-activities-ink);color:#fff}
 .section-leb .chip.dark{background:var(--area-leb-ink);color:#fff}
 .schoolHomeTop h1{font-size:32px;letter-spacing:-.04em}
@@ -675,20 +675,41 @@ main{padding:24px 28px;min-width:0}
 .section-core .subjectField .subjectTile{box-shadow:inset 0 0 0 1px rgba(50,65,85,.035)}
 
 /* Lernatelier: klare Arbeitsbereiche statt endloser Verwaltungsseite. */
-.section-learningAtelier .laQuickNav{display:flex;flex-wrap:wrap;gap:9px;margin:14px 0 20px}
-.section-learningAtelier .laQuickNav a{display:inline-flex;align-items:center;padding:11px 15px;border:1px solid #dce5ed;border-radius:12px;background:#fff;color:#344e66;text-decoration:none;font-size:13px;font-weight:700}
-.section-learningAtelier .laQuickNav a:hover{background:#edf5fa}
-.section-learningAtelier .laSection{scroll-margin-top:90px;margin:18px 0}
-.section-learningAtelier .laSectionTitle{font-size:19px;margin:0 0 12px;color:#2c4359}
-.section-learningAtelier .laPreparation{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0}
-.section-learningAtelier .laCollapsible{background:#fff;border:1px solid #e0e7ee;border-radius:16px;min-width:0;overflow:hidden;margin:12px 0}
-.section-learningAtelier .laPreparation .laCollapsible{margin:0}
-.section-learningAtelier .laCollapsible>summary{cursor:pointer;list-style:none;padding:18px 20px;font-size:15px;font-weight:750;color:#2d455b}
-.section-learningAtelier .laCollapsible>summary::-webkit-details-marker{display:none}
-.section-learningAtelier .laCollapsible>summary:after{content:"+";float:right;color:#6c8092;font-size:19px;line-height:1}
-.section-learningAtelier .laCollapsible[open]>summary:after{content:"−"}
-.section-learningAtelier .laCollapsible>summary span{display:block;font-size:12px;font-weight:400;color:#738398;margin-top:4px}
-.section-learningAtelier .laCollapsible>.card{margin:0;border:0;border-top:1px solid #edf0f4;border-radius:0;box-shadow:none}
-.section-learningAtelier .laMetrics{margin-top:16px}
-.section-learningAtelier .laBoard{margin-bottom:18px}
-@media(max-width:900px){.section-learningAtelier .laPreparation{grid-template-columns:1fr}}
+.laQuickNav{display:flex;flex-wrap:wrap;gap:9px;margin:14px 0 20px}
+.laQuickNav a{display:inline-flex;align-items:center;padding:11px 15px;border:1px solid #dce5ed;border-radius:12px;background:#fff;color:#344e66;text-decoration:none;font-size:13px;font-weight:700}
+.laQuickNav a:hover{background:#edf5fa}
+.laSection{scroll-margin-top:90px;margin:18px 0}
+.laSectionTitle{font-size:19px;margin:0 0 12px;color:#2c4359}
+.laPreparation{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0}
+.laCollapsible{background:#fff;border:1px solid #e0e7ee;border-radius:16px;min-width:0;overflow:hidden;margin:12px 0}
+.laPreparation .laCollapsible{margin:0}
+.laCollapsible>summary{cursor:pointer;list-style:none;padding:18px 20px;font-size:15px;font-weight:750;color:#2d455b}
+.laCollapsible>summary::-webkit-details-marker{display:none}
+.laCollapsible>summary:after{content:"+";float:right;color:#6c8092;font-size:19px;line-height:1}
+.laCollapsible[open]>summary:after{content:"−"}
+.laCollapsible>summary span{display:block;font-size:12px;font-weight:400;color:#738398;margin-top:4px}
+.laCollapsible>.card{margin:0;border:0;border-top:1px solid #edf0f4;border-radius:0;box-shadow:none}
+.laMetrics{margin-top:16px}
+.laBoard{margin-bottom:18px}
+@media(max-width:900px){.laPreparation{grid-template-columns:1fr}}
+
+/* Compact pupil cards: only the selected child exposes editing controls. */
+.laPupilCards{display:grid;gap:9px;margin:12px 0 24px}
+.laPupilCard{border:1px solid #e1e7ee;background:#fff;border-radius:14px;overflow:hidden}
+.laPupilCard>summary{display:flex;align-items:center;gap:16px;min-height:58px;padding:12px 17px;cursor:pointer;list-style:none}
+.laPupilCard>summary::-webkit-details-marker{display:none}
+.laPupilCard[open]{border-color:#bdcfe0;box-shadow:0 3px 14px #23384c0a}
+.laPupilCard[open]>summary{background:#f7fafc;border-bottom:1px solid #e6ebf0}
+.laPupilIdentity{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.laPupilIdentity strong{font-size:14px}
+.laPupilIdentity small{font-size:12px;color:#718197}
+.laPupilMeta{font-size:12px;color:#64768a;min-width:80px}
+.laPupilEdit{font-size:12px;font-weight:700;color:#355674;white-space:nowrap}
+.laPupilDetails{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:17px;padding:20px}
+.laPupilField{min-width:0}
+.laPupilField>label{display:block;font-size:12px;font-weight:700;margin-bottom:7px;color:#44566b}
+.laPupilField select{width:100%;min-width:0}
+.laPupilField .laStarControls,.laPupilField .laDutyControls{display:flex;flex-wrap:wrap;gap:6px}
+.laPupilHelp{display:flex;align-items:end}
+@media(max-width:900px){.laPupilDetails{grid-template-columns:repeat(2,minmax(0,1fr))}.laPupilMeta{display:none}}
+@media(max-width:600px){.laPupilDetails{grid-template-columns:1fr}.laPupilIdentity{flex-wrap:wrap}.laPupilEdit{margin-left:auto}}
