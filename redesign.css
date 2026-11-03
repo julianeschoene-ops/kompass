@@ -473,3 +473,12 @@ main{padding:24px 28px;min-width:0}
 .section-core .subjectPageTitle.subjectColor-mathe{border-bottom-color:#9fc6e9!important}
 @media(max-width:900px){.section-core .subjectFields{grid-template-columns:1fr 1fr}.section-core .subjectField .subjectGrid{grid-template-columns:1fr}}
 @media(max-width:680px){.section-core .subjectFields{grid-template-columns:1fr}.section-core .subjectField .subjectGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Consistent, restrained line icons: dashboard and subject overview only. */
+.schoolLineIcon{display:block;width:23px;height:23px;flex:none}
+.schoolHomeTile .schoolTileIcon{display:flex;align-items:center;justify-content:center;width:29px;height:29px;color:inherit;opacity:.78}
+.schoolHomeTile .schoolTileIcon .schoolLineIcon{width:25px;height:25px}
+.section-core .subjectField .subjectGrid .subjectTile{display:flex;flex-direction:row;justify-content:flex-start;align-items:center;gap:11px;min-height:64px}
+.section-core .subjectField .subjectGrid .subjectTile .subjectTileIcon{display:flex;flex:none;align-items:center;justify-content:center;color:inherit;opacity:.72}
+.section-core .subjectField .subjectGrid .subjectTile .subjectTileIcon .schoolLineIcon{width:19px;height:19px}
+.section-core .subjectField .subjectGrid .subjectTile strong{flex:1;min-width:0}
