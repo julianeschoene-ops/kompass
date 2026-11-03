@@ -79,7 +79,7 @@ function studentProfile(){
  content+=`<div class="toolbar"><button class="chip" onclick="State.pupil=null;showPupilEdit=false;render()">← Schülerübersicht</button>`;
  if(canEdit())content+=`<button class="chip" onclick="showPupilEdit=!showPupilEdit;render()">Profil bearbeiten</button><button class="chip" onclick="archivePupil('${p.id}')">Archivieren</button>`;
  content+='</div>';
- if(showPupilEdit)content+=pupilEditForm(p);
+ if(showPupilEdit)content+=pupilEditForm(p);if(typeof coachingProfileButton==='function')content+=coachingProfileButton(p);
  if(profileSection==='overview')content+=renderProfileTiles(p,entries,acts,b);
  const core=profileCoreEntries(p);
  const workshopYear=Number(p.year||String(p.className||'').charAt(0));
