@@ -11,7 +11,7 @@ function subjectHubToolPage(){const s=subjectHubSubject,tool=subjectHubTool,core
  if(tool==='bewertungen'||tool==='werkstatt'){const workshopMode=tool==='werkstatt'||!core;if(workshopMode&&!work){subjectHubMode='subject';return subjectHubSubjectPage();}const prev=shell;shell=function(content){prev('<div class="subjectContext"><button class="schoolBack" onclick="subjectHubBack()">← '+esc(s)+'</button><span>'+esc(workshopMode?'Werkstatt / Themenfeldunterricht':'Bewertungen')+'</span></div>'+content);};try{if(workshopMode)workshop();else coreSubjects();}finally{shell=prev;}return;}
  const head='<div class="schoolPageHead"><div><button class="schoolBack" onclick="subjectHubBack()">← '+esc(s)+'</button><h1>'+esc(tool==='uebungen'?'Übungen & Links':tool==='teamstars'?'TeamStars':tool==='material'?'Material':'Planung')+'</h1></div></div>';
  let body='';
- if(tool==='uebungen'&&s==='Englisch')body='<h2>English Practice</h2>'+EnglishPractice.tools(null)+'<div class="schoolEmpty">Testergebnisse zu einzelnen Kindern findest du im jeweiligen Schülerprofil unter Englisch.</div>';
+ if(['material','planung','uebungen'].includes(tool))body=(tool==='uebungen'&&s==='Englisch'?'<div class="englishToolsBar"><h2>English Practice</h2>'+EnglishPractice.tools(null)+'</div>':'')+SubjectResources.render(tool);
  else if(tool==='teamstars'&&typeof studentTeamstarOverview==='function')body=studentTeamstarOverview(filteredPupils(),s);
  else body='<div class="schoolEmpty">Noch keine Inhalte hinterlegt.</div>';
  shell(head+body);
