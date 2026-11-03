@@ -1,6 +1,6 @@
 {
   "updated": "2026-11-03",
-  "fetchedAt": "2026-11-03T16:19:08.093855+01:00",
+  "fetchedAt": "2026-11-03T22:50:14.423613+01:00",
   "leadUrl": "https://www.logo.de/3d-karte-usa-vereinigte-staaten-von-amerika-bundesstaaten-100.html",
   "source": "ZDF logo!",
   "items": [
@@ -15,6 +15,13 @@
       "title": "Testet euer USA-Wissen!",
       "url": "https://www.logo.de/quiz-usa-vereinigte-staaten-von-amerika-100.html",
       "summary": "Wo liegt der höchste Berg der USA? Und wo die größte Stadt? Wie gut ihr euch wirklich mit dem Land auskennt, könnt ihr mit unserem Quiz checken!",
+      "published": "2026-11-03",
+      "modified": "2026-11-03"
+    },
+    {
+      "title": "Worum gehts bei den \"Youth Olympic Games\"?",
+      "url": "https://www.logo.de/youth-olympic-games-102.html",
+      "summary": "Die \"Youth Olympic Games\" finden vom 31. Oktober bis zum 13. November in Dakar statt. 50 Athletinnen und Athleten aus Deutschland treten an.",
       "published": "2026-11-03",
       "modified": "2026-11-03"
     },
@@ -66,13 +73,6 @@
       "summary": "Vor 65 Jahren suchte Deutschland Arbeitskräfte. Viele Menschen aus der Türkei kamen und fanden hier ein neues Zuhause.",
       "published": "2026-10-30",
       "modified": "2026-10-30"
-    },
-    {
-      "title": "Verliert Trump seine Macht?",
-      "url": "https://www.logo.de/midterms-wahlkampf-usa-100.html",
-      "summary": "Donald Trump steht mal wieder im Mittelpunkt: Für die Zwischenwahlen macht er Wahlkampf für seine Politik. Das Ergebnis ist auch für uns wichtig.",
-      "published": "2026-10-29",
-      "modified": "2026-10-29"
     }
   ]
 }
