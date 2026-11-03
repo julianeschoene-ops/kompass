@@ -74,3 +74,69 @@ main{padding:24px 28px;min-width:0}
 
 /* School platform navigation */
 .schoolHomeTop,.schoolPageHead{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:20px}.schoolHomeTop h1,.schoolPageHead h1{margin:0;font-size:29px;letter-spacing:-.035em}.topYearSelect{width:auto;min-width:155px;margin:0;padding:9px 13px;border-radius:12px;font-size:13px}.schoolHomeGrid,.subjectGrid,.subjectTools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.schoolHomeTile,.subjectTile,.subjectToolTile{background:#fff;border:1px solid #e2e7ef;border-radius:14px;min-height:110px;padding:18px;text-align:left;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:14px;cursor:pointer;box-shadow:0 3px 12px rgba(25,40,65,.025);color:#26354b;font:inherit}.schoolHomeTile:hover,.subjectTile:hover,.subjectToolTile:hover{border-color:#aebed4;background:#fafcff}.schoolHomeTile>span,.subjectToolTile>span,.subjectIcon{font-size:22px;line-height:1}.schoolHomeTile strong,.subjectTile strong,.subjectToolTile strong{font-size:15px;font-weight:700}.schoolHomeFoot{margin-top:16px}.schoolBack{border:0;background:transparent;padding:5px 0;margin:0 0 9px;color:#516783;font-size:13px;font-weight:700;cursor:pointer}.schoolSecondaryLink{margin-top:16px}.schoolEmpty{background:#fff;border:1px dashed #d5dce7;border-radius:13px;padding:22px;color:#64748b}.subjectContext{display:flex;gap:16px;align-items:center;margin-bottom:6px}.subjectContext .schoolBack{margin:0}.subjectContext>span{font-size:12px;color:#64748b}.subjectTools{grid-template-columns:repeat(3,minmax(0,1fr))}.subjectToolTile{min-height:120px}.classGroupSwitch{margin-top:18px;color:#65748b;font-size:12px}.classGroupSwitch summary{cursor:pointer}.classSectionTitle{font-size:22px;margin:10px 0 16px}.classListBar{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;margin:12px 0}.classListBar>select{max-width:360px}.classListBar details summary{list-style:none;cursor:pointer}.classNewList{display:flex;gap:8px;align-items:center}.classNewList input{min-width:220px}.classListProgress{background:#fff;border:1px solid #e1e6ef;padding:15px 18px;border-radius:12px;margin-bottom:12px}.classListProgress progress{display:block;width:100%;margin-top:10px;accent-color:#2d587f}.classChecklist{background:#fff;border:1px solid #e1e6ef;border-radius:13px;overflow:hidden}.classChecklistRow{display:flex;align-items:center;gap:12px;padding:12px 16px;margin:0;border-bottom:1px solid #edf0f5;font-size:14px;font-weight:500;cursor:pointer}.classChecklistRow:last-child{border-bottom:0}.classChecklistRow input{width:18px;height:18px;margin:0;accent-color:#294366}.classChecklistRow:has(input:checked){background:#f7fafc;color:#66788d}.classNoteComposer,.classNote{background:#fff;border:1px solid #e1e6ef;border-radius:13px;padding:17px;margin:12px 0}.classNotes{display:grid;gap:10px}.classNote>div{display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap}.classNote p{white-space:pre-wrap}.classNote .mini{font-size:12px}.schoolHomeTile:focus-visible,.subjectTile:focus-visible,.subjectToolTile:focus-visible{outline:3px solid #7597c6;outline-offset:2px}@media(max-width:850px){.schoolHomeGrid,.subjectGrid,.subjectTools{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:540px){.schoolHomeGrid,.subjectGrid,.subjectTools{gap:8px}.schoolHomeTile,.subjectTile,.subjectToolTile{min-height:92px;padding:12px}.schoolHomeTile strong,.subjectTile strong,.subjectToolTile strong{font-size:13px}}
+
+
+/* Editorial palette · business pastels (2026-11-03)
+   One visual identity per work area, across dashboard, navigation and content. */
+:root{
+  --area-core:#e5edf2; --area-core-ink:#334e61;
+  --area-students:#e9eaf0; --area-students-ink:#4b5069;
+  --area-coaching:#e5eee8; --area-coaching-ink:#385e50;
+  --area-learningAtelier:#ebe9f1; --area-learningAtelier-ink:#57516c;
+  --area-activities:#f2eadd; --area-activities-ink:#6d5737;
+  --area-leb:#f1e8e7; --area-leb-ink:#785452;
+}
+.schoolHomeGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:22px}
+.schoolHomeTile{
+  min-height:158px;padding:21px 23px;border-radius:16px;gap:22px;
+  background:var(--tile-bg,#edf1f4);color:var(--tile-ink,#334155);
+  border:1px solid rgba(45,60,75,.055);box-shadow:none;
+  transition:transform .15s ease,box-shadow .15s ease,filter .15s ease;
+}
+.schoolHomeTile:hover{background:var(--tile-bg,#edf1f4);filter:brightness(.982);border-color:rgba(45,60,75,.18);transform:translateY(-2px);box-shadow:0 8px 20px rgba(34,49,68,.07)}
+.schoolHomeTile>span{font-size:13px!important;font-weight:750;letter-spacing:.11em;line-height:1;opacity:.63}
+.schoolHomeTile strong{font-size:22px!important;font-weight:720;line-height:1.15;letter-spacing:-.025em}
+.tone-core{--tile-bg:var(--area-core);--tile-ink:var(--area-core-ink)}
+.tone-students{--tile-bg:var(--area-students);--tile-ink:var(--area-students-ink)}
+.tone-coaching{--tile-bg:var(--area-coaching);--tile-ink:var(--area-coaching-ink)}
+.tone-learningAtelier{--tile-bg:var(--area-learningAtelier);--tile-ink:var(--area-learningAtelier-ink)}
+.tone-activities{--tile-bg:var(--area-activities);--tile-ink:var(--area-activities-ink)}
+.tone-leb{--tile-bg:var(--area-leb);--tile-ink:var(--area-leb-ink)}
+.app.section-core{--section-bg:var(--area-core);--section-ink:var(--area-core-ink)}
+.app.section-students{--section-bg:var(--area-students);--section-ink:var(--area-students-ink)}
+.app.section-coaching{--section-bg:var(--area-coaching);--section-ink:var(--area-coaching-ink)}
+.app.section-learningAtelier{--section-bg:var(--area-learningAtelier);--section-ink:var(--area-learningAtelier-ink)}
+.app.section-activities{--section-bg:var(--area-activities);--section-ink:var(--area-activities-ink)}
+.app.section-leb{--section-bg:var(--area-leb);--section-ink:var(--area-leb-ink)}
+.app[class*="section-"]:not(.section-dashboard) .pageHead,
+.app[class*="section-"]:not(.section-dashboard) .schoolPageHead{
+  border-bottom:3px solid var(--section-bg,#e7ebf0);padding-bottom:15px;
+}
+.app[class*="section-"]:not(.section-dashboard) .pageHead h1,
+.app[class*="section-"]:not(.section-dashboard) .schoolPageHead h1{color:var(--section-ink,#253044)}
+.nav .navItem.nav-core.active{background:var(--area-core);color:var(--area-core-ink)}
+.nav .navItem.nav-students.active{background:var(--area-students);color:var(--area-students-ink)}
+.nav .navItem.nav-coaching.active{background:var(--area-coaching);color:var(--area-coaching-ink)}
+.nav .navItem.nav-learningAtelier.active{background:var(--area-learningAtelier);color:var(--area-learningAtelier-ink)}
+.nav .navItem.nav-activities.active{background:var(--area-activities);color:var(--area-activities-ink)}
+.nav .navItem.nav-leb.active{background:var(--area-leb);color:var(--area-leb-ink)}
+.nav .navItem.active{font-weight:750}
+.section-core .subjectTile,.section-core .subjectToolTile{background:#edf2f5;color:var(--area-core-ink);border-color:#dce5ec}
+.section-core .subjectTile:hover,.section-core .subjectToolTile:hover{background:var(--area-core)}
+.section-coaching .subjectToolTile{background:#eef3ee;color:var(--area-coaching-ink);border-color:#dce7df}
+.section-coaching .subjectToolTile:hover{background:var(--area-coaching)}
+.section-learningAtelier .laTabs .chip.dark{background:var(--area-learningAtelier-ink);color:#fff}
+.section-activities .chip.dark{background:var(--area-activities-ink);color:#fff}
+.section-leb .chip.dark{background:var(--area-leb-ink);color:#fff}
+.schoolHomeTop h1{font-size:32px;letter-spacing:-.04em}
+.schoolHomeTop .mini{font-size:14px}
+.schoolHomeFoot{margin-top:16px}
+@media(max-width:850px){
+ .schoolHomeGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+ .schoolHomeTile{min-height:140px;padding:19px}
+ .schoolHomeTile strong{font-size:20px!important}
+}
+@media(max-width:540px){
+ .schoolHomeTile{min-height:115px;padding:14px;gap:17px}
+ .schoolHomeTile strong{font-size:18px!important}
+}
