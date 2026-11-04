@@ -778,3 +778,12 @@ main{padding:24px 28px;min-width:0}
 .laNoiseTeacherHub #laNoiseScoreboard .laMetrics>.card p{margin:7px 0}
 @media(max-width:1050px){.laNoiseTeacherHub{grid-template-columns:1fr}}
 @media(max-width:600px){.laNoiseTeacherHub #laNoiseScoreboard .laMetrics{grid-template-columns:1fr}}
+
+/* Compact Lernatelier star and noise controls */
+.laStarPanel{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:9px 12px;margin:8px 0 12px;border:1px solid #dce4ee;border-radius:14px;background:#f8fafc}
+.laStarPanel .laNoiseMeter{display:flex;align-items:center;flex-wrap:wrap;gap:9px;width:100%;margin:0;padding:0;border:0;background:transparent;box-shadow:none}
+.laStarPanel .laNoiseChallenge{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin:0;padding:0;background:transparent;border:0;box-shadow:none}
+.laStarPanel .laStarGoal{font-weight:700;color:#755313;white-space:normal}
+.laStarPanel .laNoiseLevel{max-width:100px}
+.laStarPanel .laNoiseProgress{width:65px}
+@media(min-width:950px){.laStarPanel .laNoiseMeter{flex-wrap:nowrap}.laStarPanel .laNoiseChallenge{flex-wrap:nowrap}}
