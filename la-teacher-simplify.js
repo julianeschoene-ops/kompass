@@ -20,7 +20,7 @@
      if(old)old.remove();
      const hub=document.createElement('div');
      hub.className='laNoiseTeacherHub';
-     hub.innerHTML='<section class="card"><h2>Lärmampel · '+esc(laSelectedRoom)+'</h2><p class="mini">Messung, Grenzwert und automatische Punkte für das ausgewählte Lernatelier.</p>'+laNoiseMeterUI()+'</section><section id="laNoiseScoreboard">'+laNoiseScoreboardHTML()+'</section>';
+     hub.innerHTML='<section class="card"><h2>Lärmampel · '+esc(laSelectedRoom)+'</h2>'+laNoiseMeterUI()+'</section><section id="laNoiseScoreboard">'+laNoiseScoreboardHTML()+'</section>';
      noise.appendChild(hub);
    }
  };
