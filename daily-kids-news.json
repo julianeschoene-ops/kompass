@@ -1,14 +1,28 @@
 {
   "updated": "2026-11-04",
-  "fetchedAt": "2026-11-04T13:17:44.179564+01:00",
+  "fetchedAt": "2026-11-04T21:27:35.565312+01:00",
   "leadUrl": "https://www.logo.de/midterms-wahlkampf-usa-100.html",
   "source": "ZDF logo!",
   "items": [
     {
-      "title": "Demokraten gewinnen die Midterms!",
+      "title": "Niederlage für Republikaner um Trump",
       "url": "https://www.logo.de/midterms-wahlkampf-usa-100.html",
       "summary": "In den USA wurde gewählt – zwar nicht der Präsident, aber andere wichtige Politiker im Kongress. Lest hier, was das Ergebnis bedeutet!",
       "published": "2026-10-29",
+      "modified": "2026-11-04"
+    },
+    {
+      "title": "Warum werden Blutvorräte knapp?",
+      "url": "https://www.logo.de/zu-wenig-blutkonserven-100.html",
+      "summary": "Wenn ein Mensch Blut verloren hat, kann er in einem Krankenhaus neues Blut bekommen. Doch diese Vorräte werden oft knapp.",
+      "published": "2025-06-14",
+      "modified": "2026-11-04"
+    },
+    {
+      "title": "Bilder der Woche",
+      "url": "https://www.logo.de/bilder-der-woche-bildergalerie-100.html",
+      "summary": "Klickt euch durch die Bildergalerie mit den Bildern der Woche. Beeindruckendes und Lustiges aus der Nachrichtenwoche! Viel Spaß beim Schauen!",
+      "published": "2022-12-06",
       "modified": "2026-11-04"
     },
     {
@@ -40,13 +54,6 @@
       "modified": "2026-11-03"
     },
     {
-      "title": "Bilder der Woche",
-      "url": "https://www.logo.de/bilder-der-woche-bildergalerie-100.html",
-      "summary": "Klickt euch durch die Bildergalerie mit den Bildern der Woche. Beeindruckendes und Lustiges aus der Nachrichtenwoche! Viel Spaß beim Schauen!",
-      "published": "2022-12-06",
-      "modified": "2026-11-03"
-    },
-    {
       "title": "So könnt ihr nach Hilfe rufen",
       "url": "https://www.logo.de/alternativen-sos-signal-100.html",
       "summary": "Der SOS-Notruf wird 120 Jahre alt. Diese verschiedenen Zeichen gibt es, um im Alltag und im Notfall nach Hilfe zu rufen.",
@@ -66,13 +73,6 @@
       "summary": "In Frankreich gab es zuletzt große Demonstrationen. Jugendliche protestierten für bessere Bildung. Auch in Deutschland wurde jetzt demonstriert.",
       "published": "2026-10-29",
       "modified": "2026-10-31"
-    },
-    {
-      "title": "Wisst ihr, was los war?",
-      "url": "https://www.logo.de/nachrichten-quiz-der-woche-100.html",
-      "summary": "Habt ihr alle wichtigen Nachrichten der Woche mitbekommen? Testet mit unseren spannenden Quizfragen euer Wissen zu den aktuellen Themen!",
-      "published": "2025-05-17",
-      "modified": "2026-10-30"
     }
   ]
 }
