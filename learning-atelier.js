@@ -934,9 +934,9 @@ function learningAtelier(){
   html+='</div><div class="laPanelView laPanel-places">';
   html+='<div class="laMetrics"><div class="card"><b>'+current.length+'</b><span>SuS in '+esc(laSelectedRoom)+'</span></div><div class="card"><b>'+current.filter(p=>(p.learningPlace||'Lernatelier')==='Lernatelier').length+'</b><span>Im Lernatelier</span></div><div class="card"><b>'+pending.length+'</b><span>Offene Anfragen</span></div><div class="card"><b>'+help.length+'</b><span>Hilfe benötigt</span></div></div>';
   html+='</div><div class="laPanelView laPanel-requests">';
-  html+='<section id="la-requests" class="laSection"><h2 class="laSectionTitle">Anfragen & Hilfe</h2><div class="laDashboardGrid"><div class="card"><h2><span class="laQuietIcon">${schoolTileIcon('clipboard')}</span> Genehmigungen</h2>';
+  html+='<section id="la-requests" class="laSection"><h2 class="laSectionTitle">Anfragen & Hilfe</h2><div class="laDashboardGrid"><div class="card"><h2><span class="laQuietIcon">'+schoolTileIcon('clipboard')+'</span> Genehmigungen</h2>';
   html+=pending.length?pending.map(p=>'<div class="laQueue"><div><b>'+esc(p.short||p.first+' '+p.last)+'</b><div class="mini">'+esc(p.laRequest.place)+' · '+esc(p.graduation||'Hiker')+'</div></div><div><button class="chip dark" onclick="laAnswerRequest(\''+esc(p.id)+'\',true)">✓</button><button class="chip" onclick="laAnswerRequest(\''+esc(p.id)+'\',false)">✕</button></div></div>').join(''):'<p class="mini">Keine offenen Anfragen</p>';
-  html+='</div><div class="card"><h2><span class="laQuietIcon">${schoolTileIcon('message')}</span> Hilfeanfragen</h2>';
+  html+='</div><div class="card"><h2><span class="laQuietIcon">'+schoolTileIcon('message')+'</span> Hilfeanfragen</h2>';
   html+=help.length?help.map(p=>'<div class="laQueue"><b>'+esc(p.short||p.first+' '+p.last)+'</b><button class="chip" onclick="laSetHelp(\''+esc(p.id)+'\',false)">Erledigt ✓</button></div>').join(''):'<p class="mini">Niemand wartet auf Hilfe</p>';
   html+='</div></div></section>';
   html+='</div><div class="laPanelView laPanel-places">';
