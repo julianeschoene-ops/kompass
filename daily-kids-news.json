@@ -1,9 +1,16 @@
 {
-  "updated": "2026-11-03",
-  "fetchedAt": "2026-11-03T22:50:14.423613+01:00",
-  "leadUrl": "https://www.logo.de/3d-karte-usa-vereinigte-staaten-von-amerika-bundesstaaten-100.html",
+  "updated": "2026-11-04",
+  "fetchedAt": "2026-11-04T13:17:44.179564+01:00",
+  "leadUrl": "https://www.logo.de/midterms-wahlkampf-usa-100.html",
   "source": "ZDF logo!",
   "items": [
+    {
+      "title": "Demokraten gewinnen die Midterms!",
+      "url": "https://www.logo.de/midterms-wahlkampf-usa-100.html",
+      "summary": "In den USA wurde gewählt – zwar nicht der Präsident, aber andere wichtige Politiker im Kongress. Lest hier, was das Ergebnis bedeutet!",
+      "published": "2026-10-29",
+      "modified": "2026-11-04"
+    },
     {
       "title": "Reist durch die USA und ihre 50 Staaten",
       "url": "https://www.logo.de/3d-karte-usa-vereinigte-staaten-von-amerika-bundesstaaten-100.html",
@@ -19,10 +26,24 @@
       "modified": "2026-11-03"
     },
     {
+      "title": "So wird in dem Land Politik gemacht",
+      "url": "https://www.logo.de/usa-gewaltenteilung-100.html",
+      "summary": "Der Präsident ist nicht der Einzige, der in den USA was zu sagen hat. Die Macht ist aufgeteilt zwischen ihm, dem Kongress und dem Supreme Court.",
+      "published": "2026-11-03",
+      "modified": "2026-11-03"
+    },
+    {
       "title": "Worum gehts bei den \"Youth Olympic Games\"?",
       "url": "https://www.logo.de/youth-olympic-games-102.html",
       "summary": "Die \"Youth Olympic Games\" finden vom 31. Oktober bis zum 13. November in Dakar statt. 50 Athletinnen und Athleten aus Deutschland treten an.",
       "published": "2026-11-03",
+      "modified": "2026-11-03"
+    },
+    {
+      "title": "Bilder der Woche",
+      "url": "https://www.logo.de/bilder-der-woche-bildergalerie-100.html",
+      "summary": "Klickt euch durch die Bildergalerie mit den Bildern der Woche. Beeindruckendes und Lustiges aus der Nachrichtenwoche! Viel Spaß beim Schauen!",
+      "published": "2022-12-06",
       "modified": "2026-11-03"
     },
     {
@@ -47,31 +68,10 @@
       "modified": "2026-10-31"
     },
     {
-      "title": "Eine Nacht zum Gruseln!",
-      "url": "https://www.logo.de/halloween-108.html",
-      "summary": "Halloween wird jedes Jahr in der Nacht vom 31. Oktober auf den 1. November gefeiert. Der Brauch ist wohl schon mehr als 2.000 Jahr alt.",
-      "published": "2026-10-31",
-      "modified": "2026-10-31"
-    },
-    {
-      "title": "Die Anfänge der evangelischen Kirche",
-      "url": "https://www.logo.de/was-wird-am-reformationstag-gefeiert-100.html",
-      "summary": "Am 31. Oktober 1517 nagelte Martin Luther eine Liste mit Ideen an die Schlosskirche von Wittenberg. Der Beginn der sogenannten Reformation.",
-      "published": "2022-09-06",
-      "modified": "2026-10-31"
-    },
-    {
       "title": "Wisst ihr, was los war?",
       "url": "https://www.logo.de/nachrichten-quiz-der-woche-100.html",
       "summary": "Habt ihr alle wichtigen Nachrichten der Woche mitbekommen? Testet mit unseren spannenden Quizfragen euer Wissen zu den aktuellen Themen!",
       "published": "2025-05-17",
-      "modified": "2026-10-30"
-    },
-    {
-      "title": "Dieser Vertrag hat Deutschland verändert",
-      "url": "https://www.logo.de/abkommen-tuerkei-deutschland-100.html",
-      "summary": "Vor 65 Jahren suchte Deutschland Arbeitskräfte. Viele Menschen aus der Türkei kamen und fanden hier ein neues Zuhause.",
-      "published": "2026-10-30",
       "modified": "2026-10-30"
     }
   ]
