@@ -6,7 +6,7 @@
   const today=berlinDate();
   if(feed.updated===today&&feed.leadUrl)return feed.items.find(item=>item.url===feed.leadUrl)||feed.items[0];
   const day=Math.floor(Date.parse(today+'T12:00:00Z')/86400000);
-  return feed.items[((day%feed.items.length)+feed.items.length)%feed.items.length];
+  const alternatives=feed.items.filter(item=>item.url!==feed.leadUrl);const choices=alternatives.length?alternatives:feed.items;return choices[((day%choices.length)+choices.length)%choices.length];
  }
  function valid(item){try{const u=new URL(item.url);return u.protocol==='https:'&&u.hostname==='www.logo.de'&&typeof item.summary==='string'&&item.summary.trim().length>=35&&typeof item.title==='string'&&item.title.trim()&&!item.title.startsWith('Thema:')}catch(_){return false}}
  function show(){
@@ -50,7 +50,7 @@
      if(!r.ok)throw Error(r.status);
      const j=await r.json();const items=Array.isArray(j.items)?j.items.filter(valid):[];
      const age=Date.parse(berlinDate()+'T12:00:00Z')-Date.parse(j.updated+'T12:00:00Z');
-     if(!items.length||!/^\d{4}-\d{2}-\d{2}$/.test(j.updated)||!Number.isFinite(age)||age<0||age>2*86400000)throw Error('Keine aktuellen Nachrichten');
+     if(!items.length||!/^\d{4}-\d{2}-\d{2}$/.test(j.updated)||!Number.isFinite(age)||age<0||age>86400000)throw Error('Keine aktuellen Nachrichten');
      fresh={updated:j.updated,leadUrl:j.leadUrl,items};break;
     }catch(e){console.warn('Nachrichtenquelle nicht verfügbar',e)}
    }
