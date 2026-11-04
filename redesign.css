@@ -807,3 +807,30 @@ main{padding:24px 28px;min-width:0}
 .laStudentFullscreen .laStarPanel .laSwitchAccount,.laStudentFullscreen .laStarPanel .laResetCompact{font-size:12px;white-space:nowrap}
 @media(max-width:750px){.laStarOverview{flex-wrap:wrap;gap:6px}.laStarOverviewProgress{flex-basis:100%}.laStarSettings[open] .laStarSettingsBody{right:-40px}}
 .loginPage .loginCard .loginRemember{display:flex;align-items:center;gap:9px;margin:12px 0 20px;font-size:14px;font-weight:500}.loginPage .loginCard .loginRemember input{width:18px;height:18px;margin:0;flex:none}
+
+/* Teacher Lernatelier: consistent cards, useful horizontal space. */
+.laPanel-places .laBoardModern{display:grid;grid-template-columns:minmax(350px,1.4fr) repeat(2,minmax(190px,1fr));gap:12px;align-items:start}
+.laPanel-places .laBoardModern>.laPlaceCard:first-child{grid-row:span 9;min-height:510px}
+.laPanel-places .laBoardModern>.laPlaceCard{padding:13px 15px;border-radius:13px}
+.laPanel-places .laBoardModern .laPlaceHeader{margin-bottom:10px}
+.laPanel-places .laBoardModern .laPlaceNames{gap:6px}
+.laPanel-places .laBoardModern .laPlacePupil{font-size:12px}
+.laPanel-places .laBoardModern .laPlaceEmpty{font-size:12px;color:#8793a6}
+.laPanel-requests .laDashboardGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.laPanel-requests .laDashboardGrid>.card{border:1px solid #dfe6ee;border-radius:15px;padding:20px;box-shadow:none}
+.laPanel-requests .laDashboardGrid h2{font-size:18px;display:flex;align-items:center;gap:9px;margin:0 0 15px;color:#273c55}
+.laQuietIcon{display:inline-flex;align-items:center;justify-content:center;width:23px;height:23px;color:#687d9a}
+.laQuietIcon svg{width:20px;height:20px;stroke:currentColor}
+.laPanel-preparation .laPreparation{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px;align-items:start}
+.laPrepSection{min-width:0;background:#fff;border:1px solid #dfe6ee;border-radius:16px;padding:18px}
+.laPrepSection>h3{font-size:17px;margin:0 0 12px;color:#293d58}
+.laPrepSection>.card{margin:0;border:0;box-shadow:none;padding:0}
+.laPanel-noise .laNoiseTeacherHub{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+.laPanel-noise .laNoiseTeacherHub>.card{padding:20px}
+.laPanel-noise .laNoiseTeacherHub .laNoiseMeter{display:flex;align-items:center;flex-wrap:wrap;gap:12px;max-width:100%}
+.laPanel-noise .laNoiseTeacherHub .laNoiseChallenge{display:flex;align-items:center;flex-wrap:wrap;gap:12px;width:100%;padding:12px 14px;border-radius:12px}
+.laPanel-noise .laNoiseTeacherHub .laStarGoal{flex-basis:100%;font-size:14px;line-height:1.4}
+.laPanel-noise .laNoiseTeacherHub #laNoiseScoreboard .laMetrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.laPanel-noise .laNoiseTeacherHub #laNoiseScoreboard .laMetrics>.card{padding:16px}
+@media(max-width:1050px){.laPanel-places .laBoardModern{grid-template-columns:minmax(270px,1.2fr) minmax(180px,1fr)}.laPanel-places .laBoardModern>.laPlaceCard:first-child{grid-row:span 12}.laPanel-preparation .laPreparation{grid-template-columns:1fr}}
+@media(max-width:680px){.laPanel-places .laBoardModern{grid-template-columns:1fr}.laPanel-places .laBoardModern>.laPlaceCard:first-child{grid-row:auto;min-height:0}.laPanel-requests .laDashboardGrid{grid-template-columns:1fr}.laPanel-noise .laNoiseTeacherHub #laNoiseScoreboard .laMetrics{grid-template-columns:1fr}}
