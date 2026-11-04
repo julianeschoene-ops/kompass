@@ -96,7 +96,7 @@ const Auth={
     if(typeof CreativeSyncV2!=='undefined'){try{await CreativeSyncV2.initialize();}catch(e){console.warn('Kreativband v2 noch nicht bereit',e);}}
     render();
   },
-  async cloudLogin(email,password){const {data,error}=await this.cloudClient.auth.signInWithPassword({email:String(email||'').trim().toLowerCase(),password});if(error){if(String(error.message||'').toLowerCase().includes('invalid login credentials'))throw new Error('E-Mail oder Passwort ist nicht korrekt.');throw error;}await this.applyCloudSession(data.session);this.applyRemember(this.currentUser()?.role);}
+  async cloudLogin(email,password){const {data,error}=await this.cloudClient.auth.signInWithPassword({email:String(email||'').trim().toLowerCase(),password});if(error){if(String(error.message||'').toLowerCase().includes('invalid login credentials'))throw new Error('E-Mail oder Passwort ist nicht korrekt.');throw error;}await this.applyCloudSession(data.session);this.applyRemember(this.currentUser()?.role);},
   async verifyCloudPassword(email,password){
     let response;
     try{
