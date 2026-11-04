@@ -1,8 +1,28 @@
 const AUTH_KEY='kompass81_auth';
 const SESSION_KEY='kompass81_session';
 const CLOUD_KEY='kompass81_cloud_config';
+const REMEMBER_KEY='kompass81_remember_v1';
+const CLOUD_AUTH_KEY='sb-gexhcpyzwzybrpuygqmf-auth-token';
+const KompassAuthStorage={
+ getItem(key){
+  if(key!==CLOUD_AUTH_KEY)return sessionStorage.getItem(key);
+  let choice;try{choice=JSON.parse(localStorage.getItem(REMEMBER_KEY)||'null')}catch(e){}
+  if(choice&&choice.until&&Date.now()>=choice.until){localStorage.removeItem(REMEMBER_KEY);localStorage.removeItem(key);sessionStorage.removeItem(key);return null;}
+  return (choice?.until?localStorage.getItem(key):null)||sessionStorage.getItem(key);
+ },
+ setItem(key,value){
+  if(key!==CLOUD_AUTH_KEY){sessionStorage.setItem(key,value);return;}
+  let choice;try{choice=JSON.parse(localStorage.getItem(REMEMBER_KEY)||'null')}catch(e){}
+  if(choice?.until>Date.now()){localStorage.setItem(key,value);sessionStorage.removeItem(key);}
+  else{sessionStorage.setItem(key,value);localStorage.removeItem(key);}
+ },
+ removeItem(key){sessionStorage.removeItem(key);localStorage.removeItem(key);}
+};
 const Auth={
   session:null,cloud:null,cloudClient:null,
+  rememberDays:0,
+  setRemember(days){this.rememberDays=Math.max(0,Math.min(3650,Number(days)||0));},
+  applyRemember(role){const days=role==='lernatelier'?3650:this.rememberDays;if(days){localStorage.setItem(REMEMBER_KEY,JSON.stringify({until:Date.now()+days*86400000,role}));const token=sessionStorage.getItem(CLOUD_AUTH_KEY);if(token){localStorage.setItem(CLOUD_AUTH_KEY,token);sessionStorage.removeItem(CLOUD_AUTH_KEY);}}else{localStorage.removeItem(REMEMBER_KEY);localStorage.removeItem(CLOUD_AUTH_KEY);}},
   load(){
     // KOMPASS ist fest mit der gemeinsamen Schul-Cloud verbunden.
     // Dadurch landen neue Geräte/Browser direkt beim Login statt bei "Ersten Admin anlegen".
@@ -27,7 +47,7 @@ const Auth={
   async createFirstAdmin(name,username,password){const db=this.localDb();if(db.users.length)throw new Error('Es existiert bereits ein Konto.');const u={id:uid('user'),name:name.trim(),username:username.trim().toLowerCase(),passwordHash:await this.hash(password),role:'admin',active:true,createdAt:new Date().toISOString()};db.users.push(u);this.saveLocalDb(db);await this.localLogin(username,password);return u;},
   async createLocalUser({name,username,password,role}){const db=this.localDb();username=username.trim().toLowerCase();if(db.users.some(u=>u.username===username))throw new Error('Benutzername existiert bereits.');const u={id:uid('user'),name:name.trim(),username,passwordHash:await this.hash(password),role:role||'teacher',active:true,createdAt:new Date().toISOString()};db.users.push(u);this.saveLocalDb(db);Store.log('Benutzerkonto angelegt',{target:u.name,role:u.role});return u;},
   async localLogin(username,password){const db=this.localDb(),hash=await this.hash(password);const u=db.users.find(x=>x.active!==false&&x.username===username.trim().toLowerCase()&&x.passwordHash===hash);if(!u)throw new Error('Benutzername oder Passwort ist nicht korrekt.');this.session={mode:'local',user:{id:u.id,name:u.name,username:u.username,role:u.role,gradeAccess:{5:u.role==='leitung'?'leitung':'teacher',6:u.role==='leitung'?'leitung':'teacher',7:u.role==='leitung'?'leitung':'teacher'},coachTeams:u.coachTeams||{}}};sessionStorage.setItem(SESSION_KEY,JSON.stringify(this.session));return this.session.user;},
-  async logout(){if(window.Sync){clearInterval(Sync.refreshTimer);clearTimeout(Sync.timer);}const client=this.cloudClient;this.session=null;sessionStorage.removeItem(SESSION_KEY);render();if(client){try{await client.auth.signOut({scope:'local'})}catch(e){console.warn('Lokale Abmeldung',e)}}},
+  async logout(){if(window.Sync){clearInterval(Sync.refreshTimer);clearTimeout(Sync.timer);}const client=this.cloudClient;this.session=null;sessionStorage.removeItem(SESSION_KEY);localStorage.removeItem(REMEMBER_KEY);localStorage.removeItem(CLOUD_AUTH_KEY);render();if(client){try{await client.auth.signOut({scope:'local'})}catch(e){console.warn('Lokale Abmeldung',e)}}},
   async handleCloudAuthChange(s){
     if(s?.user?.id){
       // signInWithPassword applies the profile itself. The auth event must not
@@ -41,8 +61,8 @@ const Auth={
     if(!this.cloudConfigured())return false;
     // Older releases stored the Supabase refresh token browser-wide. That made
     // a shared iPad reopen the account of the person who used it before.
-    localStorage.removeItem('sb-gexhcpyzwzybrpuygqmf-auth-token');
-    this.cloudClient=window.supabase.createClient(this.cloud.url,this.cloud.anonKey,{auth:{storage:sessionStorage,persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+    // Persistent sessions are now opt-in, with a device-specific expiry.
+    this.cloudClient=window.supabase.createClient(this.cloud.url,this.cloud.anonKey,{auth:{storage:KompassAuthStorage,persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
     const {data,error}=await this.cloudClient.auth.getSession();if(error)throw error;
     if(data?.session)await this.applyCloudSession(data.session);else if(this.session?.mode==='cloud'){this.session=null;sessionStorage.removeItem(SESSION_KEY);}
     this.cloudClient.auth.onAuthStateChange((_e,s)=>setTimeout(()=>this.handleCloudAuthChange(s).catch(e=>{console.error('Cloud-Authentifizierung',e);loginErr?.(e)}),0));
@@ -57,7 +77,9 @@ const Auth={
       if(gaErr)throw gaErr;(ga||[]).forEach(x=>gradeAccess[x.grade]=x.access_level);
     }else{gradeAccess={5:'leitung',6:'leitung',7:'leitung'};}
     this.session={mode:'cloud',user:{id:data.id,name:data.display_name||s.user.email,username:s.user.email,role:data.role||'teacher',gradeAccess,coachTeams:data.coach_teams||{},coachingGroups:data.coaching_groups||{},passwordChangedAt:s.user.user_metadata?.kompass_password_changed_at||null}};
-    sessionStorage.setItem(SESSION_KEY,JSON.stringify(this.session));State.teacher=this.session.user.name;State.role=this.session.user.role;
+    sessionStorage.setItem(SESSION_KEY,JSON.stringify(this.session));
+    if(data.role==='lernatelier'&&!localStorage.getItem(REMEMBER_KEY))this.applyRemember('lernatelier');
+    State.teacher=this.session.user.name;State.role=this.session.user.role;
     const years=this.allowedGrades();if(years.length&&!years.includes(State.year))State.year=years[0];
     State.cloudLoadError=null;
     // Restricted accounts must never retain a previous teacher's full roster in memory.
@@ -74,7 +96,7 @@ const Auth={
     if(typeof CreativeSyncV2!=='undefined'){try{await CreativeSyncV2.initialize();}catch(e){console.warn('Kreativband v2 noch nicht bereit',e);}}
     render();
   },
-  async cloudLogin(email,password){const {data,error}=await this.cloudClient.auth.signInWithPassword({email:String(email||'').trim().toLowerCase(),password});if(error){if(String(error.message||'').toLowerCase().includes('invalid login credentials'))throw new Error('E-Mail oder Passwort ist nicht korrekt.');throw error;}await this.applyCloudSession(data.session)},
+  async cloudLogin(email,password){const {data,error}=await this.cloudClient.auth.signInWithPassword({email:String(email||'').trim().toLowerCase(),password});if(error){if(String(error.message||'').toLowerCase().includes('invalid login credentials'))throw new Error('E-Mail oder Passwort ist nicht korrekt.');throw error;}await this.applyCloudSession(data.session);this.applyRemember(this.currentUser()?.role);}
   async verifyCloudPassword(email,password){
     let response;
     try{
