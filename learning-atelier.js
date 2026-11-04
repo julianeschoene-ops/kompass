@@ -918,7 +918,7 @@ function learningAtelier(){
   html+='<div class="laPanelView laPanel-overview">';
   html+='<section id="la-overview" class="laSection"><h2 class="laSectionTitle">Lernatelier im Blick</h2>'+laFindPanel()+'</section>';
   html+='</div><div class="laPanelView laPanel-preparation">';
-  html+='<section id="la-preparation" class="laPreparation"><details class="laCollapsible"><summary>Tagesübersicht vorbereiten <span>Hinweise, Nachrichten und Veröffentlichung</span></summary>'+laDailyEditor()+'</details><details class="laCollapsible"><summary>Wochendienste <span>Wöchentliche Einteilung und Synchronisierung</span></summary>'+laDutyOverview()+'</details></section>';
+  html+='<section id="la-preparation" class="laPreparation"><div class="laPrepSection"><h3>Tagesübersicht</h3>'+laDailyEditor()+'</div><div class="laPrepSection"><h3>Wochendienste</h3>'+laDutyOverview()+'</div></section>';
   html+='</div><div class="laPanelView laPanel-places">';
   html+='<div class="toolbar"><div class="laTabs">'+LA_ROOMS.map(r=>`<button class="chip ${laSelectedRoom===r?'dark':''}" onclick="laSelectedRoom='${r}';laPreviewPupilId='';render()">${r} · ${all.filter(p=>laRoom(p)===r).length}</button>`).join('')+'</div><p class="mini">Die Zuordnung zum Lernatelier bleibt auch bei einem Standortwechsel bestehen.</p></div>';
   if(unknown.length&&can)html+='<div class="card"><b>Sammelzuordnung</b><p class="mini">Noch nicht zugeordnet: '+unknown.length+' SuS aus Stufe '+laGrade+'. Bestehende Lernatelier-Zuordnungen bleiben unverändert.</p><button class="chip dark" onclick="laAssignUnassigned(\'LA 1\')">Alle noch nicht zugeordneten SuS → LA 1</button></div>';
@@ -934,9 +934,9 @@ function learningAtelier(){
   html+='</div><div class="laPanelView laPanel-places">';
   html+='<div class="laMetrics"><div class="card"><b>'+current.length+'</b><span>SuS in '+esc(laSelectedRoom)+'</span></div><div class="card"><b>'+current.filter(p=>(p.learningPlace||'Lernatelier')==='Lernatelier').length+'</b><span>Im Lernatelier</span></div><div class="card"><b>'+pending.length+'</b><span>Offene Anfragen</span></div><div class="card"><b>'+help.length+'</b><span>Hilfe benötigt</span></div></div>';
   html+='</div><div class="laPanelView laPanel-requests">';
-  html+='<section id="la-requests" class="laSection"><h2 class="laSectionTitle">Anfragen & Hilfe</h2><div class="laDashboardGrid"><div class="card"><h2>🔔 Genehmigungen</h2>';
+  html+='<section id="la-requests" class="laSection"><h2 class="laSectionTitle">Anfragen & Hilfe</h2><div class="laDashboardGrid"><div class="card"><h2><span class="laQuietIcon">${schoolTileIcon('clipboard')}</span> Genehmigungen</h2>';
   html+=pending.length?pending.map(p=>'<div class="laQueue"><div><b>'+esc(p.short||p.first+' '+p.last)+'</b><div class="mini">'+esc(p.laRequest.place)+' · '+esc(p.graduation||'Hiker')+'</div></div><div><button class="chip dark" onclick="laAnswerRequest(\''+esc(p.id)+'\',true)">✓</button><button class="chip" onclick="laAnswerRequest(\''+esc(p.id)+'\',false)">✕</button></div></div>').join(''):'<p class="mini">Keine offenen Anfragen</p>';
-  html+='</div><div class="card"><h2>✋ Hilfehand</h2>';
+  html+='</div><div class="card"><h2><span class="laQuietIcon">${schoolTileIcon('message')}</span> Hilfeanfragen</h2>';
   html+=help.length?help.map(p=>'<div class="laQueue"><b>'+esc(p.short||p.first+' '+p.last)+'</b><button class="chip" onclick="laSetHelp(\''+esc(p.id)+'\',false)">Erledigt ✓</button></div>').join(''):'<p class="mini">Niemand wartet auf Hilfe</p>';
   html+='</div></div></section>';
   html+='</div><div class="laPanelView laPanel-places">';
@@ -948,7 +948,7 @@ function learningAtelier(){
     const ps=current.filter(p=>(p.learningPlace||'Lernatelier')===place);
     html+=`<div class="laPlaceCard"><div class="laPlaceHeader"><h3>${esc(place)}</h3><span class="laPlaceCount">${ps.length}</span></div>`;
     if(chosen&&(chosen.learningPlace||'Lernatelier')!==place)html+=`<button class="laMoveHere" onclick="laBoardMove('${laSafeId(chosen.id)}','${esc(place)}')">↳ Hierher verschieben</button>`;
-    html+=`<div class="laPlaceNames">${ps.map(p=>`<button type="button" class="laPlacePupil ${String(p.id)===String(laBoardSelectedId)?'selected':''}" onclick="laBoardSelectedId='${laSafeId(p.id)}';render()"><span class="dot ${teamColor(p.team)}"></span><span>${esc(p.short||p.first+' '+p.last)}</span>${p.laNeedsHelp?' ✋':''}</button>`).join('')||'<span class="laPlaceEmpty">Noch niemand hier</span>'}</div></div>`;
+    html+=`<div class="laPlaceNames">${ps.map(p=>`<button type="button" class="laPlacePupil ${String(p.id)===String(laBoardSelectedId)?'selected':''}" onclick="laBoardSelectedId='${laSafeId(p.id)}';render()"><span class="dot ${teamColor(p.team)}"></span><span>${esc(p.short||p.first+' '+p.last)}</span>${p.laNeedsHelp?' · Hilfe':''}</button>`).join('')||'<span class="laPlaceEmpty">Noch niemand hier</span>'}</div></div>`;
   }
   html+='</div></section><section id="la-pupils" class="laSection"><div class="section">Schülerverwaltung</div>';
   if(!can)html+='<div class="card">Die Zuordnungen und Graduierungen können nur durch die Stufenleitung geändert werden.</div>';
