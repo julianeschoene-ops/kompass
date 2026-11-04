@@ -707,7 +707,25 @@ async function laResetRoomOccupancy(){
 // Lokale Mikrofon-Lärmampel: Audiodaten verlassen das Gerät nicht.
 const laNoiseMeter={stream:null,context:null,analyser:null,buffer:null,frame:0,active:false,level:0,peak:0,threshold:8,room:'',grade:0,lastPaint:0};
 function laNoiseMeterKey(){return 'kompass_noise_threshold_v2_'+laGrade+'_'+laSelectedRoom;}
-function laNoiseMeterThreshold(){try{return Math.max(1,Math.min(90,Number(localStorage.getItem(laNoiseMeterKey()))||8));}catch(e){return 8;}}
+const laNoiseSettings={rows:new Map(),busy:false,lastFetch:0};
+function laNoiseSetting(){return laNoiseSettings.rows.get(laGrade+'|'+laSelectedRoom);}
+async function laNoiseSettingsLoad(){
+ if(!Auth.cloudClient||!Auth.session||laNoiseSettings.busy||Date.now()-laNoiseSettings.lastFetch<30000)return;
+ laNoiseSettings.busy=true;
+ try{const {data,error}=await Auth.cloudClient.from('kompass_noise_settings').select('grade,room,threshold,minutes_per_star');if(error)throw error;
+ for(const row of data||[])laNoiseSettings.rows.set(row.grade+'|'+row.room,row);
+ laNoiseSettings.lastFetch=Date.now();
+ if(!laNoiseMeter.active&&document.querySelector('.laNoiseMeter'))document.querySelector('.laNoiseMeter').outerHTML=laNoiseMeterUI();
+ }catch(e){console.warn('Lärmampel-Einstellungen',e)}finally{laNoiseSettings.busy=false;}
+}
+async function laNoiseSettingsSave(){
+ if(!Auth.cloudClient||!Auth.session)return;
+ const row={grade:laGrade,room:laSelectedRoom,threshold:laNoiseMeterThreshold(),minutes_per_star:laNoiseMinutes()};
+ laNoiseSettings.rows.set(laGrade+'|'+laSelectedRoom,row);
+ const {error}=await Auth.cloudClient.from('kompass_noise_settings').upsert(row,{onConflict:'grade,room'});
+ if(error)toast('Einstellungen konnten nicht gespeichert werden: '+error.message,5000);
+}
+function laNoiseMeterThreshold(){try{return Math.max(1,Math.min(90,laNoiseSetting()?.threshold||Number(localStorage.getItem(laNoiseMeterKey()))||20));}catch(e){return 8;}}
 
 const laNoiseCloud={events:[],loaded:false,busy:false,lastFetch:0,pending:new Set()};
 function laNoiseDayKey(d){return new Date(d).toLocaleDateString('sv-SE',{timeZone:'Europe/Berlin'});}
@@ -719,18 +737,19 @@ async function laNoiseRedeem(grade,room){if(Auth.isLernatelier()||!Auth.isAdmin(
 function laNoiseCloudPaint(){const holder=document.getElementById('laNoiseScoreboard');if(!holder)return;const summary=holder.querySelector('summary');if(summary){const content=holder.querySelector('.card');if(content)content.outerHTML=laNoiseScoreboardHTML();}else holder.innerHTML=laNoiseScoreboardHTML();}
 function laNoiseScoreboardHTML(){const totals=LA_ROOMS.map(room=>({room,...laNoiseCloudTotals(laGrade,room)}));return '<div class="card"><b>⭐ Lernatelier-Sterne · Übersicht</b><div class="laMetrics">'+totals.map((t,i)=>'<div class="card"><b>'+esc(t.room)+'</b><p>Heute: <strong>'+t.day+'</strong> Punkte</p><p>Woche: <strong>'+t.week+'</strong> Punkte</p><p>Belohnungskonto: <strong>'+t.available+'</strong> Punkte</p><p class="mini">Eingelöst: '+t.spent+'</p>'+(!Auth.isLernatelier()&&Auth.isAdmin()?'<button class="chip" onclick="laNoiseRedeem('+laGrade+',\''+t.room+'\')">⭐ Sterne einlösen</button>':'')+'</div>').join('')+'</div><p class="mini">Wettbewerb: '+totals.slice().sort((a,b)=>b.week-a.week).map((t,i)=>(i+1)+'. '+esc(t.room)+' ('+t.week+')').join(' · ')+'</p></div>';}
 const laNoiseChallenge={greenSince:0,points:0,lastRoom:'',lastGrade:0,lastWeek:'',lastTime:0};
-function laNoiseMinutes(){try{return Math.max(1,Math.min(30,Number(localStorage.getItem('kompass_noise_minutes_'+laGrade+'_'+laSelectedRoom))||5));}catch(e){return 5;}}
+function laNoiseMinutes(){try{return Math.max(1,Math.min(30,laNoiseSetting()?.minutes_per_star||Number(localStorage.getItem('kompass_noise_minutes_'+laGrade+'_'+laSelectedRoom))||5));}catch(e){return 5;}}
 function laNoiseScoreKey(){return 'kompass_noise_scores_'+laGrade+'_'+laWeekKey()+'_'+laSelectedRoom;}
 function laNoiseLocalPoints(){try{return Number(localStorage.getItem(laNoiseScoreKey()))||0;}catch(e){return 0;}}
 function laNoiseSetMinutes(value){
  if(Auth.isLernatelier()&&laKioskLocked())return;
  const minutes=Math.max(1,Math.min(30,Number(value)||5));
  try{localStorage.setItem('kompass_noise_minutes_'+laGrade+'_'+laSelectedRoom,String(minutes));}catch(e){}
+ laNoiseSettingsSave();
  laNoiseChallenge.greenSince=0;
  const label=document.getElementById('laNoiseTimer');if(label)label.textContent=minutes+':00';
 }
 function laNoiseChallengeUI(){
- laNoiseCloudRefresh();
+ laNoiseCloudRefresh();laNoiseSettingsLoad();
  const minutes=laNoiseMinutes();
  return '<div class="laNoiseChallenge"><span class="laStarGoal">⭐ Noch '+Math.max(0,15-laNoiseCloudTotals(laGrade,laSelectedRoom).available)+' Sterne bis zu 5 Minuten früher Pause!</span><strong>🏆 <span id="laNoisePoints">'+laNoiseCloudTotals(laGrade,laSelectedRoom).week+'</span> Sterne diese Woche</strong><span class="laNoiseRewards">🎁 <span id="laNoiseRewards">'+laNoiseCloudTotals(laGrade,laSelectedRoom).available+'</span> Sterne verfügbar</span><span id="laNoiseTimer">'+minutes+':00</span><div class="laNoiseProgress"><span id="laNoiseProgressFill"></span></div>'+
  (!laKioskLocked()&&!Auth.isLernatelier()?'<label class="laNoiseMinutes">Punkt nach <select onchange="laNoiseSetMinutes(this.value)">'+[3,5,7,10].map(n=>'<option value="'+n+'" '+(minutes===n?'selected':'')+'>'+n+' Min.</option>').join('')+'</select></label>':'')+
@@ -744,7 +763,7 @@ function laNoiseChallengeTick(){
   c.greenSince=0;c.lastRoom=room;c.lastGrade=grade;c.lastWeek=week;
  }
  const duration=laNoiseMinutes()*60000;
- const green=laNoiseMeter.active&&laNoiseMeter.level<laNoiseMeter.threshold*.75&&!document.hidden;
+ const green=laNoiseMeter.active&&laNoiseMeter.stableColor==='green'&&!document.hidden;
  if(!green)c.greenSince=0;
  else if(!c.greenSince)c.greenSince=Date.now();
  const elapsed=c.greenSince?Date.now()-c.greenSince:0;
@@ -763,11 +782,12 @@ function laNoiseChallengeTick(){
 function laNoiseMeterUI(){
  const m=laNoiseMeter;
  m.threshold=laNoiseMeterThreshold();
- return '<div class="laNoiseMeter" aria-label="Automatische Lärmampel"><div class="laNoiseLamp '+(m.active?(m.level>=m.threshold?'laNoiseRed':m.level>=m.threshold*.75?'laNoiseYellow':'laNoiseGreen'):'laNoiseOff')+'" id="laNoiseLamp"><span id="laNoiseFace">'+(m.active?(m.level>=m.threshold?'🔴':m.level>=m.threshold*.75?'🟡':'🟢'):'🎙️')+'</span><span id="laNoiseText">'+(m.active?(m.level>=m.threshold?'Zu laut!':m.level>=m.threshold*.75?'Etwas leiser':'Gut so!'):'Lärmampel starten')+'</span></div><button type="button" class="chip" onclick="laNoiseToggle()">'+(m.active?'⏹ Messung stoppen':'🎙️ Messung starten')+'</button><label class="laNoiseSensitivity">Grenzwert <button type="button" class="laNoiseAdjust" onclick="laNoiseThreshold(laNoiseMeter.threshold-1)">−</button><input type="number" inputmode="numeric" min="1" max="90" value="'+m.threshold+'" onchange="laNoiseThreshold(this.value)" id="laNoiseThresholdInput"><button type="button" class="laNoiseAdjust" onclick="laNoiseThreshold(laNoiseMeter.threshold+1)">+</button><span id="laNoiseThresholdValue">'+m.threshold+'</span></label><div class="laNoiseLevel"><span id="laNoiseBar" style="width:'+m.level+'%"></span></div>'+laNoiseChallengeUI()+'</div>';
+ return '<div class="laNoiseMeter" aria-label="Automatische Lärmampel"><div class="laNoiseLamp '+(m.active?(m.level>=m.threshold?'laNoiseRed':m.level>=m.threshold*.75?'laNoiseYellow':'laNoiseGreen'):'laNoiseOff')+'" id="laNoiseLamp"><span id="laNoiseFace">'+(m.active?(m.level>=m.threshold?'🔴':m.level>=m.threshold*.75?'🟡':'🟢'):'🎙️')+'</span><span id="laNoiseText">'+(m.active?(m.level>=m.threshold?'Zu laut!':m.level>=m.threshold*.75?'Etwas leiser':'Gut so!'):'Lärmampel starten')+'</span></div><button type="button" class="chip" onclick="laNoiseToggle()">'+(m.active?'⏹ Messung stoppen':'🎙️ Messung starten')+'</button><label class="laNoiseSensitivity">Grenzwert <button type="button" class="laNoiseAdjust" onclick="laNoiseThreshold(laNoiseMeter.threshold-5)">−</button><input type="number" inputmode="numeric" min="5" max="90" step="5" value="'+m.threshold+'" onchange="laNoiseThreshold(this.value)" id="laNoiseThresholdInput"><button type="button" class="laNoiseAdjust" onclick="laNoiseThreshold(laNoiseMeter.threshold+5)">+</button><span id="laNoiseThresholdValue">'+m.threshold+'</span></label><div class="laNoiseLevel"><span id="laNoiseBar" style="width:'+m.level+'%"></span></div>'+laNoiseChallengeUI()+'</div>';
 }
 function laNoiseThreshold(v){
- laNoiseMeter.threshold=Math.max(1,Math.min(90,Number(v)||8));
+ laNoiseMeter.threshold=Math.max(5,Math.min(90,Math.round((Number(v)||20)/5)*5));
  try{localStorage.setItem(laNoiseMeterKey(),String(laNoiseMeter.threshold));}catch(e){}
+ laNoiseSettingsSave();
  const el=document.getElementById('laNoiseThresholdValue');if(el)el.textContent=laNoiseMeter.threshold;
  const input=document.getElementById('laNoiseThresholdInput');if(input)input.value=laNoiseMeter.threshold;
 }
@@ -780,7 +800,7 @@ async function laNoiseToggle(){
   const source=ctx.createMediaStreamSource(stream),analyser=ctx.createAnalyser();
   analyser.fftSize=2048;analyser.smoothingTimeConstant=.65;source.connect(analyser);
   await ctx.resume();
-  Object.assign(laNoiseMeter,{stream,context:ctx,analyser,buffer:new Float32Array(analyser.fftSize),active:true,room:laSelectedRoom,grade:laGrade,threshold:laNoiseMeterThreshold(),level:0,peak:0});
+  Object.assign(laNoiseMeter,{stream,context:ctx,analyser,buffer:new Float32Array(analyser.fftSize),active:true,room:laSelectedRoom,grade:laGrade,threshold:laNoiseMeterThreshold(),level:0,peak:0,stableColor:'green',candidateColor:'green',candidateSince:Date.now()});
   laNoiseTick();laNoiseRefreshButton();
  }catch(e){alert('Mikrofon konnte nicht gestartet werden. Bitte Mikrofonzugriff für KOMPASS erlauben. ('+e.message+')');}
 }
@@ -803,13 +823,13 @@ function laNoiseTick(time=0){
  const rms=Math.sqrt(sum/m.buffer.length);
  // Relative Geräuschstärke (kein geeichter Dezibelmesser).
  const raw=Math.max(0,Math.min(100,(20*Math.log10(Math.max(rms,.00001))+70)*2));
- m.level=m.level*.76+raw*.24;
+ m.level=m.level*.94+raw*.06;
  laNoiseChallengeTick();
  if(time-m.lastPaint>90){laNoisePaint();m.lastPaint=time;}
  m.frame=requestAnimationFrame(laNoiseTick);
 }
 function laNoisePaint(){
- const m=laNoiseMeter,red=m.active&&m.level>=m.threshold,yellow=m.active&&!red&&m.level>=m.threshold*.75;
+ const m=laNoiseMeter;const now=Date.now(),candidate=m.level>=m.threshold?'red':m.level>=m.threshold*.75?'yellow':'green';if(candidate!==m.stableColor){if(m.candidateColor!==candidate){m.candidateColor=candidate;m.candidateSince=now;}if(now-m.candidateSince>2500)m.stableColor=candidate;}else{m.candidateColor=candidate;m.candidateSince=now;}const red=m.active&&m.stableColor==='red',yellow=m.active&&m.stableColor==='yellow';
  const lamp=document.getElementById('laNoiseLamp');if(lamp)lamp.className='laNoiseLamp '+(!m.active?'laNoiseOff':red?'laNoiseRed':yellow?'laNoiseYellow':'laNoiseGreen');
  const face=document.getElementById('laNoiseFace');if(face)face.textContent=!m.active?'🎙️':red?'🔴':yellow?'🟡':'🟢';
  const label=document.getElementById('laNoiseText');if(label)label.textContent=!m.active?'Lärmampel starten':red?'Zu laut!':yellow?'Etwas leiser':'Gut so!';
