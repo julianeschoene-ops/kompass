@@ -767,7 +767,7 @@ function laNoiseSetMinutes(value){
 function laNoiseChallengeUI(){
  laNoiseCloudRefresh();laNoiseSettingsLoad();
  const minutes=laNoiseMinutes();
- return '<div class="laNoiseChallenge"><span class="laStarGoal">⭐ Noch '+Math.max(0,15-laNoiseCloudTotals(laGrade,laSelectedRoom).available)+' Sterne bis zu 5 Minuten früher Pause!</span><strong>🏆 <span id="laNoisePoints">'+laNoiseCloudTotals(laGrade,laSelectedRoom).week+'</span> Sterne diese Woche</strong><span class="laNoiseRewards">🎁 <span id="laNoiseRewards">'+laNoiseCloudTotals(laGrade,laSelectedRoom).available+'</span> Sterne verfügbar</span><span id="laNoiseTimer">'+minutes+':00</span><div class="laNoiseProgress"><span id="laNoiseProgressFill"></span></div>'+
+ return '<div class="laNoiseChallenge"><span class="laStarGoal">⭐ Belohnungen individuell je Lernatelier festlegen</span><strong>🏆 <span id="laNoisePoints">'+laNoiseCloudTotals(laGrade,laSelectedRoom).week+'</span> Sterne diese Woche</strong><span class="laNoiseRewards">🎁 <span id="laNoiseRewards">'+laNoiseCloudTotals(laGrade,laSelectedRoom).available+'</span> Sterne verfügbar</span><span id="laNoiseTimer">'+minutes+':00</span><div class="laNoiseProgress"><span id="laNoiseProgressFill"></span></div>'+
  (!laKioskLocked()&&!Auth.isLernatelier()?'<label class="laNoiseMinutes">Punkt nach <select onchange="laNoiseSetMinutes(this.value)">'+[3,5,7,10].map(n=>'<option value="'+n+'" '+(minutes===n?'selected':'')+'>'+n+' Min.</option>').join('')+'</select></label>':'')+
  '</div>';
 }
