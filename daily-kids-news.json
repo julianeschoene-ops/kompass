@@ -1,28 +1,28 @@
 {
   "updated": "2026-11-05",
-  "fetchedAt": "2026-11-05T13:31:17.925078+01:00",
-  "leadUrl": "https://www.logo.de/zu-wenig-blutkonserven-100.html",
+  "fetchedAt": "2026-11-05T21:43:17.862888+01:00",
+  "leadUrl": "https://www.logo.de/halloween-suessigkeiten-gegenstaende-100.html",
   "source": "ZDF logo!",
   "items": [
     {
-      "title": "Niederlage für Republikaner um Trump",
-      "url": "https://www.logo.de/midterms-wahlkampf-usa-100.html",
-      "summary": "In den USA wurde gewählt – zwar nicht der Präsident, aber andere wichtige Politiker im Kongress. Lest hier, was das Ergebnis bedeutet!",
-      "published": "2026-10-29",
-      "modified": "2026-11-04"
-    },
-    {
-      "title": "Warum werden Blutvorräte knapp?",
-      "url": "https://www.logo.de/zu-wenig-blutkonserven-100.html",
-      "summary": "Wenn ein Mensch Blut verloren hat, kann er in einem Krankenhaus neues Blut bekommen. Doch diese Vorräte werden oft knapp.",
-      "published": "2025-06-14",
-      "modified": "2026-11-04"
+      "title": "Kinder haben Süßigkeiten selbst verändert",
+      "url": "https://www.logo.de/halloween-suessigkeiten-gegenstaende-100.html",
+      "summary": "Mehrere Kinder geben zu, dass sie Halloween-Süßigkeiten selbst mit gefährlichen Gegenständen verändert oder erfunden haben.",
+      "published": "2026-11-05",
+      "modified": "2026-11-05"
     },
     {
       "title": "Bilder der Woche",
       "url": "https://www.logo.de/bilder-der-woche-bildergalerie-100.html",
       "summary": "Klickt euch durch die Bildergalerie mit den Bildern der Woche. Beeindruckendes und Lustiges aus der Nachrichtenwoche! Viel Spaß beim Schauen!",
       "published": "2022-12-06",
+      "modified": "2026-11-05"
+    },
+    {
+      "title": "Niederlage für Republikaner um Trump",
+      "url": "https://www.logo.de/midterms-wahlkampf-usa-100.html",
+      "summary": "In den USA wurde gewählt – zwar nicht der Präsident, aber andere wichtige Politiker im Kongress. Lest hier, was das Ergebnis bedeutet!",
+      "published": "2026-10-29",
       "modified": "2026-11-04"
     },
     {
@@ -33,21 +33,7 @@
       "modified": "2026-11-03"
     },
     {
-      "title": "Testet euer USA-Wissen!",
-      "url": "https://www.logo.de/quiz-usa-vereinigte-staaten-von-amerika-100.html",
-      "summary": "Wo liegt der höchste Berg der USA? Und wo die größte Stadt? Wie gut ihr euch wirklich mit dem Land auskennt, könnt ihr mit unserem Quiz checken!",
-      "published": "2026-11-03",
-      "modified": "2026-11-03"
-    },
-    {
-      "title": "So wird in dem Land Politik gemacht",
-      "url": "https://www.logo.de/usa-gewaltenteilung-100.html",
-      "summary": "Der Präsident ist nicht der Einzige, der in den USA was zu sagen hat. Die Macht ist aufgeteilt zwischen ihm, dem Kongress und dem Supreme Court.",
-      "published": "2026-11-03",
-      "modified": "2026-11-03"
-    },
-    {
-      "title": "Worum gehts bei den \"Youth Olympic Games\"?",
+      "title": "Olympische Jugend-Sommerspiele im Senegal",
       "url": "https://www.logo.de/youth-olympic-games-102.html",
       "summary": "Die \"Youth Olympic Games\" finden vom 31. Oktober bis zum 13. November in Dakar statt. 50 Athletinnen und Athleten aus Deutschland treten an.",
       "published": "2026-11-03",
@@ -73,6 +59,13 @@
       "summary": "In Frankreich gab es zuletzt große Demonstrationen. Jugendliche protestierten für bessere Bildung. Auch in Deutschland wurde jetzt demonstriert.",
       "published": "2026-10-29",
       "modified": "2026-10-31"
+    },
+    {
+      "title": "Wisst ihr, was los war?",
+      "url": "https://www.logo.de/nachrichten-quiz-der-woche-100.html",
+      "summary": "Habt ihr alle wichtigen Nachrichten der Woche mitbekommen? Testet mit unseren spannenden Quizfragen euer Wissen zu den aktuellen Themen!",
+      "published": "2025-05-17",
+      "modified": "2026-10-30"
     }
   ]
 }
