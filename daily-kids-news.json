@@ -1,21 +1,35 @@
 {
   "updated": "2026-11-06",
-  "fetchedAt": "2026-11-06T13:15:03.170651+01:00",
+  "fetchedAt": "2026-11-06T20:58:58.666389+01:00",
   "leadUrl": "https://www.logo.de/bilder-der-woche-bildergalerie-100.html",
   "source": "ZDF logo!",
   "items": [
     {
-      "title": "Kinder haben Süßigkeiten selbst verändert",
-      "url": "https://www.logo.de/halloween-suessigkeiten-gegenstaende-100.html",
-      "summary": "Mehrere Kinder geben zu, dass sie Halloween-Süßigkeiten selbst mit gefährlichen Gegenständen verändert oder erfunden haben.",
-      "published": "2026-11-05",
-      "modified": "2026-11-05"
+      "title": "Die Geschichte des Computers",
+      "url": "https://www.logo.de/geschichte-des-computers-100.html",
+      "summary": "Computer sind heute überall. Aber wozu waren sie eigentlich gedacht und wie wurden sie erfunden?",
+      "published": "2026-11-06",
+      "modified": "2026-11-06"
+    },
+    {
+      "title": "Wer ist euer Favorit? Stimmt ab!",
+      "url": "https://www.logo.de/abstimmung-kinderreporter-interviews-100.html",
+      "summary": "Am 26. Dezember gibt’s ein logo! extra für euch mit den coolsten und lustigsten Kinderreporterinterviews 2026. Ihr dürft darüber abstimmen!",
+      "published": "2026-11-06",
+      "modified": "2026-11-06"
     },
     {
       "title": "Bilder der Woche",
       "url": "https://www.logo.de/bilder-der-woche-bildergalerie-100.html",
       "summary": "Klickt euch durch die Bildergalerie mit den Bildern der Woche. Beeindruckendes und Lustiges aus der Nachrichtenwoche! Viel Spaß beim Schauen!",
       "published": "2022-12-06",
+      "modified": "2026-11-06"
+    },
+    {
+      "title": "Gegenstände in Süßigkeiten erfunden",
+      "url": "https://www.logo.de/halloween-suessigkeiten-gegenstaende-100.html",
+      "summary": "Mehrere Kinder geben zu, dass sie Halloween-Süßigkeiten selbst mit gefährlichen Gegenständen verändert oder erfunden haben.",
+      "published": "2026-11-05",
       "modified": "2026-11-05"
     },
     {
