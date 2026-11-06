@@ -25,7 +25,7 @@ const EnglishPractice = {
     if (!this.userKey()) return '';
     if (this.taskUser !== this.userKey() && !this.taskBusy) setTimeout(() => this.loadTasks(), 0);
     const all = this.forGrade(true), selected = this.forGrade();
-    return `<div class="toolbar" style="margin-bottom:12px;flex-wrap:wrap"><button class="chip" onclick="reloadTeacherCloudData()">↻ Ergebnisse aktualisieren</button>
+    return `<div class="toolbar" style="margin-bottom:12px;flex-wrap:wrap"><button class="chip dark" onclick="LiveQuiz.setup()">Live-Quiz · 15 Fragen</button><button class="chip" onclick="reloadTeacherCloudData()">↻ Ergebnisse aktualisieren</button>
       ${canManageRoster() ? `<button class="chip dark" onclick="EnglishPractice.printCodes(null,true)">Code + Symbol · ganzer Jahrgang (${all.length})</button>
       ${State.team !== 'alle' ? `<button class="chip" onclick="EnglishPractice.printCodes()">Code + Symbol · ${esc(State.team)} (${selected.length})</button>` : ''}` : ''}
     </div>`;
