@@ -1,15 +1,15 @@
 <!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><meta name="theme-color" content="#24344f"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="KOMPASS"><title>KOMPASS 8.5.59</title><link rel="manifest" href="manifest.json?v=8666"><link rel="icon" href="kompass-icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="kompass-icon.svg"><link rel="stylesheet" href="style.css?v=news-board-20261103-2"><link rel="stylesheet" href="redesign.css?v=noise-20261105-1"><style>
-/* Kreativband: same visual language as the subject overview */
-.creativeCompactGrid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}
-.creativeCompactTile{box-sizing:border-box!important;min-height:0!important;padding:16px!important;border:1px solid #e1e7ef!important;border-radius:16px!important;background:#fff!important;box-shadow:none!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;align-content:start!important}
-.creativeCompactTile .creativeOfferInner{min-height:66px;display:flex;align-items:center;gap:12px;padding:13px 16px;border:1px solid rgba(70,75,90,.08);border-radius:11px;background:#e8e3f1;color:#554a70;cursor:pointer}
-.creativeCompactTile .creativeOfferInner:nth-child(4n+2){background:#e0ece7;color:#416355}
-.creativeCompactTile .creativeOfferInner:nth-child(4n+3){background:#f3e6d9;color:#735a47}
-.creativeCompactTile .creativeOfferInner:nth-child(4n+4){background:#dfeaf4;color:#405e7b}
-.creativeCompactTile .activityIcon{font-size:19px!important;flex-shrink:0}
-.creativeCompactTile b{font-size:14px!important;line-height:1.3!important}
-.creativeCompactTile>span:last-child{display:none!important}
-@media(max-width:850px){.creativeCompactGrid{grid-template-columns:1fr!important}}
+/* Kreativband – subject-style colored cards, compact and uniform */
+.creativeCompactGrid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:12px!important}
+.creativeCompactGrid .creativeCompactTile{box-sizing:border-box!important;min-height:78px!important;padding:14px 16px!important;border:1px solid rgba(70,75,90,.10)!important;border-radius:11px!important;background:#e8e3f1!important;color:#554a70!important;box-shadow:none!important;display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;gap:12px!important}
+.creativeCompactGrid .creativeCompactTile:nth-child(4n+2){background:#e0ece7!important;color:#416355!important}
+.creativeCompactGrid .creativeCompactTile:nth-child(4n+3){background:#f3e6d9!important;color:#735a47!important}
+.creativeCompactGrid .creativeCompactTile:nth-child(4n+4){background:#dfeaf4!important;color:#405e7b!important}
+.creativeCompactGrid .creativeCompactTile .activityIcon{font-size:19px!important;flex-shrink:0}
+.creativeCompactGrid .creativeCompactTile b{font-size:14px!important;line-height:1.3!important}
+.creativeCompactGrid .creativeCompactTile>span:last-child{display:none!important}
+@media(max-width:1100px){.creativeCompactGrid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+@media(max-width:700px){.creativeCompactGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 </style></head><body><div id="app"></div><div id="dialog"></div><div id="toast" class="toast">Gespeichert</div>
 <script>function kompassStartError(e){var a=document.getElementById('app');if(a&&!a.textContent.trim())a.innerHTML='<div style="font-family:Arial,sans-serif;padding:24px"><h1>KOMPASS konnte nicht starten</h1><p>Bitte die Seite vollständig neu laden.</p><p style="color:#9b1c1c">'+String(e&&e.message||e&&e.reason&&e.reason.message||'Unbekannter Ladefehler')+'</p></div>'}window.addEventListener('error',kompassStartError);window.addEventListener('unhandledrejection',kompassStartError);</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="data.js?v=french-subject-20261103"></script><script src="storage.js?v=mathe5-20261027"></script><script src="auth.js?v=syntax-repair-2"></script><script src="sync.js?v=school-plans-20261029-3"></script><script src="creative-sync-v2.js?v=cancel-20261102"></script><script src="teams.js?v=8666"></script>
