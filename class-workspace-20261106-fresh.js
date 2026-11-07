@@ -40,9 +40,9 @@ Coaching.render=function(){
  if(!this.allowed()){shell(header('Meine Klassen')+'<div class="card">Keine Coachinggruppe zugewiesen.</div>');return;}
  if((!this.loaded||this.grade!==State.year)&&!this.loading){this.loaded=false;this.load();}
  const group=this.classGroup(),groups=this.groups(),section=this.section;
- const heading='<div class="schoolPageHead"><div><h1>Meine Klassen</h1><span class="mini">'+esc(this.classTeam()||group)+' · Jahrgang '+State.year+'</span></div><button class="chip" onclick="Coaching.load()">↻</button></div>';
+ const heading='<div class="schoolPageHead" style="'+(typeof coachingTeamTheme==='function'?coachingTeamTheme():'')+'padding:16px;border-radius:14px;border:1px solid transparent"><div><h1>Meine Klassen</h1><span class="mini">'+esc(this.classTeam()||group)+' · Jahrgang '+State.year+'</span></div><button class="chip" onclick="Coaching.load()">↻</button></div>';
  const switcher='';
- if(section==='home'){shell(heading+'<div class="subjectTools">'+[['coaching','Coaching','✎'],['listen','Listen','☑'],['vereinbarung','Absprachen','◇'],['aufgabe','Aufgaben','▤']].map(([id,label,icon])=>'<button class="subjectToolTile" onclick="Coaching.goto(\''+id+'\')"><span>'+icon+'</span><strong>'+label+'</strong></button>').join('')+'</div>'+switcher+(this.error?'<p>'+esc(this.error)+'</p>':''));return;}
+ if(section==='home'){shell(heading+'<div class="subjectTools">'+[['coaching','Coaching','✎'],['listen','Listen','☑'],['vereinbarung','Absprachen','◇'],['aufgabe','Aufgaben','▤']].map(([id,label,icon])=>'<button class="subjectToolTile" style="'+(typeof coachingTeamTheme==='function'?coachingTeamTheme():'')+'" onclick="Coaching.goto(\''+id+'\')"><span>'+icon+'</span><strong>'+label+'</strong></button>').join('')+'</div>'+switcher+(this.error?'<p>'+esc(this.error)+'</p>':''));return;}
  let html=heading+'<button class="schoolBack" onclick="Coaching.goto(\'home\')">← Meine Klassen</button><h2 class="classSectionTitle">'+esc(({listen:'Listen',gespraech:'Gespräche',vereinbarung:'Absprachen',coaching:'Coaching',aufgabe:'Aufgaben'})[section]||section)+'</h2>';
  if(section==='listen'){
   const listRows=this.listRecords(),titles=[...new Set(listRows.map(r=>r.title.slice(7)))],pupils=this.classPupils();
