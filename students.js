@@ -80,7 +80,7 @@ function studentProfile(){
  if(Auth.isAdmin())content+=`<button class="chip" onclick="showPupilEdit=!showPupilEdit;render()">Profil bearbeiten</button><button class="chip" onclick="archivePupil('${p.id}')">Archivieren</button>`;
  content+='</div>';
  if(showPupilEdit&&Auth.isAdmin())content+=pupilEditForm(p);if(typeof coachingProfileButton==='function')content+=coachingProfileButton(p);
- if(profileSection==='overview')content+=renderProfileTiles(p,entries,acts,b);
+ if(profileSection==='overview'){content+=renderProfileTiles(p,entries,acts,b);content+='<section class="card" style="margin-top:16px"><h2>Schülerakte im Überblick</h2><p class="mini">Wähle einen Lernbereich, um die gespeicherten Bewertungen und Beobachtungen zu sehen.</p><div class="profileOverviewStats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px">'+[['Kernfächer','core'],['Themenfeldunterricht','workshop'],['Coaching & Entwicklung','development'],['Lernentwicklungsbericht','leb']].map(([label,id])=>'<button class="chip" style="padding:15px;text-align:left" onclick="openProfileSection(\''+id+'\')">'+label+' →</button>').join('')+'</div></section>';}
  const core=profileCoreEntries(p);
  const workshopYear=Number(p.year||String(p.className||'').charAt(0));
  const workshop=Store.competencies.filter(c=>c.type==='workshop'&&Number(c.year)===workshopYear&&(!c.phase||c.phase!=='lab'||(Store.workshopPaths[`${p.id}|${workshopYear}|${c.sprint}`]?.lab===c.lab)||!!Store.records[c.id+'|'+p.id])).map(c=>[c.id+'|'+p.id,Store.records[c.id+'|'+p.id]||{}]);
@@ -106,7 +106,7 @@ function studentProfile(){
  content+='</section>';shell(content);
 }
 function renderProfileTiles(p,entries,acts,b){
- const tiles=[['core','Kernfächer'],['workshop','Themenfeldunterricht'],['offers','Angebote'],['development','Sozialverhalten'],['leb','LEB']];
+ const tiles=[['core','Kernfächer'],['workshop','Themenfeldunterricht'],['offers','Angebote'],['development','Coaching & Entwicklung'],['leb','LEB']];
  return '<nav class="profileAreas profileAreaTabs" aria-label="Schülerprofil">'+tiles.map(([id,title])=>'<button type="button" class="profileArea '+(profileSection===id?'isActive':'')+'" onclick="openProfileSection(\''+id+'\')">'+title+'</button>').join('')+'</nav>';
 }
 function renderProfileWorkshop(p){
