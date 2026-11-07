@@ -23,6 +23,29 @@
   }
   return out;
  };
+ const evidence=p=>{
+  const grade=year(p),cs=(Store.competencies||[]).filter(c=>Number(c.year)===grade&&['core','workshop'].includes(c.type));
+  const rated=cs.map(c=>({c,r:Store.records?.[c.id+'|'+p.id]})).filter(x=>['red','yellow','green'].includes(x.r?.current));
+  const concerns=rated.filter(x=>['red','yellow'].includes(x.r.current)).sort((a,b)=>(a.r.current==='red'?0:1)-(b.r.current==='red'?0:1));
+  const strengths=rated.filter(x=>x.r.current==='green');
+  const behaviour=Store.behaviour?.[p.id]||{};
+  const rows=pupilRows(Coaching,p.id);
+  const last=rows.filter(x=>x.kind==='gespraech').sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
+  const overdue=rows.filter(x=>!x.done&&['vereinbarung','aufgabe'].includes(x.kind)&&x.due_date&&x.due_date<new Date().toISOString().slice(0,10));
+  const observations=Array.isArray(behaviour.observations)?behaviour.observations:[];
+  return {rated,concerns,strengths,last,overdue,observations,configured:cs.length};
+ };
+ const evidenceHtml=(p,prep)=>{
+  const e=evidence(p),items=[];
+  if(e.concerns.length)items.push('<section class="coCard"><h3>Unterstützungsbedarf · Fachbewertungen</h3>'+e.concerns.slice(0,7).map(x=>'<p><strong>'+h(x.c.subject)+'</strong> · '+h(x.c.text||x.c.category||'Kompetenz')+' <span class="coTag">'+(x.r.current==='red'?'Noch nicht erreicht':'Teilweise erreicht')+'</span></p>').join('')+'</section>');
+  if(e.strengths.length)items.push('<section class="coCard"><h3>Dokumentierte Stärken</h3>'+e.strengths.slice(0,5).map(x=>'<p><strong>'+h(x.c.subject)+'</strong> · '+h(x.c.text||x.c.category||'Kompetenz')+'</p>').join('')+'</section>');
+  if(e.overdue.length)items.push('<section class="coCard"><h3>Fällige nächste Schritte</h3>'+e.overdue.map(x=>'<p>'+h(x.body)+' · '+h(x.due_date)+'</p>').join('')+'</section>');
+  if(e.observations.length)items.push('<section class="coCard"><h3>Beobachtungen zum Arbeits- und Sozialverhalten</h3>'+e.observations.slice(-4).map(x=>'<p>'+h(typeof x==='string'?x:(x.text||x.note||''))+'</p>').join('')+'</section>');
+  if(!e.configured)items.push('<section class="coCard"><h3>Fachbewertungen fehlen</h3><p class="coMuted">Für diesen Jahrgang sind keine Kernfach- oder Themenfeldkompetenzen hinterlegt. Deshalb kann KOMPASS daraus noch keine Entwicklung ableiten.</p></section>');
+  else if(!e.rated.length)items.push('<section class="coCard"><h3>Fachbewertungen noch offen</h3><p class="coMuted">'+e.configured+' Kompetenzen sind hinterlegt, aber für dieses Kind noch nicht bewertet.</p></section>');
+  if(!items.length)items.push('<section class="coCard"><h3>Keine auffälligen Einträge</h3><p class="coMuted">In den verfügbaren Bewertungen, Beobachtungen und Vereinbarungen liegen derzeit keine dokumentierten Hinweise vor. Das ist keine automatische Beurteilung.</p></section>');
+  return '<h3>'+(prep?'Datengestützte Gesprächsvorbereitung':'Auswertung vorhandener Daten')+'</h3><div class="coGrid">'+items.join('')+'</div>';
+ };
  const style='<style>.coNew{--coBorder:#e1e5ed;--coText:#25314a;color:var(--coText);max-width:1220px}.coNew .coTop{background:#f2ecf8;border-radius:17px;padding:22px 25px;margin:12px 0 20px}.coNew .coTop h1{margin:0;font-size:25px;color:#3e594c}.coNew .coTop p{margin:4px 0 0;color:#68728a}.coNew .coGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:13px;margin:14px 0}.coNew .coCard{background:#fff;border:1px solid var(--coBorder);border-radius:14px;padding:18px}.coNew .coCard h3{margin:0 0 10px;font-size:16px}.coNew .coMetric{font-size:25px;font-weight:750}.coNew .coMuted{color:#68748a;font-size:13px}.coNew .coRow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 17px;width:100%;text-align:left;background:white;border:0;border-bottom:1px solid var(--coBorder);cursor:pointer;color:inherit}.coNew .coRow:hover{background:#f7f7fc}.coNew .coTable{border:1px solid var(--coBorder);border-radius:14px;overflow:hidden}.coNew .coTabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 18px}.coNew .coTabs button{border:1px solid #dbe1eb;background:white;border-radius:24px;padding:9px 15px;cursor:pointer;color:#34435c}.coNew .coTabs button[aria-current=true]{background:#293752;color:white}.coNew .coSubject{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid #eef0f4}.coNew .coTag{border-radius:20px;background:#edf0f6;padding:4px 9px;font-size:12px}.coNew .coEmpty{color:#68748a;font-size:14px;padding:12px 0}.coNew .coActions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.coNew .coActions button{border:1px solid #dce1e9;background:#fff;border-radius:9px;padding:9px 13px;cursor:pointer}.coNew .coActions button.primary{background:#293752;color:white}</style>';
  Coaching.openWorkspace=function(section){if(this.hasUnsavedEntry?.()&&!confirm('Ungespeicherte Gesprächsnotizen verwerfen?'))return;this.section=section;this.pupil='';this.newEntryOpen=false;this.prepOpen=false;render();};
  Coaching.render=function(){
@@ -41,7 +64,7 @@
    html+='<div class="coActions">'+action('Übersicht',"Coaching.v2Mode='overview';render()",mode==='overview')+action('Gespräch vorbereiten',"Coaching.v2Mode='prep';render()",mode==='prep')+action('+ Gespräch dokumentieren',"Coaching.v2Mode='new';render()",mode==='new')+action('Schülerakte / LEB',"Coaching.openPupilProfile("+JSON.stringify(String(p.id)).replace(/"/g,'&quot;')+")")+'</div>';
    const subj=subjects(p);
    const subjectsHtml='<div class="coGrid">'+subj.map(x=>'<div class="coCard"><h3>'+h(x.name)+'</h3><div class="coMetric">'+x.assessed+' <span class="coMuted">/ '+x.all+' Kompetenzen</span></div><div class="coMuted">'+x.green+' grün · '+x.yellow+' gelb · '+x.red+' rot</div></div>').join('')+'</div>';
-   if(mode==='overview'||mode==='prep')html+=subjectsHtml;
+   if(mode==='overview'||mode==='prep'){html+=subjectsHtml;html+=evidenceHtml(p,mode==='prep');}
    if(mode==='prep'){
     const last=rows.find(x=>x.kind==='gespraech');
     html+='<div class="coGrid"><section class="coCard"><h3>Letztes Gespräch</h3>'+(last?'<p>'+date(last.created_at)+'</p><p>'+h(last.body)+'</p>':'<p class="coEmpty">Noch kein Gespräch dokumentiert.</p>')+'</section><section class="coCard"><h3>Offene Vereinbarungen</h3>'+(goals.length?goals.map(x=>'<p><strong>'+h(x.title)+'</strong> '+h(x.body)+(x.due_date?' · bis '+h(x.due_date):'')+'</p>').join(''):'<p class="coEmpty">Keine offenen Vereinbarungen.</p>')+'</section><section class="coCard"><h3>LEB und weitere Entwicklung</h3><p>'+(Store.lebDrafts?.[p.id]?'LEB-Entwurf vorhanden':'Noch kein LEB-Entwurf')+'</p><p class="coMuted">Die Kompetenzbewertungen oben stammen aus den gespeicherten Fachbewertungen.</p></section></div>';
