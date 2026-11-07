@@ -76,7 +76,7 @@ function studentProfile(){
  const entries=Object.entries(Store.records).filter(([key])=>key.endsWith('|'+p.id)&&Store.competencies.some(c=>c.id===key.split('|')[0]));
  const acts=pupilActivities(p.id),b=Store.behaviour[p.id]||{observations:[],teamStars:0};
  let content=header(`${esc(p.short)} (${esc(p.team)})`,`Coach ${esc(p.coach)} · ${esc(p.className)}`);
- content+=`<div class="toolbar"><button class="chip" onclick="State.pupil=null;showPupilEdit=false;render()">← Schülerübersicht</button>`;
+ content+=`<div class="toolbar">${typeof Coaching!=='undefined'&&Coaching.profileReturnPupil===String(p.id)?'<button class="chip dark" onclick="Coaching.returnFromProfile()">← Zurück zum Coaching</button>':''}<button class="chip" onclick="State.pupil=null;showPupilEdit=false;render()">← Schülerübersicht</button>`;
  if(Auth.isAdmin())content+=`<button class="chip" onclick="showPupilEdit=!showPupilEdit;render()">Profil bearbeiten</button><button class="chip" onclick="archivePupil('${p.id}')">Archivieren</button>`;
  content+='</div>';
  if(showPupilEdit&&Auth.isAdmin())content+=pupilEditForm(p);if(typeof coachingProfileButton==='function')content+=coachingProfileButton(p);
