@@ -5,7 +5,7 @@
  const oldSelect=Coaching.selectPupil;
  Coaching.selectPupil=function(id){this.v2Mode='overview';this.v2Edit='';return oldSelect.call(this,id);};
  const oldSave=Coaching.saveLearningEntry;
- Coaching.saveLearningEntry=async function(){this.newEntryOpen=true;const result=await oldSave.call(this);if(!this.error&&!this.newEntryOpen)this.v2Mode='overview';return result;};
+ Coaching.saveLearningEntry=async function(){this.newEntryOpen=true;const result=await oldSave.call(this);if(!this.error&&!this.newEntryOpen){this.v2Mode='overview';render();}return result;};
  const oldUpdate=Coaching.updateEntry;
  Coaching.updateEntry=async function(id){await oldUpdate.call(this,id);this.v2Edit='';render();};
  const oldUnsaved=Coaching.hasUnsavedEntry;
