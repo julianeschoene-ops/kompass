@@ -17,8 +17,8 @@
  const subjects=p=>{
   const y=year(p),out=[];
   for(const name of ['Deutsch','Mathematik','Englisch']){
-   const cs=(Store.competencies||[]).filter(c=>c.subject===name&&Number(c.year)===y);
-   const vals=cs.map(c=>Store.records?.[c.id+'|'+p.id]?.current).filter(Boolean);
+   const cs=(Store.competencies||[]).filter(c=>c.type==='core'&&c.subject===name&&Number(c.year)===y);
+   const vals=cs.map(c=>Store.records?.[c.id+'|'+p.id]?.current).filter(v=>['green','yellow','red'].includes(v));
    out.push({name,all:cs.length,assessed:vals.length,green:vals.filter(v=>v==='green').length,yellow:vals.filter(v=>v==='yellow').length,red:vals.filter(v=>v==='red').length});
   }
   return out;
