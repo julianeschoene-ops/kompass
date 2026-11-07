@@ -77,9 +77,9 @@ function studentProfile(){
  const acts=pupilActivities(p.id),b=Store.behaviour[p.id]||{observations:[],teamStars:0};
  let content=header(`${esc(p.short)} (${esc(p.team)})`,`Coach ${esc(p.coach)} · ${esc(p.className)}`);
  content+=`<div class="toolbar"><button class="chip" onclick="State.pupil=null;showPupilEdit=false;render()">← Schülerübersicht</button>`;
- if(canEdit())content+=`<button class="chip" onclick="showPupilEdit=!showPupilEdit;render()">Profil bearbeiten</button><button class="chip" onclick="archivePupil('${p.id}')">Archivieren</button>`;
+ if(Auth.isAdmin())content+=`<button class="chip" onclick="showPupilEdit=!showPupilEdit;render()">Profil bearbeiten</button><button class="chip" onclick="archivePupil('${p.id}')">Archivieren</button>`;
  content+='</div>';
- if(showPupilEdit)content+=pupilEditForm(p);if(typeof coachingProfileButton==='function')content+=coachingProfileButton(p);
+ if(showPupilEdit&&Auth.isAdmin())content+=pupilEditForm(p);if(typeof coachingProfileButton==='function')content+=coachingProfileButton(p);
  if(profileSection==='overview')content+=renderProfileTiles(p,entries,acts,b);
  const core=profileCoreEntries(p);
  const workshopYear=Number(p.year||String(p.className||'').charAt(0));
