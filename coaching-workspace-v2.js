@@ -86,7 +86,11 @@
   const soon=x.pending.filter(t=>t.due_date&&t.due_date>=now.toISOString().slice(0,10)&&t.due_date<=new Date(now.getTime()+7*86400000).toISOString().slice(0,10));
   if(soon.length)reasons.push({score:65,label:soon.length+' Ziel(e) diese Woche fällig'});
   if(days!==null&&days>=28)reasons.push({score:50,label:'Letztes Gespräch vor '+days+' Tagen'});
-  if(e.observations.length)reasons.push({score:60,label:e.observations.length+' dokumentierte Beobachtung(en)'});
+  if(e.observations.length){const latest=e.observations.slice(-2).map(o=>typeof o==='string'?o:String(o.text||o.note||'')).filter(Boolean);if(latest.length)reasons.push({score:60,label:'Beobachtung: '+latest[latest.length-1].slice(0,105)});}
+  const subjectsWithConcerns=[...new Set(e.concerns.map(v=>v.c.subject).filter(Boolean))];
+  if(subjectsWithConcerns.length>=2)reasons.push({score:88,label:'Unterstützungsbedarf in mehreren Fächern: '+subjectsWithConcerns.join(', ')});
+  if(e.overdue.length&&e.concerns.length)reasons.push({score:105,label:'Offenes Ziel und Kompetenzbedarf: bisherigen Förderweg gemeinsam überprüfen'});
+  if(e.concerns.length&&days!==null&&days>=21)reasons.push({score:92,label:'Kompetenzbedarf und längerer Gesprächsabstand: Entwicklung gemeinsam prüfen'});
   if(days===null)reasons.push({score:30,label:'Erstgespräch noch nicht dokumentiert'});
   reasons.sort((a,b)=>b.score-a.score);
   return {score:reasons[0]?.score||0,reasons};
