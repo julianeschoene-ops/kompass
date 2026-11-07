@@ -72,11 +72,12 @@ function schoolTileIcon(name){
  };
  return '<svg class="schoolLineIcon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+(paths[name]||paths.book)+'</svg>';
 }
+function coachingTeamTheme(){const u=Auth.currentUser()||{};const raw=String(u.coachTeams?.[State.year]||u.coachTeams?.[String(State.year)]||u.coachingGroups?.[State.year]||u.coachingGroups?.[String(State.year)]||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();const team=/pink|lila|violett/.test(raw)?'violett':/blau/.test(raw)?'blau':/rot/.test(raw)?'rot':/gelb/.test(raw)?'gelb':/grun/.test(raw)?'gruen':'';const colors={violett:['#f2eafa','#65448d'],blau:['#e8f2ff','#245d91'],rot:['#fff0ef','#a3434b'],gelb:['#fff7db','#86631c'],gruen:['#e7f5ed','#2b7653']};const pair=colors[team];return pair?'background:'+pair[0]+';color:'+pair[1]+';border-color:'+pair[1]+'33;':'';}
 function dashboard(){
  const tiles=[['core','book','Fächer'],['students','users','Schüler*innen'],['coaching','clipboard','Meine Klassen'],['learningAtelier','school','Lernatelier'],['activities','palette','Angebote'],['leb','file','LEB'],['organization','calendar','Organisation']];
  if(Auth.isAdmin())tiles.push(['admin','settings','Verwaltung']);
  const heading='<div class="schoolHomeTop"><div><h1>Mein Schulalltag</h1><span class="mini">Alles Wichtige auf einen Blick</span></div></div>';
- const cards='<div class="schoolHomeGrid">'+tiles.map(([id,icon,label])=>'<button class="schoolHomeTile tone-'+id+'" onclick="State.view=\''+id+'\';if(\''+id+'\'===\'core\')subjectHubMode=\'home\';if(\''+id+'\'===\'coaching\')Coaching.section=\'home\';render()"><span class="schoolTileIcon">'+schoolTileIcon(icon)+'</span><strong>'+label+'</strong></button>').join('')+'</div>';
+ const cards='<div class="schoolHomeGrid">'+tiles.map(([id,icon,label])=>'<button class="schoolHomeTile tone-'+id+'" style="'+(id==='coaching'?coachingTeamTheme():'')+'" onclick="State.view=\''+id+'\';if(\''+id+'\'===\'core\')subjectHubMode=\'home\';if(\''+id+'\'===\'coaching\')Coaching.section=\'home\';render()"><span class="schoolTileIcon">'+schoolTileIcon(icon)+'</span><strong>'+label+'</strong></button>').join('')+'</div>';
  shell('<div class="homeDashboard">'+heading+'<section class="homeAgenda">'+coachReminderHtml(State.year)+'</section><div class="homeTilesHeading">Meine Bereiche</div>'+cards+'</div>');
 }
 function organization(){
