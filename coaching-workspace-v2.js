@@ -2,6 +2,14 @@
    Existing Supabase save/edit flows remain authoritative. Kreativband untouched. */
 (function(){
  const previous=Coaching.render;
+ const oldSelect=Coaching.selectPupil;
+ Coaching.selectPupil=function(id){this.v2Mode='overview';this.v2Edit='';return oldSelect.call(this,id);};
+ const oldSave=Coaching.saveLearningEntry;
+ Coaching.saveLearningEntry=async function(){this.newEntryOpen=true;const result=await oldSave.call(this);if(!this.error&&!this.newEntryOpen)this.v2Mode='overview';return result;};
+ const oldUpdate=Coaching.updateEntry;
+ Coaching.updateEntry=async function(id){await oldUpdate.call(this,id);this.v2Edit='';render();};
+ const oldUnsaved=Coaching.hasUnsavedEntry;
+ Coaching.hasUnsavedEntry=function(){return oldUnsaved.call(this)||!!(this.v2Mode==='new'&&(document.getElementById('co_body')?.value.trim()||document.getElementById('co_followup')?.value.trim()||document.getElementById('co_next_task')?.value.trim()));};
  const h=x=>esc(String(x??''));
  const date=x=>x?new Date(x).toLocaleDateString('de-DE'):'—';
  const pupilRows=(c,id)=>(c.rows||[]).filter(r=>String(r.pupil_id)===String(id)&&!['checkliste','statusereignis'].includes(r.kind));
