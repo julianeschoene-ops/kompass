@@ -46,6 +46,23 @@
   if(!items.length)items.push('<section class="coCard"><h3>Keine auffälligen Einträge</h3><p class="coMuted">In den verfügbaren Bewertungen, Beobachtungen und Vereinbarungen liegen derzeit keine dokumentierten Hinweise vor. Das ist keine automatische Beurteilung.</p></section>');
   return '<h3>'+(prep?'Datengestützte Gesprächsvorbereitung':'Auswertung vorhandener Daten')+'</h3><div class="coGrid">'+items.join('')+'</div>';
  };
+ const trendFor=p=>{
+  const grade=year(p),results=[];
+  for(const c of (Store.competencies||[]).filter(c=>Number(c.year)===grade&&['core','workshop'].includes(c.type))){
+   const r=Store.records?.[c.id+'|'+p.id];if(!r)continue;
+   const h=(r.history||[]).filter(x=>!x.removed&&x.source!=='english_practice'&&['red','yellow','green'].includes(x.value)).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+   if(['red','yellow','green'].includes(r.current)&&(!h.length||h[h.length-1].value!==r.current))h.push({value:r.current,date:r.updatedAt||''});
+   if(h.length<2)continue;
+   const first=h[0],last=h[h.length-1],scale={red:0,yellow:1,green:2},delta=scale[last.value]-scale[first.value];
+   results.push({subject:c.subject,text:c.text||c.category||'Kompetenz',delta,from:first.value,to:last.value,date:last.date});
+  }
+  return results;
+ };
+ const trendHtml=p=>{
+  const trends=trendFor(p),improved=trends.filter(x=>x.delta>0),declined=trends.filter(x=>x.delta<0),steady=trends.filter(x=>x.delta===0);
+  const card=(title,rows)=>'<section class="coCard"><h3>'+title+'</h3>'+(rows.length?rows.slice(0,6).map(x=>'<p><strong>'+h(x.subject)+'</strong> · '+h(x.text)+' <span class="coMuted">('+({red:'rot',yellow:'gelb',green:'grün'}[x.from])+' → '+({red:'rot',yellow:'gelb',green:'grün'}[x.to])+')</span></p>').join(''):'<p class="coMuted">Keine belegten Veränderungen.</p>')+'</section>';
+  return '<h3>Entwicklung im Bewertungsverlauf</h3><p class="coMuted">Vergleich der ersten und letzten dokumentierten Bewertung je Kompetenz; Übungsdaten zählen nicht als Fachbewertung.</p><div class="coGrid">'+card('Verbesserungen · '+improved.length,improved)+card('Rückschritte · '+declined.length,declined)+card('Unverändert · '+steady.length,steady)+'</div>';
+ };
  const style='<style>.coNew{--coBorder:#e1e5ed;--coText:#25314a;color:var(--coText);max-width:1220px}.coNew .coTop{background:#f2ecf8;border-radius:17px;padding:22px 25px;margin:12px 0 20px}.coNew .coTop h1{margin:0;font-size:25px;color:#3e594c}.coNew .coTop p{margin:4px 0 0;color:#68728a}.coNew .coGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:13px;margin:14px 0}.coNew .coCard{background:#fff;border:1px solid var(--coBorder);border-radius:14px;padding:18px}.coNew .coCard h3{margin:0 0 10px;font-size:16px}.coNew .coMetric{font-size:25px;font-weight:750}.coNew .coMuted{color:#68748a;font-size:13px}.coNew .coRow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 17px;width:100%;text-align:left;background:white;border:0;border-bottom:1px solid var(--coBorder);cursor:pointer;color:inherit}.coNew .coRow:hover{background:#f7f7fc}.coNew .coTable{border:1px solid var(--coBorder);border-radius:14px;overflow:hidden}.coNew .coTabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 18px}.coNew .coTabs button{border:1px solid #dbe1eb;background:white;border-radius:24px;padding:9px 15px;cursor:pointer;color:#34435c}.coNew .coTabs button[aria-current=true]{background:#293752;color:white}.coNew .coSubject{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid #eef0f4}.coNew .coTag{border-radius:20px;background:#edf0f6;padding:4px 9px;font-size:12px}.coNew .coEmpty{color:#68748a;font-size:14px;padding:12px 0}.coNew .coActions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.coNew .coActions button{border:1px solid #dce1e9;background:#fff;border-radius:9px;padding:9px 13px;cursor:pointer}.coNew .coActions button.primary{background:#293752;color:white}</style>';
  Coaching.openWorkspace=function(section){if(this.hasUnsavedEntry?.()&&!confirm('Ungespeicherte Gesprächsnotizen verwerfen?'))return;this.section=section;this.pupil='';this.newEntryOpen=false;this.prepOpen=false;render();};
  Coaching.render=function(){
@@ -64,7 +81,7 @@
    html+='<div class="coActions">'+action('Übersicht',"Coaching.v2Mode='overview';render()",mode==='overview')+action('Gespräch vorbereiten',"Coaching.v2Mode='prep';render()",mode==='prep')+action('+ Gespräch dokumentieren',"Coaching.v2Mode='new';render()",mode==='new')+action('Schülerakte / LEB',"Coaching.openPupilProfile("+JSON.stringify(String(p.id)).replace(/"/g,'&quot;')+")")+'</div>';
    const subj=subjects(p);
    const subjectsHtml='<div class="coGrid">'+subj.map(x=>'<div class="coCard"><h3>'+h(x.name)+'</h3><div class="coMetric">'+x.assessed+' <span class="coMuted">/ '+x.all+' Kompetenzen</span></div><div class="coMuted">'+x.green+' grün · '+x.yellow+' gelb · '+x.red+' rot</div></div>').join('')+'</div>';
-   if(mode==='overview'||mode==='prep'){html+=subjectsHtml;html+=evidenceHtml(p,mode==='prep');}
+   if(mode==='overview'||mode==='prep'){html+=subjectsHtml;html+=evidenceHtml(p,mode==='prep');html+=trendHtml(p);}
    if(mode==='prep'){
     const last=rows.find(x=>x.kind==='gespraech');
     html+='<div class="coGrid"><section class="coCard"><h3>Letztes Gespräch</h3>'+(last?'<p>'+date(last.created_at)+'</p><p>'+h(last.body)+'</p>':'<p class="coEmpty">Noch kein Gespräch dokumentiert.</p>')+'</section><section class="coCard"><h3>Offene Vereinbarungen</h3>'+(goals.length?goals.map(x=>'<p><strong>'+h(x.title)+'</strong> '+h(x.body)+(x.due_date?' · bis '+h(x.due_date):'')+'</p>').join(''):'<p class="coEmpty">Keine offenen Vereinbarungen.</p>')+'</section><section class="coCard"><h3>LEB und weitere Entwicklung</h3><p>'+(Store.lebDrafts?.[p.id]?'LEB-Entwurf vorhanden':'Noch kein LEB-Entwurf')+'</p><p class="coMuted">Die Kompetenzbewertungen oben stammen aus den gespeicherten Fachbewertungen.</p></section></div>';
