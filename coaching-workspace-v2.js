@@ -40,6 +40,23 @@
   const la={room:String(p.learningAtelier||''),place:String(p.learningPlace||''),level:String(p.graduation||'')};
   return {rated,concerns,strengths,last,overdue,observations,la,configured:relevant.length};
  };
+ const crossDomain=p=>{
+  const id=String(p.id),activityById=new Map((Store.activities||[]).map(a=>[String(a.id),a]));
+  const visits=Object.values(Store.dailyCreativeVisits||{}).filter(v=>v&&String(v.pupilId)===id&&v.date&&!v.cancelledAt&&activityById.get(String(v.activityId))?.type==='Kreativband');
+  const attended=[...new Set(visits.map(v=>activityById.get(String(v.activityId))?.name).filter(Boolean))];
+  const notes=Object.values(Store.activityRecords||{}).filter(v=>v&&String(v.pupilId)===id&&v.note&&activityById.get(String(v.activityId))?.type==='Kreativband').map(v=>({name:activityById.get(String(v.activityId))?.name||'Kreativband',note:String(v.note)}));
+  const lab=Object.entries(Store.workshopPaths||{}).filter(([key])=>key.startsWith(id+'|')).map(([_,v])=>v?.lab).filter(Boolean);
+  const leb=Object.entries(Store.lebDrafts||{}).filter(([key,value])=>key.startsWith(id+'|')&&typeof value==='string'&&value.trim()).map(([key,value])=>({subject:key.slice(id.length+1),text:value.trim()}));
+  return {visits:visits.length,attended,notes,lab:[...new Set(lab)],leb};
+ };
+ const crossDomainHtml=p=>{
+  const x=crossDomain(p),sections=[];
+  if(x.notes.length)sections.push('<div><strong>Kreativband · dokumentierte Rückmeldungen</strong>'+x.notes.slice(0,3).map(n=>'<p>'+h(n.name)+': '+h(n.note)+'</p>').join('')+'</div>');
+  if(x.visits)sections.push('<div><strong>Kreativband · Teilnahme</strong><p>'+x.visits+' erfasste Besuche'+(x.attended.length?' · '+h(x.attended.slice(0,4).join(', ')):'')+'</p></div>');
+  if(x.lab.length)sections.push('<div><strong>Themenfeldunterricht · Labs</strong><p>'+h(x.lab.join(', '))+'</p></div>');
+  if(x.leb.length)sections.push('<div><strong>LEB · vorhandene Fachtexte</strong><p>'+h(x.leb.map(z=>z.subject).join(', '))+'</p></div>');
+  return sections.length?'<section class="coCard"><h3>Weitere Lernbereiche</h3><p class="coMuted">Dokumentierte Informationen aus KOMPASS. Eine Teilnahme allein ist kein Coachingproblem.</p>'+sections.join('')+'</section>':'';
+ };
  const evidenceHtml=(p,prep)=>{
   const e=evidence(p),items=[],grouped={};
   for(const x of e.concerns){const subject=x.c.subject||'Weitere Fächer';(grouped[subject]??=[]).push(x);}
@@ -132,7 +149,7 @@
    html+='<div class="coActions">'+action('Übersicht',"Coaching.switchV2Mode('overview')",mode==='overview')+action('Gespräch vorbereiten',"Coaching.switchV2Mode('prep')",mode==='prep')+action('+ Gespräch dokumentieren',"Coaching.switchV2Mode('new')",mode==='new')+action('LEB',"Coaching.openPupilProfile("+JSON.stringify(String(p.id)).replace(/"/g,'&quot;')+")")+'</div>';
    const subj=subjects(p);
    const subjectsHtml='<div class="coGrid">'+subj.map(x=>'<button class="coCard coSubjectLink" onclick="Coaching.openSubject(\''+x.name+'\')"><h3>'+h(x.name)+' ↗</h3><div class="coMetric">'+(x.all?x.assessed+' <span class="coMuted">bewertet</span>':'<span class="coMuted">Keine Fachkompetenzen hinterlegt</span>')+'</div>'+(x.all?'<div class="coMuted">'+x.green+' erreicht · '+x.yellow+' teilweise · '+x.red+' noch offen</div>':'')+'</button>').join('')+'</div>';
-   if(mode==='overview'||mode==='prep'){html+=subjectsHtml;html+=coachingBriefHtml(p);html+=evidenceHtml(p,mode==='prep');if(trendFor(p).length)html+=trendHtml(p);}if(mode==='subject'){html+='<div class="coActions"><button onclick="Coaching.switchV2Mode(\'overview\')">← Zur Übersicht</button></div>'+subjectDetail(p);}
+   if(mode==='overview'||mode==='prep'){html+=subjectsHtml;html+=coachingBriefHtml(p);html+=evidenceHtml(p,mode==='prep');html+=crossDomainHtml(p);if(trendFor(p).length)html+=trendHtml(p);}if(mode==='subject'){html+='<div class="coActions"><button onclick="Coaching.switchV2Mode(\'overview\')">← Zur Übersicht</button></div>'+subjectDetail(p);}
    if(mode==='prep'){
     const last=rows.find(x=>x.kind==='gespraech');
     html+='<div class="coGrid"><section class="coCard"><h3>Letztes Gespräch</h3>'+(last?'<p>'+date(last.created_at)+'</p><p>'+h(last.body)+'</p>':'<p class="coEmpty">Noch kein Gespräch dokumentiert.</p>')+'</section><section class="coCard"><h3>Offene Vereinbarungen</h3>'+(goals.length?goals.map(x=>'<p><strong>'+h(x.title)+'</strong> '+h(x.body)+(x.due_date?' · bis '+h(x.due_date):'')+'</p>').join(''):'<p class="coEmpty">Keine offenen Vereinbarungen.</p>')+'</section><section class="coCard"><h3>LEB und weitere Entwicklung</h3><p>'+(Store.lebDrafts?.[p.id]?'LEB-Entwurf vorhanden':'Noch kein LEB-Entwurf')+'</p><p class="coMuted">Die Kompetenzbewertungen oben stammen aus den gespeicherten Fachbewertungen.</p></section></div>';
