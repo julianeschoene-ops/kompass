@@ -90,7 +90,17 @@ function studentProfile(){
  else if(profileSection==='practice')content+='<h2>English Practice · Übungsübersicht</h2><p class="mini">Übungen, Übungspunkte und selbst gemeldete Kontrollen. Testergebnisse stehen bei den Kompetenzen unter Kernfächer → Englisch.</p>'+(EnglishPractice.practiceReport(p)||'<div class="card empty">Noch keine Übungsberichte übermittelt.</div>')+EnglishPractice.access(p);
  else if(profileSection==='workshop')content+=renderWorkshopLearningOverview(p,workshop);
  else if(profileSection==='offers')content+=renderProfileOffers(p,acts);
- else if(profileSection==='development')content+=`<h2>Coaching & Entwicklung</h2><div class="card"><h3>Arbeits- & Sozialverhalten</h3>${(b.observations||[]).map(x=>`<p>${esc(x)}</p>`).join('')||'<p class="mini">Noch keine Beobachtungen.</p>'}${b.note?`<h3>Notiz</h3><p class="profileNote">${esc(b.note)}</p>`:''}<button class="chip" onclick="State.view='behaviour';behaviourPupil='${p.id}';resetBehaviourDraft();render()">Beobachtungen bearbeiten</button><div class="section">Verlauf</div>${behaviourHistoryHtml(b.history)}</div>`;
+ else if(profileSection==='development'){
+  const canView=typeof Coaching!=='undefined'&&Coaching.allowed()&&((Coaching.coachPupils?.()||[]).some(x=>String(x.id)===String(p.id))||Auth.isAdmin()||Auth.canLead?.(Number(p.year)));
+  const notes=canView?(Coaching.rows||[]).filter(r=>String(r.pupil_id)===String(p.id)&&Number(r.grade)===Number(p.year)&&!['checkliste','statusereignis'].includes(r.kind)).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)):[];
+  content+='<h2>Coaching & Entwicklung</h2>';
+  if(canView){
+   content+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><strong>Gespräche und Vereinbarungen</strong><button class="chip dark" onclick="Coaching.openFromProfile('+esc(JSON.stringify(String(p.id)))+')">Coaching öffnen</button></div>';
+   content+=notes.length?notes.map(r=>'<div style="padding:12px 0;border-bottom:1px solid #e5eaf0"><strong>'+esc(r.title)+'</strong> <span class="mini">'+new Date(r.created_at).toLocaleDateString('de-DE')+(r.done?' · erledigt':'')+'</span><p>'+esc(r.body||'')+'</p></div>').join(''):'<p class="mini">Noch keine Coachinggespräche dokumentiert.</p>';
+   content+='</div>';
+  }else content+='<p class="mini">Coachinggespräche sind nur für berechtigte Lerncoaches und Stufenleitungen sichtbar.</p>';
+  content+='<div class="card"><h3>Arbeits- & Sozialverhalten</h3>'+(b.observations||[]).map(x=>'<p>'+esc(typeof x==='string'?x:String(x?.text||x?.note||''))+'</p>').join('')+(b.note?'<p class="profileNote">'+esc(b.note)+'</p>':'')+'<div class="section">Beobachtungsverlauf</div>'+behaviourHistoryHtml(b.history)+'</div>';
+ }
  else if(profileSection==='leb')content+=`<h2>Lernentwicklungsbericht</h2><div class="card"><p>${Store.lebDrafts[p.id]?'Ein gespeicherter Entwurf liegt vor.':'Noch kein Entwurf gespeichert.'}</p><button class="chip dark" onclick="State.view='leb';lebMode='schueler';State.pupil='${p.id}';render()">LEB öffnen</button></div>`;
  else content+='';
  content+='</section>';shell(content);
