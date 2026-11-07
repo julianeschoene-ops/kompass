@@ -18,15 +18,16 @@
  const subjects=p=>{
   const y=year(p),out=[];
   for(const name of ['Deutsch','Mathematik','Englisch']){
-   const cs=(Store.competencies||[]).filter(c=>c.subject===name&&!c.sprint&&c.type!=='workshop'&&(Number(c.year)===y||Object.prototype.hasOwnProperty.call(Store.records||{},c.id+'|'+p.id)));
+   const cs=(Store.competencies||[]).filter(c=>c.subject===name&&(Number(c.year)===y||Object.prototype.hasOwnProperty.call(Store.records||{},c.id+'|'+p.id)));
    const vals=cs.map(c=>Store.records?.[c.id+'|'+p.id]?.current).filter(v=>['green','yellow','red'].includes(v));
    out.push({name,all:cs.length,assessed:vals.length,green:vals.filter(v=>v==='green').length,yellow:vals.filter(v=>v==='yellow').length,red:vals.filter(v=>v==='red').length});
   }
   return out;
  };
  const evidence=p=>{
-  const grade=year(p),cs=(Store.competencies||[]).filter(c=>Number(c.year)===grade&&(c.type==='core'||c.type==='workshop'||!!c.sprint||['Deutsch','Englisch','Mathematik'].includes(c.subject)));
-  const rated=cs.map(c=>({c,r:Store.records?.[c.id+'|'+p.id]})).filter(x=>['red','yellow','green'].includes(x.r?.current));
+  const all=Store.competencies||[],records=Store.records||{},id=String(p.id);
+  const relevant=all.filter(c=>Number(c.year)===year(p)||Object.prototype.hasOwnProperty.call(records,c.id+'|'+id));
+  const rated=relevant.map(c=>({c,r:records[c.id+'|'+id]})).filter(x=>['red','yellow','green'].includes(x.r?.current));
   const concerns=rated.filter(x=>['red','yellow'].includes(x.r.current)).sort((a,b)=>(a.r.current==='red'?0:1)-(b.r.current==='red'?0:1));
   const strengths=rated.filter(x=>x.r.current==='green');
   const behaviour=Store.behaviour?.[p.id]||{};
@@ -34,7 +35,7 @@
   const last=rows.filter(x=>x.kind==='gespraech').sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
   const overdue=rows.filter(x=>!x.done&&['vereinbarung','aufgabe'].includes(x.kind)&&x.due_date&&x.due_date<new Date().toISOString().slice(0,10));
   const observations=Array.isArray(behaviour.observations)?behaviour.observations:[];
-  return {rated,concerns,strengths,last,overdue,observations,configured:cs.length};
+  return {rated,concerns,strengths,last,overdue,observations,configured:relevant.length};
  };
  const evidenceHtml=(p,prep)=>{
   const e=evidence(p),items=[];
@@ -77,7 +78,7 @@
   const worsening=trends.filter(t=>t.delta<0);
   if(worsening.length)reasons.push({score:90,label:'Veränderung in '+[...new Set(worsening.map(t=>t.subject))].join(', ')+' besprechen'});
   const reds=e.concerns.filter(t=>t.r.current==='red');
-  if(reds.length)reasons.push({score:75,label:reds.length+' nicht erreichte Kompetenzen'});
+  if(reds.length){const bySubject={};for(const x of reds){const name=x.c.subject||'Fach';bySubject[name]=(bySubject[name]||0)+1;}reasons.push({score:85,label:Object.entries(bySubject).map(([subject,n])=>subject+': '+n+' rot').join(' · ')});}
   const soon=x.pending.filter(t=>t.due_date&&t.due_date>=now.toISOString().slice(0,10)&&t.due_date<=new Date(now.getTime()+7*86400000).toISOString().slice(0,10));
   if(soon.length)reasons.push({score:65,label:soon.length+' Ziel(e) diese Woche fällig'});
   if(days!==null&&days>=28)reasons.push({score:50,label:'Letztes Gespräch vor '+days+' Tagen'});
