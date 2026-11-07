@@ -16,13 +16,15 @@
  const pupilRows=(c,id)=>(c.rows||[]).filter(r=>String(r.pupil_id)===String(id)&&!['checkliste','statusereignis'].includes(r.kind));
  const year=p=>Number(p.year||String(p.className||'').charAt(0));
  const subjects=p=>{
-  const y=year(p),out=[];
-  for(const name of ['Deutsch','Mathematik','Englisch']){
-   const cs=(Store.competencies||[]).filter(c=>c.subject===name&&(Number(c.year)===y||Object.prototype.hasOwnProperty.call(Store.records||{},c.id+'|'+p.id)));
-   const vals=cs.map(c=>Store.records?.[c.id+'|'+p.id]?.current).filter(v=>['green','yellow','red'].includes(v));
-   out.push({name,all:cs.length,assessed:vals.length,green:vals.filter(v=>v==='green').length,yellow:vals.filter(v=>v==='yellow').length,red:vals.filter(v=>v==='red').length});
-  }
-  return out;
+  const y=year(p),records=Store.records||{},id=String(p.id);
+  const all=(Store.competencies||[]).filter(c=>Number(c.year)===y||Object.prototype.hasOwnProperty.call(records,c.id+'|'+id));
+  const names=[...new Set(all.map(c=>c.subject).filter(Boolean))];
+  const preferred=['Deutsch','Mathematik','Englisch'];
+  const ordered=[...preferred,...names.filter(n=>!preferred.includes(n)).sort((a,b)=>a.localeCompare(b,'de'))];
+  return ordered.map(name=>{
+   const cs=all.filter(c=>c.subject===name),vals=cs.map(c=>records[c.id+'|'+id]?.current).filter(v=>['green','yellow','red'].includes(v));
+   return {name,all:cs.length,assessed:vals.length,green:vals.filter(v=>v==='green').length,yellow:vals.filter(v=>v==='yellow').length,red:vals.filter(v=>v==='red').length};
+  }).filter(x=>x.all||preferred.includes(x.name));
  };
  const evidence=p=>{
   const all=Store.competencies||[],records=Store.records||{},id=String(p.id);
@@ -38,15 +40,15 @@
   return {rated,concerns,strengths,last,overdue,observations,configured:relevant.length};
  };
  const evidenceHtml=(p,prep)=>{
-  const e=evidence(p),items=[];
-  if(e.concerns.length)items.push('<section class="coCard"><h3>Unterstützungsbedarf · Fachbewertungen</h3>'+e.concerns.slice(0,7).map(x=>'<p><strong>'+h(x.c.subject)+'</strong> · '+h(x.c.text||x.c.category||'Kompetenz')+' <span class="coTag">'+(x.r.current==='red'?'Noch nicht erreicht':'Teilweise erreicht')+'</span></p>').join('')+'</section>');
-  if(e.strengths.length)items.push('<section class="coCard"><h3>Dokumentierte Stärken</h3>'+e.strengths.slice(0,5).map(x=>'<p><strong>'+h(x.c.subject)+'</strong> · '+h(x.c.text||x.c.category||'Kompetenz')+'</p>').join('')+'</section>');
-  if(e.overdue.length)items.push('<section class="coCard"><h3>Fällige nächste Schritte</h3>'+e.overdue.map(x=>'<p>'+h(x.body)+' · '+h(x.due_date)+'</p>').join('')+'</section>');
-  if(e.observations.length)items.push('<section class="coCard"><h3>Beobachtungen zum Arbeits- und Sozialverhalten</h3>'+e.observations.slice(-4).map(x=>'<p>'+h(typeof x==='string'?x:(x.text||x.note||''))+'</p>').join('')+'</section>');
-  if(!e.configured)items.push('<section class="coCard"><h3>Fachbewertungen fehlen</h3><p class="coMuted">Für diesen Jahrgang sind keine Kernfach- oder Themenfeldkompetenzen hinterlegt. Deshalb kann KOMPASS daraus noch keine Entwicklung ableiten.</p></section>');
-  else if(!e.rated.length)items.push('<section class="coCard"><h3>Fachbewertungen noch offen</h3><p class="coMuted">'+e.configured+' Kompetenzen sind hinterlegt, aber für dieses Kind noch nicht bewertet.</p></section>');
-  if(!items.length)items.push('<section class="coCard"><h3>Keine auffälligen Einträge</h3><p class="coMuted">In den verfügbaren Bewertungen, Beobachtungen und Vereinbarungen liegen derzeit keine dokumentierten Hinweise vor. Das ist keine automatische Beurteilung.</p></section>');
-  return '<h3>'+(prep?'Datengestützte Gesprächsvorbereitung':'Auswertung vorhandener Daten')+'</h3><div class="coGrid">'+items.join('')+'</div>';
+  const e=evidence(p),items=[],grouped={};
+  for(const x of e.concerns){const subject=x.c.subject||'Weitere Fächer';(grouped[subject]??=[]).push(x);}
+  if(e.concerns.length)items.push('<section class="coCard"><h3>Kompetenzen für das Coaching</h3>'+Object.entries(grouped).map(([subject,rows])=>'<div style="margin:12px 0"><strong>'+h(subject)+'</strong><span class="coMuted"> · '+rows.filter(x=>x.r.current==='red').length+' rot · '+rows.filter(x=>x.r.current==='yellow').length+' gelb</span>'+rows.filter(x=>x.r.current==='red').slice(0,2).map(x=>'<p style="margin:5px 0">Noch nicht erreicht: '+h(x.c.text||x.c.category||'Kompetenz')+'</p>').join('')+(rows.length>2?'<p class="coMuted">Weitere Bewertungen über die Fachkachel ansehen</p>':'')+'</div>').join('')+'</section>');
+  if(e.strengths.length)items.push('<section class="coCard"><h3>Stärken</h3>'+Object.entries(e.strengths.reduce((a,x)=>{(a[x.c.subject||'Weitere Fächer']??=[]).push(x);return a;},{})).map(([subject,rows])=>'<p><strong>'+h(subject)+'</strong> · '+rows.length+' erreichte Kompetenzen</p>').join('')+'</section>');
+  if(e.overdue.length)items.push('<section class="coCard"><h3>Überfällige Vereinbarungen</h3>'+e.overdue.map(x=>'<p>'+h(x.body)+' · '+h(x.due_date)+'</p>').join('')+'</section>');
+  if(e.observations.length)items.push('<section class="coCard"><h3>Arbeits- und Sozialverhalten</h3>'+e.observations.slice(-3).map(x=>'<p>'+h(typeof x==='string'?x:(x.text||x.note||''))+'</p>').join('')+'</section>');
+  if(!e.rated.length)items.push('<section class="coCard"><h3>Fachbewertungen</h3><p class="coMuted">Für dieses Kind liegen hier noch keine auswertbaren Bewertungen vor.</p></section>');
+  if(!items.length)items.push('<section class="coCard"><h3>Keine aktuellen Hinweise</h3><p class="coMuted">Keine dokumentierten Auffälligkeiten in den verfügbaren Daten.</p></section>');
+  return '<h3>'+(prep?'Gesprächsvorbereitung':'Wichtige Informationen')+'</h3><div class="coGrid">'+items.join('')+'</div>';
  };
  const trendFor=p=>{
   const grade=year(p),results=[];
@@ -82,7 +84,8 @@
   const soon=x.pending.filter(t=>t.due_date&&t.due_date>=now.toISOString().slice(0,10)&&t.due_date<=new Date(now.getTime()+7*86400000).toISOString().slice(0,10));
   if(soon.length)reasons.push({score:65,label:soon.length+' Ziel(e) diese Woche fällig'});
   if(days!==null&&days>=28)reasons.push({score:50,label:'Letztes Gespräch vor '+days+' Tagen'});
-  if(days===null)reasons.push({score:30,label:'Noch kein Coachinggespräch dokumentiert'});
+  if(e.observations.length)reasons.push({score:60,label:e.observations.length+' Beobachtung(en) zum Arbeits-/Sozialverhalten'});
+  if(days===null)reasons.push({score:30,label:'Erstgespräch noch nicht dokumentiert'});
   reasons.sort((a,b)=>b.score-a.score);
   return {score:reasons[0]?.score||0,reasons};
  };
@@ -103,7 +106,7 @@
    let html=style+'<div class="coNew"><div class="coTop"><button class="chip" onclick="Coaching.backToCoaching()">← Alle Kinder</button><h1>'+h(p.first+' '+p.last)+'</h1><p>'+h(p.team||'')+' · Jahrgang '+year(p)+' · '+rows.filter(x=>x.kind==='gespraech').length+' Gespräche · '+goals.length+' offene Vereinbarungen</p></div>';
    html+='<div class="coActions">'+action('Übersicht',"Coaching.switchV2Mode('overview')",mode==='overview')+action('Gespräch vorbereiten',"Coaching.switchV2Mode('prep')",mode==='prep')+action('+ Gespräch dokumentieren',"Coaching.switchV2Mode('new')",mode==='new')+action('LEB',"Coaching.openPupilProfile("+JSON.stringify(String(p.id)).replace(/"/g,'&quot;')+")")+'</div>';
    const subj=subjects(p);
-   const subjectsHtml='<div class="coGrid">'+subj.map(x=>'<button class="coCard coSubjectLink" onclick="Coaching.openSubject(\''+x.name+'\')"><h3>'+h(x.name)+' ↗</h3><div class="coMetric">'+(x.all?x.assessed+' <span class="coMuted">/ '+x.all+' Kompetenzen</span>':'<span class="coMuted">Keine Fachkompetenzen hinterlegt</span>')+'</div>'+(x.all?'<div class="coMuted">'+x.green+' erreicht · '+x.yellow+' teilweise · '+x.red+' noch offen</div>':'')+'</button>').join('')+'</div>';
+   const subjectsHtml='<div class="coGrid">'+subj.map(x=>'<button class="coCard coSubjectLink" onclick="Coaching.openSubject(\''+x.name+'\')"><h3>'+h(x.name)+' ↗</h3><div class="coMetric">'+(x.all?x.assessed+' <span class="coMuted">bewertet</span>':'<span class="coMuted">Keine Fachkompetenzen hinterlegt</span>')+'</div>'+(x.all?'<div class="coMuted">'+x.green+' erreicht · '+x.yellow+' teilweise · '+x.red+' noch offen</div>':'')+'</button>').join('')+'</div>';
    if(mode==='overview'||mode==='prep'){html+=subjectsHtml;html+=evidenceHtml(p,mode==='prep');html+=trendHtml(p);}if(mode==='subject'){html+='<div class="coActions"><button onclick="Coaching.switchV2Mode(\'overview\')">← Zur Übersicht</button></div>'+subjectDetail(p);}
    if(mode==='prep'){
     const last=rows.find(x=>x.kind==='gespraech');
