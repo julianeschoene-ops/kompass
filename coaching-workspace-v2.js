@@ -37,7 +37,8 @@
   const last=rows.filter(x=>x.kind==='gespraech').sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
   const overdue=rows.filter(x=>!x.done&&['vereinbarung','aufgabe'].includes(x.kind)&&x.due_date&&x.due_date<new Date().toISOString().slice(0,10));
   const observations=Array.isArray(behaviour.observations)?behaviour.observations:[];
-  return {rated,concerns,strengths,last,overdue,observations,configured:relevant.length};
+  const la={room:String(p.learningAtelier||''),place:String(p.learningPlace||''),level:String(p.graduation||'')};
+  return {rated,concerns,strengths,last,overdue,observations,la,configured:relevant.length};
  };
  const evidenceHtml=(p,prep)=>{
   const e=evidence(p),items=[],grouped={};
@@ -46,6 +47,7 @@
   if(e.strengths.length)items.push('<section class="coCard"><h3>Stärken</h3>'+Object.entries(e.strengths.reduce((a,x)=>{(a[x.c.subject||'Weitere Fächer']??=[]).push(x);return a;},{})).map(([subject,rows])=>'<p><strong>'+h(subject)+'</strong> · '+rows.length+' erreichte Kompetenzen</p>').join('')+'</section>');
   if(e.overdue.length)items.push('<section class="coCard"><h3>Überfällige Vereinbarungen</h3>'+e.overdue.map(x=>'<p>'+h(x.body)+' · '+h(x.due_date)+'</p>').join('')+'</section>');
   if(e.observations.length)items.push('<section class="coCard"><h3>Arbeits- und Sozialverhalten</h3>'+e.observations.slice(-3).map(x=>'<p>'+h(typeof x==='string'?x:(x.text||x.note||''))+'</p>').join('')+'</section>');
+  if(e.la.room||e.la.level||e.la.place)items.push('<section class="coCard"><h3>Lernatelier · aktueller Stand</h3><p>'+[e.la.room?'Zuordnung: '+h(e.la.room):'',e.la.level?'Lernstufe: '+h(e.la.level):'',e.la.place?'Aktueller Lernort: '+h(e.la.place):''].filter(Boolean).join(' · ')+'</p><p class="coMuted">Standort und Lernstufe sind Kontextinformationen, keine Auffälligkeiten. Individuelle LA-Beobachtungen erscheinen nur, wenn sie dokumentiert wurden.</p></section>');
   if(!e.rated.length)items.push('<section class="coCard"><h3>Fachbewertungen</h3><p class="coMuted">Für dieses Kind liegen hier noch keine auswertbaren Bewertungen vor.</p></section>');
   if(!items.length)items.push('<section class="coCard"><h3>Keine aktuellen Hinweise</h3><p class="coMuted">Keine dokumentierten Auffälligkeiten in den verfügbaren Daten.</p></section>');
   return '<h3>'+(prep?'Gesprächsvorbereitung':'Wichtige Informationen')+'</h3><div class="coGrid">'+items.join('')+'</div>';
@@ -107,7 +109,7 @@
    html+='<div class="coActions">'+action('Übersicht',"Coaching.switchV2Mode('overview')",mode==='overview')+action('Gespräch vorbereiten',"Coaching.switchV2Mode('prep')",mode==='prep')+action('+ Gespräch dokumentieren',"Coaching.switchV2Mode('new')",mode==='new')+action('LEB',"Coaching.openPupilProfile("+JSON.stringify(String(p.id)).replace(/"/g,'&quot;')+")")+'</div>';
    const subj=subjects(p);
    const subjectsHtml='<div class="coGrid">'+subj.map(x=>'<button class="coCard coSubjectLink" onclick="Coaching.openSubject(\''+x.name+'\')"><h3>'+h(x.name)+' ↗</h3><div class="coMetric">'+(x.all?x.assessed+' <span class="coMuted">bewertet</span>':'<span class="coMuted">Keine Fachkompetenzen hinterlegt</span>')+'</div>'+(x.all?'<div class="coMuted">'+x.green+' erreicht · '+x.yellow+' teilweise · '+x.red+' noch offen</div>':'')+'</button>').join('')+'</div>';
-   if(mode==='overview'||mode==='prep'){html+=subjectsHtml;html+=evidenceHtml(p,mode==='prep');html+=trendHtml(p);}if(mode==='subject'){html+='<div class="coActions"><button onclick="Coaching.switchV2Mode(\'overview\')">← Zur Übersicht</button></div>'+subjectDetail(p);}
+   if(mode==='overview'||mode==='prep'){html+=subjectsHtml;html+=evidenceHtml(p,mode==='prep');if(trendFor(p).length)html+=trendHtml(p);}if(mode==='subject'){html+='<div class="coActions"><button onclick="Coaching.switchV2Mode(\'overview\')">← Zur Übersicht</button></div>'+subjectDetail(p);}
    if(mode==='prep'){
     const last=rows.find(x=>x.kind==='gespraech');
     html+='<div class="coGrid"><section class="coCard"><h3>Letztes Gespräch</h3>'+(last?'<p>'+date(last.created_at)+'</p><p>'+h(last.body)+'</p>':'<p class="coEmpty">Noch kein Gespräch dokumentiert.</p>')+'</section><section class="coCard"><h3>Offene Vereinbarungen</h3>'+(goals.length?goals.map(x=>'<p><strong>'+h(x.title)+'</strong> '+h(x.body)+(x.due_date?' · bis '+h(x.due_date):'')+'</p>').join(''):'<p class="coEmpty">Keine offenen Vereinbarungen.</p>')+'</section><section class="coCard"><h3>LEB und weitere Entwicklung</h3><p>'+(Store.lebDrafts?.[p.id]?'LEB-Entwurf vorhanden':'Noch kein LEB-Entwurf')+'</p><p class="coMuted">Die Kompetenzbewertungen oben stammen aus den gespeicherten Fachbewertungen.</p></section></div>';
