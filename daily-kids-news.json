@@ -1,9 +1,23 @@
 {
   "updated": "2026-11-08",
-  "fetchedAt": "2026-11-08T12:22:17.694932+01:00",
+  "fetchedAt": "2026-11-08T19:24:51.471506+01:00",
   "leadUrl": "https://www.logo.de/abstimmung-kinderreporter-interviews-100.html",
   "source": "ZDF logo!",
   "items": [
+    {
+      "title": "Er ist aktuell deutscher Bundespräsident",
+      "url": "https://www.logo.de/frank-walter-steinmeier-122.html",
+      "summary": "logo! stellt euch den Bundespräsidenten vor. Bereits als Schüler interessierte sich Frank-Walter Steinmeier für Politik..",
+      "published": "2026-06-10",
+      "modified": "2026-11-08"
+    },
+    {
+      "title": "Wisst ihr, was los war?",
+      "url": "https://www.logo.de/nachrichten-quiz-der-woche-100.html",
+      "summary": "Habt ihr alle wichtigen Nachrichten der Woche mitbekommen? Testet mit unseren spannenden Quizfragen euer Wissen zu den aktuellen Themen!",
+      "published": "2025-05-17",
+      "modified": "2026-11-08"
+    },
     {
       "title": "Wer ist euer Favorit? Stimmt ab!",
       "url": "https://www.logo.de/abstimmung-kinderreporter-interviews-100.html",
@@ -59,20 +73,6 @@
       "summary": "Beim logo!-Fotowettbewerb springt ein Luchs vor die Kamera. Zuschauer Jakob freut sich über die gute Nachricht aus dem Thüringer Wald.",
       "published": "2022-04-30",
       "modified": "2026-11-01"
-    },
-    {
-      "title": "Was es mit den Gen-Z-Demos auf sich hat",
-      "url": "https://www.logo.de/genz-demonstriert-100.html",
-      "summary": "In Frankreich gab es zuletzt große Demonstrationen. Jugendliche protestierten für bessere Bildung. Auch in Deutschland wurde jetzt demonstriert.",
-      "published": "2026-10-29",
-      "modified": "2026-10-31"
-    },
-    {
-      "title": "Wisst ihr, was los war?",
-      "url": "https://www.logo.de/nachrichten-quiz-der-woche-100.html",
-      "summary": "Habt ihr alle wichtigen Nachrichten der Woche mitbekommen? Testet mit unseren spannenden Quizfragen euer Wissen zu den aktuellen Themen!",
-      "published": "2025-05-17",
-      "modified": "2026-10-30"
     }
   ]
 }
