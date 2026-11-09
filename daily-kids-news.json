@@ -1,15 +1,15 @@
 {
-  "updated": "2026-11-09",
-  "fetchedAt": "2026-11-09T14:01:48.909823+01:00",
-  "leadUrl": "https://www.logo.de/frank-walter-steinmeier-122.html",
+  "updated": "2026-11-10",
+  "fetchedAt": "2026-11-10T00:01:58.904392+01:00",
+  "leadUrl": "https://www.logo.de/weltklimakonferenz-cop-31-100.html",
   "source": "ZDF logo!",
   "items": [
     {
-      "title": "Er ist aktuell deutscher Bundespräsident",
-      "url": "https://www.logo.de/frank-walter-steinmeier-122.html",
-      "summary": "logo! stellt euch den Bundespräsidenten vor. Bereits als Schüler interessierte sich Frank-Walter Steinmeier für Politik..",
-      "published": "2026-06-10",
-      "modified": "2026-11-08"
+      "title": "Weltklimakonferenz in der Türkei",
+      "url": "https://www.logo.de/weltklimakonferenz-cop-31-100.html",
+      "summary": "Es ist wieder soweit: Die Weltklimakonferenz startet - auch COP genannt. Antworten auf die wichtigsten Fragen, zu dem Treffen in der Türkei.",
+      "published": "2025-11-04",
+      "modified": "2026-11-09"
     },
     {
       "title": "Wisst ihr, was los war?",
@@ -19,7 +19,14 @@
       "modified": "2026-11-08"
     },
     {
-      "title": "Wer ist euer Favorit? Stimmt ab!",
+      "title": "Er ist aktuell deutscher Bundespräsident",
+      "url": "https://www.logo.de/frank-walter-steinmeier-122.html",
+      "summary": "logo! stellt euch den Bundespräsidenten vor. Bereits als Schüler interessierte sich Frank-Walter Steinmeier für Politik..",
+      "published": "2026-06-10",
+      "modified": "2026-11-08"
+    },
+    {
+      "title": "Stimmt ab! Wer ist euer Favorit?",
       "url": "https://www.logo.de/abstimmung-kinderreporter-interviews-100.html",
       "summary": "Am 26. Dezember gibt’s ein logo! extra für euch mit den coolsten und lustigsten Kinderreporterinterviews 2026. Ihr dürft darüber abstimmen!",
       "published": "2026-11-06",
@@ -30,13 +37,6 @@
       "url": "https://www.logo.de/geschichte-des-computers-100.html",
       "summary": "Computer sind heute überall. Aber wozu waren sie eigentlich gedacht und wie wurden sie erfunden?",
       "published": "2026-11-06",
-      "modified": "2026-11-06"
-    },
-    {
-      "title": "Bilder der Woche",
-      "url": "https://www.logo.de/bilder-der-woche-bildergalerie-100.html",
-      "summary": "Klickt euch durch die Bildergalerie mit den Bildern der Woche. Beeindruckendes und Lustiges aus der Nachrichtenwoche! Viel Spaß beim Schauen!",
-      "published": "2022-12-06",
       "modified": "2026-11-06"
     },
     {
