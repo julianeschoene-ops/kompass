@@ -340,8 +340,8 @@ const Sync={
             const oldRecord=baseCompetencyRecords[key];
             if(oldRecord&&this.same(localRecord,oldRecord))continue;
             const cloudRecord=cloudCompetencyRecords[key];
-            merged.records[key]=oldRecord&&cloudRecord
-              ?this.mergeTeacherRecord(oldRecord,localRecord,cloudRecord)
+            merged.records[key]=cloudRecord
+              ?this.mergeTeacherRecord(oldRecord||{},localRecord,cloudRecord)
               :clone(localRecord);
           }
           // Non-leaders may change competency assessments, creative visits and
