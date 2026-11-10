@@ -1,9 +1,16 @@
 {
   "updated": "2026-11-10",
-  "fetchedAt": "2026-11-10T13:45:50.139793+01:00",
+  "fetchedAt": "2026-11-10T21:29:38.714808+01:00",
   "leadUrl": "https://www.logo.de/weltklimakonferenz-cop-31-100.html",
   "source": "ZDF logo!",
   "items": [
+    {
+      "title": "So ist die Situation im Libanon",
+      "url": "https://www.logo.de/libanon-krieg-100.html",
+      "summary": "Wegen der Kämpfe zwischen der Hisbollah-Miliz und Israel sind besonders im Süden des Libanon Menschen auf der Flucht. Was ist dort los?",
+      "published": "2026-04-04",
+      "modified": "2026-11-10"
+    },
     {
       "title": "Weltklimakonferenz in der Türkei",
       "url": "https://www.logo.de/weltklimakonferenz-cop-31-100.html",
@@ -59,13 +66,6 @@
       "summary": "Die \"Youth Olympic Games\" finden vom 31. Oktober bis zum 13. November in Dakar statt. 50 Athletinnen und Athleten aus Deutschland treten an.",
       "published": "2026-11-03",
       "modified": "2026-11-03"
-    },
-    {
-      "title": "So könnt ihr nach Hilfe rufen",
-      "url": "https://www.logo.de/alternativen-sos-signal-100.html",
-      "summary": "Der SOS-Notruf wird 120 Jahre alt. Diese verschiedenen Zeichen gibt es, um im Alltag und im Notfall nach Hilfe zu rufen.",
-      "published": "2026-11-02",
-      "modified": "2026-11-02"
     },
     {
       "title": "Tierisch gutes Comeback",
