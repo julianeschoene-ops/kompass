@@ -117,13 +117,23 @@ const IT_STUDIO_COMPETENCIES=[
  ['debug','Ich kann Fehler in meinem Programm erkennen und verbessern.'],
  ['explain','Ich kann mein Programm erklären und eigene Ideen weiterentwickeln.']
 ];
+const COOK_SEW_COMPETENCIES=[
+ ['cook_preparation','Ich kann Lebensmittel und Küchengeräte richtig verwenden und Speisen mit passenden Zubereitungstechniken herstellen.'],
+ ['cook_safety','Ich kann die Sicherheits- und Hygieneregeln in der Schulküche einhalten.'],
+ ['sew_workpiece','Ich kann mit verschiedenen textilen Techniken ein eigenes Werkstück herstellen.'],
+ ['sew_safety','Ich kann die Sicherheitsregeln in der Textilwerkstatt einhalten.']
+];
 function creativeCompetenciesFor(a){
- return a?.type==='Kreativband'&&/it.studio|informatik.studio/i.test(String(a.name||''))?IT_STUDIO_COMPETENCIES:[];
+ if(a?.type!=='Kreativband')return [];
+ if(creativeStatsGroupName(a.name)==='Kochen & Nähstudio')return COOK_SEW_COMPETENCIES;
+ return /it.studio|informatik.studio/i.test(String(a.name||''))?IT_STUDIO_COMPETENCIES:[];
 }
 function creativeCompetencyControls(a,p,assessment){
  const competencies=creativeCompetenciesFor(a);if(!competencies.length)return '';
  const id=esc(a.id+'_'+p.id),values=assessment.competencies||{};
- return '<details class="creativeCompetencyDetails"><summary>💻 Kompetenzen IT-Studio ('+Object.values(values).filter(Boolean).length+'/'+competencies.length+')</summary>'+
+ const title=competencies===IT_STUDIO_COMPETENCIES?'💻 Kompetenzen IT-Studio':'🍳 🧵 Kompetenzen Kochen & Nähstudio';
+ const rated=competencies.filter(([key])=>values[key]).length;
+ return '<details class="creativeCompetencyDetails"><summary>'+esc(title)+' ('+rated+'/'+competencies.length+')</summary>'+
  competencies.map(([key,title])=>'<label class="mini" style="display:block;margin:8px 0">'+esc(title)+' <select id="creativeCompetency_'+id+'_'+key+'">'+
  [['','– offen'],['red','🔴 Noch nicht erreicht'],['yellow','🟡 Teilweise erreicht'],['green','🟢 Erreicht']].map(([v,label])=>'<option value="'+v+'" '+(values[key]===v?'selected':'')+'>'+label+'</option>').join('')+'</select></label>').join('')+'</details>';
 }
