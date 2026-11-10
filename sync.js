@@ -191,9 +191,20 @@ const Sync={
         for(const [key,record] of Object.entries(localBeforePull.records||{})){
           const pupilId=String(key).split('|').pop();
           if(!record||!mergedPupilIds.has(pupilId))continue;
-          if(!Object.prototype.hasOwnProperty.call(merged.records||{},key)){
+          const cloudRecord=merged.records?.[key];
+          if(!cloudRecord){
             merged.records[key]=clone(record);
             needsCreativeUpload=true;
+          }else{
+            // Existing competency keys must not hide device-only teacher history.
+            const cloudHistory=Array.isArray(cloudRecord.history)?cloudRecord.history:[];
+            const localHistory=Array.isArray(record.history)?record.history:[];
+            const known=new Set(cloudHistory.map(h=>JSON.stringify(h)));
+            const missing=localHistory.filter(h=>!known.has(JSON.stringify(h)));
+            if(missing.length){
+              merged.records[key]={...cloudRecord,history:[...cloudHistory,...missing.map(clone)]};
+              needsCreativeUpload=true;
+            }
           }
         }
         const creativeActivityIds=new Set((merged.activities||[]).filter(a=>a.type==='Kreativband').map(a=>String(a.id)));
