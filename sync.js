@@ -47,6 +47,20 @@ const Sync={
     }
     return clone(local);
   },
+  // Merge teacher assessment histories by event identity, not by array position.
+  // This prevents two colleagues' additions to the same competency being lost.
+  mergeTeacherRecord(base,local,remote){
+    const merged=this.mergeConcurrent(base||{},local||{},remote||{});
+    const histories=[remote?.history||[],local?.history||[]],seen=new Set(),events=[];
+    for(const history of histories)for(const entry of history){
+      const signature=JSON.stringify(entry);
+      if(!seen.has(signature)){seen.add(signature);events.push(clone(entry));}
+    }
+    merged.history=events;
+    // Preserve existing signed agreement only while the source assessments match.
+    if(local?.sharedAgreement&&!remote?.sharedAgreement)merged.sharedAgreement=clone(local.sharedAgreement);
+    return merged;
+  },
   // Preserve referenced competencies and block destructive shared-state uploads.
   referencedCompetencyIds(){const ids=new Set();for(const record of Object.values(Store.records||{})){}for(const key of Object.keys(Store.records||{}))ids.add(String(key).split('|')[0]);return ids;},
   keepRecoverySnapshot(label,payload){try{const key='kompass_recovery_'+label;const current=JSON.parse(localStorage.getItem(key)||'[]');current.push({at:new Date().toISOString(),payload:clone(payload)});while(current.length>1)current.shift();localStorage.setItem(key,JSON.stringify(current));}catch(e){console.warn('Lokale Sicherung konnte nicht angelegt werden',e);}},
@@ -327,7 +341,7 @@ const Sync={
             if(oldRecord&&this.same(localRecord,oldRecord))continue;
             const cloudRecord=cloudCompetencyRecords[key];
             merged.records[key]=oldRecord&&cloudRecord
-              ?this.mergeConcurrent(oldRecord,localRecord,cloudRecord)
+              ?this.mergeTeacherRecord(oldRecord,localRecord,cloudRecord)
               :clone(localRecord);
           }
           // Non-leaders may change competency assessments, creative visits and
