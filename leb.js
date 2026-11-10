@@ -24,7 +24,7 @@ function creativeLebRows(pupil,subject){
   return !!(a.assessedBy||a.level||a.color||a.note||Object.values(a.competencies||{}).some(Boolean));
  });
 }
-function lebSubjectStatus(pupil,subject){ if(Store.lebDrafts[lebSubjectKey(pupil.id,subject)])return'<span class="statusPill status-green">fertig</span>'; const rows=getRowsForPupil(pupil).filter(r=>r.comp.subject===subject&&['green','yellow','red'].includes(r.record.current)),creative=creativeLebRows(pupil,subject); return rows.length||creative.length?'<span class="statusPill status-yellow">Entwurf</span>':'<span class="statusPill status-empty">fehlt</span>'; }
+function lebSubjectStatus(pupil,subject){ if(Store.lebDrafts[lebSubjectKey(pupil.id,subject)])return'<span class="statusPill status-green">fertig</span>'; const rows=getRowsForPupil(pupil).filter(r=>r.comp.subject===subject&&['green','yellow','red'].includes(r.record.current)),creative=creativeLebRows(pupil,subject); const pending=rows.filter(r=>typeof sharedAssessmentState==='function'&&sharedAssessmentState(r.record).conflict&&!sharedAssessmentAgreementValid(r.record)); const approved=rows.filter(r=>!pending.includes(r)); return rows.length||creative.length?'<span class="statusPill status-yellow">Entwurf</span>':'<span class="statusPill status-empty">fehlt</span>'; }
 function saveSubjectLeb(pupilId,subject){Store.lebDrafts[lebSubjectKey(pupilId,subject)]=document.getElementById('subjectLebText').value;Store.save();toast();render();}
 function saveSubjectLebAndNext(pupilId,subject){Store.lebDrafts[lebSubjectKey(pupilId,subject)]=document.getElementById('subjectLebText').value;Store.save(); const pupils=(Store.pupils||[]).filter(p=>String(p.className).startsWith(String(State.year))).sort((a,b)=>a.last.localeCompare(b.last,'de')||a.first.localeCompare(b.first,'de')); const idx=pupils.findIndex(p=>p.id===pupilId); if(idx<pupils.length-1)lebSelectedPupil=pupils[idx+1].id; toast(); render();}
 function copySubjectLeb(){navigator.clipboard.writeText(document.getElementById('subjectLebText').value);toast('Kopiert');}
@@ -33,7 +33,7 @@ function getRowsForPupil(pupil){return Object.entries(Store.records).filter(([ke
 function generateSubjectOnlyText(pupil,subject){
  const rows=getRowsForPupil(pupil).filter(r=>r.comp.subject===subject),creative=creativeLebRows(pupil,subject);
  if(!rows.length&&!creative.length)return `Für ${pupil.first} liegen im Fach ${subject} noch keine dokumentierten Kompetenzen vor.`;
- return [rows.length?generateSubjectParagraph(pupil,subject,rows):'',...creative.map(x=>generateCreativeLebParagraph(pupil,x.activity,x.record))].filter(Boolean).join(' ');
+ return [approved.length?generateSubjectParagraph(pupil,subject,approved):'',...creative.map(x=>generateCreativeLebParagraph(pupil,x.activity,x.record)),pending.length?'Für '+pending.length+' Kompetenz(en) steht die gemeinsame Bewertung noch aus.':''].filter(Boolean).join(' ');
 }
 function generateFullLebText(pupil){
  const rows=getRowsForPupil(pupil),by={}; rows.forEach(r=>{by[r.comp.subject]=by[r.comp.subject]||[];});
