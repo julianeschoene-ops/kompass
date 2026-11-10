@@ -76,14 +76,15 @@ function sharedAssessmentState(record){
  const signatures=new Set(entries.map(([,h])=>(h.level||'')+'|'+h.value));
  return {entries,conflict:entries.length>1&&signatures.size>1,agreed:entries.length>1&&signatures.size===1};
 }
+function sharedAssessmentAgreementValid(record){const state=sharedAssessmentState(record);return !!(state.conflict&&record?.sharedAgreement&&record.sharedAgreement.signature===state.entries.map(([t,h])=>t+':'+h.level+':'+h.value).sort().join('|'));}
 function sharedAssessmentOverview(record){
  const state=sharedAssessmentState(record);
  if(!state.entries.length)return '';
  const rows=state.entries.map(([teacher,h])=>'<div class="history"><b>'+esc(teacher)+'</b> · '+esc(h.level||'—')+' · '+esc(statusPlain(h.value))+(h.note?'<br>'+esc(h.note):'')+'</div>').join('');
  const notice=state.conflict?'<p class="mini"><b>Abstimmung erforderlich:</b> Unterschiedliche Bewertungen. Bitte gemeinsame Entscheidung dokumentieren.</p><button class="chip" onclick="confirmSharedAssessment()">Gemeinsame Bewertung bestätigen</button>':state.agreed?'<p class="mini">Beide Lehrkräfte stimmen überein.</p>':'';
  const confirmed=record?.sharedAgreement;
- const valid=confirmed&&state.conflict&&confirmed.signature===state.entries.map(([t,h])=>t+':'+h.level+':'+h.value).sort().join('|');
- return '<div class="section">Einschätzungen der Lehrkräfte</div>'+rows+notice+(valid?'<p class="mini">Gemeinsame Bewertung bestätigt von '+esc(confirmed.teacher)+': '+esc(confirmed.level)+' · '+esc(statusPlain(confirmed.value))+'</p>':'');
+ const valid=sharedAssessmentAgreementValid(record);
+ return '<div class="section">Einschätzungen der Lehrkräfte</div>'+rows+(valid?'':notice)+(valid?'<p class="mini">Gemeinsame Bewertung bestätigt von '+esc(confirmed.teacher)+': '+esc(confirmed.level)+' · '+esc(statusPlain(confirmed.value))+'</p>':'');
 }
 function confirmSharedAssessment(){
  const key=recKey(State.dialog.competencyId,State.dialog.pupilId),record=Store.records[key];
