@@ -80,12 +80,12 @@ function studentProfile(){
  if(Auth.isAdmin())content+=`<button class="chip" onclick="showPupilEdit=!showPupilEdit;render()">Profil bearbeiten</button><button class="chip" onclick="archivePupil('${p.id}')">Archivieren</button>`;
  content+='</div>';
  if(showPupilEdit&&Auth.isAdmin())content+=pupilEditForm(p);if(typeof coachingProfileButton==='function')content+=coachingProfileButton(p);
- if(profileSection==='overview'){content+=renderProfileTiles(p,entries,acts,b);content+='<section class="card" style="margin-top:16px"><h2>Schülerakte im Überblick</h2><p class="mini">Wähle einen Lernbereich, um die gespeicherten Bewertungen und Beobachtungen zu sehen.</p><div class="profileOverviewStats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px">'+[['Kernfächer','core'],['Themenfeldunterricht','workshop'],['Coaching & Entwicklung','development'],['Lernentwicklungsbericht','leb']].map(([label,id])=>'<button class="chip" style="padding:15px;text-align:left" onclick="openProfileSection(\''+id+'\')">'+label+' →</button>').join('')+'</div></section>';}
+ if(profileSection==='overview'){content+=renderProfileTiles(p,entries,acts,b);content+='<section class="card" style="margin-top:16px"><h2>Schülerakte im Überblick</h2><p class="mini">Wähle einen Lernbereich, um die gespeicherten Bewertungen und Beobachtungen zu sehen.</p><div class="profileOverviewStats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px">'+[['Kernfächer','core'],[profileWorkshopLabel(p),'workshop'],['Coaching & Entwicklung','development'],['Lernentwicklungsbericht','leb']].map(([label,id])=>'<button class="chip" style="padding:15px;text-align:left" onclick="openProfileSection(\''+id+'\')">'+label+' →</button>').join('')+'</div></section>';}
  const core=profileCoreEntries(p);
  const workshopYear=Number(p.year||String(p.className||'').charAt(0));
  const workshop=Store.competencies.filter(c=>c.type==='workshop'&&Number(c.year)===workshopYear&&(!c.phase||c.phase!=='lab'||(Store.workshopPaths[`${p.id}|${workshopYear}|${c.sprint}`]?.lab===c.lab)||!!Store.records[c.id+'|'+p.id])).map(c=>[c.id+'|'+p.id,Store.records[c.id+'|'+p.id]||{}]);
  content+='<section id="profileContent" class="profileContent" tabindex="-1">';
- if(profileSection!=='overview')content+=renderProfileNavigation();
+ if(profileSection!=='overview')content+=renderProfileNavigation(p);
  if(profileSection==='core')content+=renderProfileCore(p,core);
  else if(profileSection==='practice')content+='<h2>English Practice · Übungsübersicht</h2><p class="mini">Übungen, Übungspunkte und selbst gemeldete Kontrollen. Testergebnisse stehen bei den Kompetenzen unter Kernfächer → Englisch.</p>'+(EnglishPractice.practiceReport(p)||'<div class="card empty">Noch keine Übungsberichte übermittelt.</div>')+EnglishPractice.access(p);
  else if(profileSection==='workshop')content+=renderWorkshopLearningOverview(p,workshop);
@@ -105,8 +105,10 @@ function studentProfile(){
  else content+='';
  content+='</section>';shell(content);
 }
+function workshopAreaLabel(year){return Number(year)===7?'Themenfeldunterricht':'Nebenfächer';}
+function profileWorkshopLabel(p){return workshopAreaLabel(p.year||String(p.className||'').charAt(0));}
 function renderProfileTiles(p,entries,acts,b){
- const tiles=[['core','Kernfächer'],['workshop','Themenfeldunterricht'],['offers','Angebote'],['development','Coaching & Entwicklung'],['leb','LEB']];
+ const tiles=[['core','Kernfächer'],['workshop',profileWorkshopLabel(p)],['offers','Angebote'],['development','Coaching & Entwicklung'],['leb','LEB']];
  return '<nav class="profileAreas profileAreaTabs" aria-label="Schülerprofil">'+tiles.map(([id,title])=>'<button type="button" class="profileArea '+(profileSection===id?'isActive':'')+'" onclick="openProfileSection(\''+id+'\')">'+title+'</button>').join('')+'</nav>';
 }
 function renderProfileWorkshop(p){
@@ -122,7 +124,7 @@ function renderProfileWorkshop(p){
   if(!lab&&!match)return '';
   return `<div class="history"><b>Sprint ${s.number}${s.name&&s.name!=='Sprint '+s.number?' · '+esc(s.name):''}</b><br>${lab?'Zuteilung: '+esc(lab):'Noch keine Zuteilung'}${match?.priority?' · Wunsch '+esc(match.priority):''}</div>`;
  }).filter(Boolean);
- return '<h2>Themenfeldunterricht</h2>'+(cards.length?'<div class="card"><h3>Sprintzuordnungen</h3>'+cards.join('')+'</div>':'<div class="card empty">Noch keine Sprintzuteilung gespeichert.</div>');
+ return '<h2>'+profileWorkshopLabel(p)+'</h2>'+(cards.length?'<div class="card"><h3>Sprintzuordnungen</h3>'+cards.join('')+'</div>':'<div class="card empty">Noch keine Sprintzuteilung gespeichert.</div>');
 }
 function creativeCompetencyProfileHtml(activity,assessment){
  const labels={red:'🔴 Noch nicht erreicht',yellow:'🟡 Teilweise erreicht',green:'🟢 Erreicht'};
@@ -201,7 +203,7 @@ function profileCoreEntries(p){
   return Object.prototype.hasOwnProperty.call(Store.records,key)||(c.type==='core'&&Number(c.year)===grade);
  }).map(c=>[c.id+'|'+p.id,Store.records[c.id+'|'+p.id]||{}]);
 }
-function renderProfileNavigation(){return `<nav class="profileCompactNav" aria-label="Profilbereiche"><button class="chip" onclick="openProfileSection('overview')">← Profilübersicht</button>${[['core','Kernfächer'],['workshop','Themenfeldunterricht'],['offers','Angebote'],['development','Coaching'],['leb','LEB']].map(([id,label])=>`<button class="chip ${profileSection===id?'dark':''}" aria-pressed="${profileSection===id}" onclick="openProfileSection('${id}')">${label}</button>`).join('')}</nav>`;}
+function renderProfileNavigation(p){return `<nav class="profileCompactNav" aria-label="Profilbereiche"><button class="chip" onclick="openProfileSection('overview')">← Profilübersicht</button>${[['core','Kernfächer'],['workshop',profileWorkshopLabel(p)],['offers','Angebote'],['development','Coaching'],['leb','LEB']].map(([id,label])=>`<button class="chip ${profileSection===id?'dark':''}" aria-pressed="${profileSection===id}" onclick="openProfileSection('${id}')">${label}</button>`).join('')}</nav>`;}
 function profileSubjectTeamstar(p,subject){
  const code={Englisch:'en',Deutsch:'de',Mathematik:'ma'}[subject];if(!code)return '';
  const grade=Number(p.year||String(p.className||'').charAt(0));
