@@ -71,7 +71,7 @@ const Sync={
     const oldComps=Array.isArray(remote.competencies)?remote.competencies:[];
     const newComps=Array.isArray(local.competencies)?local.competencies:[];
     const ids=new Set(newComps.map(x=>String(x.id)));
-    const recovered=oldComps.filter(x=>!ids.has(String(x.id)));
+    const recovered=oldComps.filter(x=>!ids.has(String(x.id))&&!RETIRED_SPRINT_5_COMPETENCY_IDS.has(x.id));
     // Never infer deletion from an incomplete browser cache.
     local.competencies=[...newComps,...recovered.map(clone)];
     const oldProjects=Array.isArray(remote.projectTemplates)?remote.projectTemplates:[];

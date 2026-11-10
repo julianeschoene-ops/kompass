@@ -55,7 +55,7 @@ const Store = {
     d.coreSubjects=d.coreSubjects||clone(SEED.coreSubjects);
     d.sprints=d.sprints||clone(SEED.sprints);
     d.pupils=d.pupils||[];
-    d.competencies=d.competencies||[];
+    d.competencies=(d.competencies||[]).filter(c=>!RETIRED_SPRINT_5_COMPETENCY_IDS.has(c.id));
     // Fehlende Mathematik-5-Kompetenzen nachtragen, bestehende Bewertungen und IDs bewahren.
     if(typeof mathematik5Competencies==='function'){
       const ids=new Set(d.competencies.map(c=>String(c.id)));
