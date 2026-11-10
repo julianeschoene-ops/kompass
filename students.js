@@ -131,6 +131,14 @@ function creativeCompetencyProfileHtml(activity,assessment){
  const title=creativeStatsGroupName(activity.name);
  return '<div class="profileNote"><b>'+esc(title)+' · Kompetenzen</b>'+entries.map(([id,t])=>'<p class="mini">'+esc(t)+' · '+esc(labels[assessment.competencies[id]])+'</p>').join('')+'</div>';
 }
+function musicOfferEvidence(p){
+ return pupilActivities(p.id).filter(({activity})=>isMusicOffer(activity)).map(({activity,record})=>{
+  const visits=activityAttendance(activity.id,p.id).visits;
+  const assessment=record.creativeAssessment;
+  if(!visits&&!record.note&&!assessment?.note&&!assessment?.level&&!assessment?.color)return '';
+  return `<div class="history"><b>${esc(activity.name)}</b> · ${visits} ${visits===1?'Teilnahme':'Teilnahmen'}${assessment?.level||assessment?.color?`<p class="mini">${esc(creativeAssessmentSummary(assessment))}</p>`:''}${[record.note,assessment?.note].filter(Boolean).map(note=>`<p class="profileNote">${esc(note)}</p>`).join('')}</div>`;
+ }).join('');
+}
 function renderProfileOffers(p,acts){
  const clubs=Store.clubHistory[p.id]||[],groups=new Map();
  for(const item of acts){const a=item.activity,name=a.type==='Kreativband'?creativeStatsGroupName(a.name):a.name,key=a.type+'|'+name; if(!groups.has(key))groups.set(key,{name,type:a.type,items:[]});groups.get(key).items.push(item);}
@@ -138,7 +146,7 @@ function renderProfileOffers(p,acts){
   const ids=new Set(group.items.map(x=>String(x.activity.id)));
   if(group.type==='Kreativband'&&group.name==='Kochen & Nähstudio')combinedCookSewIds().forEach(id=>ids.add(String(id)));
   const dated=Object.values(Store.dailyCreativeVisits||{}).filter(v=>v&&ids.has(String(v.activityId))&&String(v.pupilId)===String(p.id)&&v.date).length;
-  const visits=Math.max(dated,...group.items.map(x=>Number(x.record.count)||0));
+  const visits=group.items.every(({activity})=>isMusicOffer(activity))?Math.max(...group.items.map(({activity})=>activityAttendance(activity.id,p.id).visits)):Math.max(dated,...group.items.map(x=>Number(x.record.count)||0));
   return `<div class="card"><h3>${esc(group.name)}</h3><p class="mini">${esc(group.type)}</p><p>${visits} Teilnahmen</p>${group.items.map(({activity,record:r})=>`${r.note?`<p class="profileNote">${esc(r.note)}</p>`:''}${r.creativeAssessment?.assessedBy?`<p>${esc(creativeAssessmentSummary(r.creativeAssessment))}</p>${r.creativeAssessment.note?`<p class="profileNote">${esc(r.creativeAssessment.note)}</p>`:''}${creativeCompetencyProfileHtml(activity,r.creativeAssessment)}`:''}${r.licenses?.length?`<p>${r.licenses.map(x=>esc(x)).join(' · ')}</p>`:''}`).join('')}</div>`;
  }).join('');
  return '<h2>Angebote & Teilnahmen</h2>'+ (clubs.length?'<details class="card"><summary>Clubzuordnungen</summary>'+clubs.slice().reverse().map(x=>`<div class="history"><b>${esc(x.name)}</b><br>${esc(x.title)} · Wunsch ${esc(x.priority)}</div>`).join('')+'</details>':'')+(cards||'<div class="card empty">Noch keine Teilnahmen erfasst.</div>');
@@ -156,6 +164,8 @@ function renderWorkshopLearningOverview(p,workshop){
  const entries=(workshop||[]).filter(([key,r])=>r?.current||r?.level||r?.history?.length);
  const subjects=new Map();for(const [key,r] of entries){const id=key.split('|')[0];const comp=Store.competencies.find(x=>String(x.id)===id);const subject=comp?.subject||'Weitere Bewertungen';if(!subjects.has(subject))subjects.set(subject,[]);subjects.get(subject).push({comp,r});}
  let html=`<div class="section">Lernstand in den Nebenfächern</div><div class="card"><b>${year===7?'Themenfeldunterricht':'Aktuelle Werkstatt'} · Sprint ${esc(current?.number||1)}</b><p>${esc(topic)}</p><p class="mini"><b>${year===7?'Themenfeld / Vertiefung':'Gewähltes Lab / Vertiefung'}:</b> ${esc(lab)}</p></div>`;
+ const music=musicOfferEvidence(p);
+ if(music)html+='<details class="card" open><summary><b>Musik</b> · Chor & Bläserklasse</summary>'+music+'</details>';
  html+='<div class="section">Bewertungen nach Fach</div>';
  if(!subjects.size)html+='<div class="card empty">Noch keine Bewertungen für die Werkstatt hinterlegt.</div>';
  for(const [subject,items] of [...subjects].sort((a,b)=>a[0].localeCompare(b[0],'de'))){html+=`<details class="card" open><summary><b>${esc(subject)}</b> · ${items.length} ${items.length===1?'Kompetenz':'Kompetenzen'} · ${items.filter(x=>x.r.current==='green').length} erreicht</summary>`;for(const {comp,r} of items){html+=`<div class="history"><b>${esc(comp?.text||'Gespeicherte Kompetenzbewertung')}</b> · ${esc(r.level||'–')} · ${statusLabel(r.current)}${r.history?.length?`<details><summary>Bewertungsverlauf (${r.history.length})</summary>${r.history.slice().reverse().map(h=>`<div class="mini">${esc(h.date||'')} · ${esc(h.teacher||'')} · ${esc(h.level||'')} · ${esc(h.value||'')}</div>`).join('')}</details>`:''}</div>`;}html+='</details>';}
