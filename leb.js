@@ -24,12 +24,12 @@ function creativeLebRows(pupil,subject){
   return !!(a.assessedBy||a.level||a.color||a.note||Object.values(a.competencies||{}).some(Boolean));
  });
 }
-function lebSubjectStatus(pupil,subject){ if(Store.lebDrafts[lebSubjectKey(pupil.id,subject)])return'<span class="statusPill status-green">fertig</span>'; const rows=getRowsForPupil(pupil).filter(r=>r.comp.subject===subject),creative=creativeLebRows(pupil,subject); return rows.length||creative.length?'<span class="statusPill status-yellow">Entwurf</span>':'<span class="statusPill status-empty">fehlt</span>'; }
+function lebSubjectStatus(pupil,subject){ if(Store.lebDrafts[lebSubjectKey(pupil.id,subject)])return'<span class="statusPill status-green">fertig</span>'; const rows=getRowsForPupil(pupil).filter(r=>r.comp.subject===subject&&['green','yellow','red'].includes(r.record.current)),creative=creativeLebRows(pupil,subject); return rows.length||creative.length?'<span class="statusPill status-yellow">Entwurf</span>':'<span class="statusPill status-empty">fehlt</span>'; }
 function saveSubjectLeb(pupilId,subject){Store.lebDrafts[lebSubjectKey(pupilId,subject)]=document.getElementById('subjectLebText').value;Store.save();toast();render();}
 function saveSubjectLebAndNext(pupilId,subject){Store.lebDrafts[lebSubjectKey(pupilId,subject)]=document.getElementById('subjectLebText').value;Store.save(); const pupils=(Store.pupils||[]).filter(p=>String(p.className).startsWith(String(State.year))).sort((a,b)=>a.last.localeCompare(b.last,'de')||a.first.localeCompare(b.first,'de')); const idx=pupils.findIndex(p=>p.id===pupilId); if(idx<pupils.length-1)lebSelectedPupil=pupils[idx+1].id; toast(); render();}
 function copySubjectLeb(){navigator.clipboard.writeText(document.getElementById('subjectLebText').value);toast('Kopiert');}
 function renderLebStudentView(){ const pupils=(Store.pupils||[]).filter(p=>String(p.className).startsWith(String(State.year))).sort((a,b)=>a.last.localeCompare(b.last,'de')||a.first.localeCompare(b.first,'de')); if(!State.pupil&&pupils[0])State.pupil=pupils[0].id; const pupil=(Store.pupils||[]).find(p=>p.id===State.pupil)||pupils[0]; if(!pupil)return'<div class="card">Keine Schüler*innen vorhanden.</div>'; const text=generateFullLebText(pupil); return `<div class="toolbar"><label>Schüler*in</label><select onchange="State.pupil=this.value;render()">${pupils.map(p=>`<option value="${p.id}" ${pupil.id===p.id?'selected':''}>${esc(p.short)} · ${esc(p.team)}</option>`).join('')}</select></div><div class="card"><h2>${esc(pupil.short)}</h2><textarea id="fullLebText" class="bigText">${esc(Store.lebDrafts[pupil.id]||text)}</textarea><button class="chip dark" onclick="Store.lebDrafts['${pupil.id}']=document.getElementById('fullLebText').value;Store.save();toast();">Speichern</button><button class="chip" onclick="document.getElementById('fullLebText').value=generateFullLebText((Store.pupils||[]).find(p=>p.id==='${pupil.id}'))">neu erzeugen</button><button class="chip" onclick="navigator.clipboard.writeText(document.getElementById('fullLebText').value);toast('Kopiert')">kopieren</button></div>`; }
-function getRowsForPupil(pupil){return Object.entries(Store.records).filter(([key])=>key.endsWith('|'+pupil.id)).map(([key,record])=>{const comp=Store.competencies.find(c=>c.id===key.split('|')[0]);return comp&&comp.includeInLeb?{comp,record}:null;}).filter(Boolean);}
+function getRowsForPupil(pupil){return Object.entries(Store.records).filter(([key,record])=>key.endsWith('|'+pupil.id)&&record&&['green','yellow','red'].includes(record.current)).map(([key,record])=>{const comp=Store.competencies.find(c=>c.id===key.split('|')[0]);return comp&&comp.includeInLeb?{comp,record}:null;}).filter(Boolean);}
 function generateSubjectOnlyText(pupil,subject){
  const rows=getRowsForPupil(pupil).filter(r=>r.comp.subject===subject),creative=creativeLebRows(pupil,subject);
  if(!rows.length&&!creative.length)return `Für ${pupil.first} liegen im Fach ${subject} noch keine dokumentierten Kompetenzen vor.`;
@@ -48,33 +48,12 @@ function lebStableVariant(key,variants){
  return variants[hash%variants.length];
 }
 function lebCompetencyDevelopmentText(pupil,status,areas,key){
- const name=pupil.first;
- const variants={
-  green:[
-   `Folgende Kompetenzen sind sicher erreicht: ${areas}.`,
-   `${name} hat folgende Kompetenzen sicher erreicht: ${areas}.`,
-   `Ein sicherer Lernstand zeigt sich bei folgenden Kompetenzen: ${areas}.`
-  ],
-  yellow:[
-   `Folgende Kompetenzen sind teilweise erreicht: ${areas}. ${name} entwickelt hier zunehmend Sicherheit.`,
-   `Bei folgenden Kompetenzen sind bereits wesentliche Teilanforderungen erreicht: ${areas}. ${name} baut die benötigte Sicherheit weiter aus.`,
-   `${name} befindet sich bei folgenden Kompetenzen auf einem guten Weg: ${areas}. Die Sicherheit nimmt dabei zunehmend zu.`
-  ],
-  red:[
-   `Folgende Kompetenzen sind noch nicht erreicht: ${areas}. ${name} arbeitet mit gezielter Unterstützung und weiterer Übung an den nächsten Lernschritten.`,
-   `Noch nicht erreicht sind folgende Kompetenzen: ${areas}. Mit gezielter Unterstützung kann ${name} die nächsten Lernschritte zunehmend bewältigen.`,
-   `Bei folgenden Kompetenzen ist das Lernziel noch nicht erreicht: ${areas}. ${name} arbeitet daran weiter und erhält dafür passende Unterstützung und Übungsgelegenheiten.`
-  ]
- };
- return lebStableVariant(key,variants[status]);
+ const labels={green:'erreicht',yellow:'teilweise erreicht',red:'noch nicht erreicht'};
+ return 'Dokumentierter Kompetenzstand ('+labels[status]+'): '+areas+'.';
 }
 function lebOverallDevelopmentText(pupil,status,key){
- const name=pupil.first,variants={
-  green:['Die Anforderungen sind sicher erreicht.',`${name} erfüllt die Anforderungen bereits sicher.`,`Dabei zeigt ${name} einen sicheren Lernstand.`],
-  yellow:[`Die Anforderungen sind teilweise erreicht. ${name} entwickelt dabei zunehmend Sicherheit.`,`${name} erfüllt bereits wesentliche Teilanforderungen und gewinnt zunehmend Sicherheit.`,`${name} befindet sich auf einem guten Weg und baut die benötigte Sicherheit weiter aus.`],
-  red:[`Die Anforderungen sind noch nicht erreicht. ${name} arbeitet mit gezielter Unterstützung und weiterer Übung an den nächsten Lernschritten.`,`${name} befindet sich noch im Lernprozess; die Anforderungen sind noch nicht erreicht. Passende Hilfen unterstützen die nächsten Lernschritte.`,`Die Anforderungen sind noch nicht erreicht. ${name} arbeitet daran weiter und erhält gezielte Unterstützung sowie zusätzliche Übungsgelegenheiten.`]
- };
- return lebStableVariant(key,variants[status]);
+ const labels={green:'erreicht',yellow:'teilweise erreicht',red:'noch nicht erreicht'};
+ return 'Dokumentierter Bewertungsstatus: '+labels[status]+'.';
 }
 function generateSubjectParagraph(pupil,subject,items){
  const green=items.filter(r=>r.record.current==='green'),yellow=items.filter(r=>r.record.current==='yellow'),red=items.filter(r=>r.record.current==='red');
@@ -92,7 +71,7 @@ function generateSubjectParagraph(pupil,subject,items){
  if(green.length)text+=' '+lebCompetencyDevelopmentText(pupil,'green',listAreas(green),key+'|green');
  if(yellow.length)text+=' '+lebCompetencyDevelopmentText(pupil,'yellow',listAreas(yellow),key+'|yellow');
  if(red.length)text+=' '+lebCompetencyDevelopmentText(pupil,'red',listAreas(red),key+'|red');
- const scores=items.filter(r=>r.record.score).slice(-2);
+ const scores=items.filter(r=>r.record.score&&Number.isFinite(Number(r.record.score.points))&&Number(r.record.score.max)>0).slice(-2);
  if(scores.length)text+=` Die dokumentierten Punkteergebnisse (${scores.map(r=>r.record.score.points+'/'+r.record.score.max+' Punkte').join(', ')}) stützen diese Einschätzung.`;
  return text.trim();
 }
