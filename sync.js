@@ -319,7 +319,25 @@ const Sync={
           }
 
           // Never let stale devices erase cloud rosters or previously recorded visits.
-          if(!Array.isArray(merged.pupils)||merged.pupils.length<(remotePayload.pupils||[]).length||!Auth.canLead(grade))merged.pupils=clone(remotePayload.pupils||[]);
+          // The roster is a shared, additive register: a stale browser must never remove
+          // pupils added by another device. Only grade leaders can publish new pupils
+          // or edit existing pupil profiles; other teachers always use the cloud roster.
+          if(!Auth.canLead(grade)){
+            merged.pupils=clone(remotePayload.pupils||[]);
+          }else{
+            const byId=new Map((remotePayload.pupils||[]).map(p=>[String(p.id),clone(p)]));
+            const baseById=new Map((base.pupils||[]).map(p=>[String(p.id),p]));
+            for(const pupil of localPayload.pupils||[]){
+              const id=String(pupil.id);
+              if(!byId.has(id)){
+                // New pupil on this device; never infer deletion from absence.
+                byId.set(id,clone(pupil));
+              }else if(baseById.has(id)&&!this.same(pupil,baseById.get(id))){
+                byId.set(id,this.mergeConcurrent(baseById.get(id),pupil,byId.get(id)));
+              }
+            }
+            merged.pupils=[...byId.values()];
+          }
           const remoteVisits=remotePayload.dailyCreativeVisits||{},localVisits=localPayload.dailyCreativeVisits||{},baseVisits=base.dailyCreativeVisits||{};
           merged.dailyCreativeVisits={...remoteVisits};
           for(const [key,value] of Object.entries(localVisits)){
@@ -366,12 +384,13 @@ const Sync={
           error=updated.error;
           if(!error&&updated.data?.length){
             const written=updated.data[0]?.payload||{};
+            const rosterOk=!Auth.canLead(grade)||(localPayload.pupils||[]).every(p=>(written.pupils||[]).some(q=>String(q.id)===String(p.id)));
             const visitsOk=Object.entries(localPayload.dailyCreativeVisits||{}).every(([key,value])=>Object.prototype.hasOwnProperty.call(written.dailyCreativeVisits||{},key));
             const recordsOk=Object.entries(localPayload.activityRecords||{}).every(([key,value])=>{
               const got=(written.activityRecords||{})[key];
               return !!got&&(!value?.creativeAssessment||this.same(got.creativeAssessment,value.creativeAssessment));
             });
-            if(!visitsOk||!recordsOk){error=new Error('Cloud hat Kreativband-Einträge oder Bewertungen nicht vollständig bestätigt');break;}
+            if(!rosterOk||!visitsOk||!recordsOk){error=new Error('Cloud hat Schülerliste, Kreativband-Einträge oder Bewertungen nicht vollständig bestätigt');break;}
             done=true;persistedPayload=written;
           }
         }
@@ -383,9 +402,10 @@ const Sync={
             done=false;error=check.error||new Error('Cloud-Kontrolllesung fehlgeschlagen');
           }else{
             const confirmed=check.data.payload;
+            const rosterOk=!Auth.canLead(grade)||(localPayload.pupils||[]).every(p=>(confirmed.pupils||[]).some(q=>String(q.id)===String(p.id)));
             const visitsOk=Object.keys(localPayload.dailyCreativeVisits||{}).every(k=>Object.prototype.hasOwnProperty.call(confirmed.dailyCreativeVisits||{},k));
             const assessmentsOk=Object.entries(localPayload.activityRecords||{}).every(([k,v])=>!v?.creativeAssessment||this.same(confirmed.activityRecords?.[k]?.creativeAssessment,v.creativeAssessment));
-            if(!visitsOk||!assessmentsOk){done=false;error=new Error('Kreativband-Daten sind nach dem Speichern nicht vollständig aus der Cloud lesbar');}
+            if(!rosterOk||!visitsOk||!assessmentsOk){done=false;error=new Error('Schülerliste oder Kreativband-Daten sind nach dem Speichern nicht vollständig aus der Cloud lesbar');}
             else persistedPayload=confirmed;
           }
         }
