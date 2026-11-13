@@ -15,16 +15,17 @@ const CreativeRoster={
    }
    this.pupils=rows.map(r=>({id:r.pupil_id,year:r.grade,first:r.first_name,last:r.last_name,short:r.short_name||r.first_name+' '+r.last_name.charAt(0)+'.',className:r.class_name,team:r.team,archived:r.archived}));
    this.loaded=true;this.lastLoaded=Date.now();
-   if(typeof render==='function'&&State.view==='activities')render();
+   if(typeof render==='function'&&activityType==='Kreativband'&&activitySelected)render();
   }catch(e){console.warn('Kreativband-Schülerliste konnte nicht aktualisiert werden',e)}
   finally{this.loading=false}
  },
  list(){
   if(activityType!=='Kreativband')return Store.pupils||[];
   if(!this.loading&&(!this.loaded||Date.now()-this.lastLoaded>30000))this.refresh();
-  const byId=new Map((Store.pupils||[]).map(p=>[String(p.id),p]));
-  for(const p of this.pupils)byId.set(String(p.id),p);
-  return [...byId.values()];
+  // The shared cloud roster is authoritative, including archived flags.
+  // Never merge stale local pupil copies back into Kreativband.
+  if(this.loaded)return this.pupils.filter(p=>!p.archived);
+  return (Store.pupils||[]).filter(p=>!p.archived);
  }
 };
 function creativeRosterPupils(){return CreativeRoster.list()}
