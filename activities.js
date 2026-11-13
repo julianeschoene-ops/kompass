@@ -22,7 +22,7 @@ const CreativeRoster={
  list(){
   if(activityType!=='Kreativband')return Store.pupils||[];
   if(!this.loading&&(!this.loaded||Date.now()-this.lastLoaded>30000))this.refresh();
-  const byId=new Map((creativeRosterPupils()).map(p=>[String(p.id),p]));
+  const byId=new Map((Store.pupils||[]).map(p=>[String(p.id),p]));
   for(const p of this.pupils)byId.set(String(p.id),p);
   return [...byId.values()];
  }
