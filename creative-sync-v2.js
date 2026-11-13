@@ -13,7 +13,7 @@ const CreativeSyncV2={
   pending(){try{return JSON.parse(localStorage.getItem(this.journalKey)||'{}')}catch(e){throw new Error('Lokale Kreativband-Warteschlange beschädigt: '+e.message)}},
   persist(queue){localStorage.setItem(this.journalKey,JSON.stringify(queue))},
   gradeOf(p){return Number(p?.year||String(p?.className||'').charAt(0))||0},
-  pupilGrade(id){const p=(Store.pupils||[]).find(p=>String(p.id)===String(id));return p?this.gradeOf(p):0},
+  pupilGrade(id){const p=(Store.pupils||[]).find(p=>String(p.id)===String(id))||(typeof CreativeRoster!=='undefined'?CreativeRoster.pupils.find(p=>String(p.id)===String(id)):null);return p?this.gradeOf(p):0},
   capture(){
     if(!Auth.cloudClient||Auth.session?.mode!=='cloud'||Auth.isLernatelier())return;
     const q=this.pending(),ack=this.acknowledgements(),now=new Date().toISOString();
