@@ -1,3 +1,33 @@
+// Separate, minimal roster for Kreativband: no grades' private records are exposed.
+const CreativeRoster={
+ pupils:[],loading:false,loaded:false,lastLoaded:0,
+ async refresh(){
+  if(this.loading||!Auth.cloudClient||Auth.session?.mode!=='cloud'||Auth.isLernatelier())return;
+  this.loading=true;
+  try{
+   const rows=[];let from=0;
+   while(true){
+    const {data,error}=await Auth.cloudClient.from('kompass_creative_roster').select('pupil_id,grade,first_name,last_name,short_name,class_name,team,archived').range(from,from+499);
+    if(error)throw error;
+    rows.push(...(data||[]));
+    if(!data||data.length<500)break;
+    from+=500;
+   }
+   this.pupils=rows.map(r=>({id:r.pupil_id,year:r.grade,first:r.first_name,last:r.last_name,short:r.short_name||r.first_name+' '+r.last_name.charAt(0)+'.',className:r.class_name,team:r.team,archived:r.archived}));
+   this.loaded=true;this.lastLoaded=Date.now();
+   if(typeof render==='function'&&State.view==='activities')render();
+  }catch(e){console.warn('Kreativband-Schülerliste konnte nicht aktualisiert werden',e)}
+  finally{this.loading=false}
+ },
+ list(){
+  if(activityType!=='Kreativband')return Store.pupils||[];
+  if(!this.loading&&(!this.loaded||Date.now()-this.lastLoaded>30000))this.refresh();
+  const byId=new Map((creativeRosterPupils()).map(p=>[String(p.id),p]));
+  for(const p of this.pupils)byId.set(String(p.id),p);
+  return [...byId.values()];
+ }
+};
+function creativeRosterPupils(){return CreativeRoster.list()}
 const ACTIVITY_TYPES=['Kreativband','Club','Besonderes Angebot'];
 const COUNTABLE_ACTIVITY_TYPES=new Set(['Kreativband','Besonderes Angebot']);
 const ACTIVITY_MAX_COUNT=39;
@@ -18,7 +48,7 @@ const ADDITIONAL_CREATIVE_OFFERS=['Kreativband Sport','Kreativband – Sportange
 let activityType='Kreativband',activitySelected=null,activitySearch='',activityTeam='alle',activityStatsAllGrades=true,activityPupilYear='alle',activityVisitDate=new Date().toLocaleDateString('en-CA'),activityWeeklyView=false,activityOverview=false,activityOverviewOffer='',activityOverviewGrade='alle',activityOverviewTeam='alle',activityOverviewVisited='alle',activityWeekDate=new Date().toLocaleDateString('en-CA');
 
 function activityTeamsForGrade(year=State.year){
-  const teams=[...new Set((Store.pupils||[]).filter(p=>Number(p.year||String(p.className||'').charAt(0))===Number(year)).map(p=>p.team).filter(Boolean))];
+  const teams=[...new Set((creativeRosterPupils()).filter(p=>Number(p.year||String(p.className||'').charAt(0))===Number(year)).map(p=>p.team).filter(Boolean))];
   return (teams.length?teams:TEAMS).sort((a,b)=>String(a).localeCompare(String(b),'de'));
 }
 function currentCoachTeam(year=State.year){return Auth.currentUser()?.coachTeams?.[year]||Auth.currentUser()?.coachTeams?.[String(year)]||'';}
@@ -75,10 +105,10 @@ function activities(){
 function activityIcon(type){return type==='Kreativband'?'🎨':type==='Club'?'🏆':'✨';}
 function activityMemberCount(id){return Object.values(Store.activityRecords).filter(r=>r.activityId===id&&r.active).length;}
 function renderActivityDetail(id){
-  for(const grade of [5,6,7])if(!(Store.pupils||[]).some(p=>Number(p.year)===grade)&&typeof ensureStudentRosterLoaded==='function')setTimeout(()=>ensureStudentRosterLoaded(grade),0);
+  for(const grade of [5,6,7])if(!(creativeRosterPupils()).some(p=>Number(p.year)===grade)&&typeof ensureStudentRosterLoaded==='function')setTimeout(()=>ensureStudentRosterLoaded(grade),0);
   const a=Store.activities.find(x=>x.id===id);if(!a)return'';ensureActivityDefaultTeam();
   const teams=activityTeamsForGrade(State.year),own=currentCoachTeam(State.year);
-  let pupils=(Store.pupils||[]).filter(p=>a.type==='Kreativband'?(activityPupilYear==='alle'||Number(p.year||String(p.className||'').charAt(0))===Number(activityPupilYear)):Number(p.year||String(p.className||'').charAt(0))===Number(State.year)).filter(p=>activityTeam==='alle'||p.team===activityTeam).filter(p=>!activitySearch||(p.first+' '+p.last+' '+p.short).toLowerCase().includes(activitySearch.toLowerCase())).sort((x,y)=>x.last.localeCompare(y.last,'de')||x.first.localeCompare(y.first,'de'));
+  let pupils=(creativeRosterPupils()).filter(p=>a.type==='Kreativband'?(activityPupilYear==='alle'||Number(p.year||String(p.className||'').charAt(0))===Number(activityPupilYear)):Number(p.year||String(p.className||'').charAt(0))===Number(State.year)).filter(p=>activityTeam==='alle'||p.team===activityTeam).filter(p=>!activitySearch||(p.first+' '+p.last+' '+p.short).toLowerCase().includes(activitySearch.toLowerCase())).sort((x,y)=>x.last.localeCompare(y.last,'de')||x.first.localeCompare(y.first,'de'));
   return`<button class="chip" onclick="activitySelected=null;render()">← Übersicht</button>${a.type!=='Kreativband'&&!isMusicOffer(a)&&canEdit()?`<button class="chip" onclick="openActivityEditor('${a.id}')">Bearbeiten</button>`:''}<div class="card focusCard"><div><h2>${a.icon||activityIcon(a.type)} ${esc(combinedCookSewMode(a.id)?'Kochen & Nähstudio':a.name)}</h2></div>${isCountableActivity(a)?'':`<div class="scoreHint">${activityMemberCount(a.id)}<br><span class="mini">Kinder mit Eintrag</span></div>`}</div>${isCountableActivity(a)?`<div class="card"><div class="formgrid"><div><label>Besuchsdatum</label><input type="date" value="${esc(activityVisitDate)}" onchange="activityVisitDate=this.value"></div></div><div class="toolbar" style="justify-content:flex-end;margin-top:12px"><button class="chip dark" onclick="creativeRefreshFromCloud()">↻ Cloud-Anwesenheiten laden</button></div></div>`:''}<div class="toolbar formgrid">${a.type==='Kreativband'?`<div><label>Jahrgang</label><select onchange="activityPupilYear=this.value;activityTeam='alle';render()"><option value="alle" ${activityPupilYear==='alle'?'selected':''}>Alle Jahrgänge (5–7)</option>${[5,6,7].map(y=>`<option value="${y}" ${String(activityPupilYear)===String(y)?'selected':''}>Jahrgang ${y}</option>`).join('')}</select></div>`:''}<div><label>Lerngruppe</label><select onchange="activityTeam=this.value;render()">${own?`<option value="${esc(own)}" ${activityTeam===own?'selected':''}>Meine Lerngruppe · ${esc(own)}</option>`:''}<option value="alle" ${activityTeam==='alle'?'selected':''}>alle Teams</option>${teams.filter(t=>t!==own).map(t=>`<option ${activityTeam===t?'selected':''}>${esc(t)}</option>`).join('')}</select></div><div><label>Name filtern</label><input id="activityNameSearch" value="${esc(activitySearch)}" oninput="activitySearch=this.value;renderKeepingFocus('activityNameSearch')" placeholder="Name suchen …"></div></div><div class="quickList">${pupils.map(p=>activityQuickRow(a,p)).join('')||'<div class="card empty">Keine Schüler*innen in dieser Auswahl.</div>'}</div>`;
 }
 async function confirmCreativeAssessment(activityId,pupilId){
@@ -88,7 +118,7 @@ async function confirmCreativeAssessment(activityId,pupilId){
  const level=document.getElementById('assessmentLevel_'+activityId+'_'+pupilId)?.value||'';
  const color=document.getElementById('assessmentColor_'+activityId+'_'+pupilId)?.value||'';
  const note=document.getElementById('assessmentNote_'+activityId+'_'+pupilId)?.value||'';
- const pupil=(Store.pupils||[]).find(p=>String(p.id)===String(pupilId));
+ const pupil=(creativeRosterPupils()).find(p=>String(p.id)===String(pupilId));
  const activity=Store.activities.find(a=>String(a.id)===String(activityId));
  if(!pupil||Auth.isLernatelier()||!(activity?.type==='Kreativband'||isMusicOffer(activity))||!(Auth.isAdmin()||Auth.currentUser()?.role==='teacher'||Auth.canAccessGrade(Number(pupil.year||String(pupil.className||'').charAt(0))))){toast('Keine Berechtigung für diese Bewertung',6000);return;}
  if(!['','G','M','E'].includes(level)||!['','red','yellow','green'].includes(color)){toast('Ungültige Bewertung',6000);return;}
@@ -174,7 +204,7 @@ function activityQuickRow(a,p){
 }
 function creativeTodayDate(){return new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Berlin'});}
 function addVisit(a,p,delta){
-  const pupil=(Store.pupils||[]).find(x=>String(x.id)===String(p));
+  const pupil=(creativeRosterPupils()).find(x=>String(x.id)===String(p));
   const pupilGrade=Number(pupil?.year||String(pupil?.className||'').charAt(0));
   if(!pupil||Auth.isLernatelier()||!(Auth.isAdmin()||Auth.currentUser()?.role==='teacher'||Auth.canAccessGrade(pupilGrade))){toast('Keine Berechtigung für diesen Jahrgang');return;}
   const act=Store.activities.find(x=>x.id===a);if(!isCountableActivity(act))return;
@@ -241,7 +271,7 @@ function creativeDateKey(v){
 function creativeWeekData(){
  const start=creativeWeekStart(activityWeekDate),end=new Date(start+'T12:00:00');end.setDate(end.getDate()+6);
  const endStr=end.toLocaleDateString('en-CA');
- const pupils=(Store.pupils||[]).filter(p=>activityStatsAllGrades||Number(p.year||String(p.className||'').charAt(0))===Number(State.year));
+ const pupils=(creativeRosterPupils()).filter(p=>activityStatsAllGrades||Number(p.year||String(p.className||'').charAt(0))===Number(State.year));
  const ids=new Set(pupils.map(p=>String(p.id)));
  const offers=(Store.activities||[]).filter(a=>a.type==='Kreativband').sort((a,b)=>a.name.localeCompare(b.name,'de'));
  const offerIds=new Set(offers.map(a=>String(a.id)));
@@ -281,7 +311,7 @@ async function creativeRefreshFromCloud(){
   // complete school snapshot (which can exceed Safari's localStorage quota).
   if(typeof CreativeSyncV2==='undefined'||!CreativeSyncV2.ready){throw new Error('Besuchs-Synchronisierung noch nicht bereit. Keine vollständige Cloud-Kopie laden.');}
   await CreativeSyncV2.refresh();
-  const visits=Object.values(Store.dailyCreativeVisits||{}),roster=new Map((Store.pupils||[]).map(p=>[String(p.id),p]));
+  const visits=Object.values(Store.dailyCreativeVisits||{}),roster=new Map((creativeRosterPupils()).map(p=>[String(p.id),p]));
   const count=visits.filter(v=>v&&v.date&&v.pupilId&&Number(roster.get(String(v.pupilId))?.year)===Number(State.year)).length;
   const orphaned=visits.filter(v=>v&&!roster.has(String(v.pupilId))).length;
   const recognized=visits.filter(v=>v&&roster.has(String(v.pupilId))).length;
@@ -294,8 +324,8 @@ function renderCreativeOfferOverview(){
  const grouped=[...new Set(offers.map(a=>creativeStatsGroupName(a.name)))].sort((a,b)=>a.localeCompare(b,'de'));
  const selected=grouped.includes(activityOverviewOffer)?activityOverviewOffer:grouped[0]||'';
  const ids=new Set(offers.filter(a=>creativeStatsGroupName(a.name)===selected).map(a=>String(a.id)));
- const teams=[...new Set((Store.pupils||[]).filter(p=>activityOverviewGrade==='alle'||String(p.year)===String(activityOverviewGrade)).map(p=>p.team).filter(Boolean))].sort();
- const pupils=(Store.pupils||[]).filter(p=>!p.archived&&[5,6,7].includes(Number(p.year||String(p.className||'').charAt(0)))).filter(p=>activityOverviewGrade==='alle'||String(p.year)===String(activityOverviewGrade)).filter(p=>activityOverviewTeam==='alle'||p.team===activityOverviewTeam).map(p=>{
+ const teams=[...new Set((creativeRosterPupils()).filter(p=>activityOverviewGrade==='alle'||String(p.year)===String(activityOverviewGrade)).map(p=>p.team).filter(Boolean))].sort();
+ const pupils=(creativeRosterPupils()).filter(p=>!p.archived&&[5,6,7].includes(Number(p.year||String(p.className||'').charAt(0)))).filter(p=>activityOverviewGrade==='alle'||String(p.year)===String(activityOverviewGrade)).filter(p=>activityOverviewTeam==='alle'||p.team===activityOverviewTeam).map(p=>{
  const visits=Object.values(Store.dailyCreativeVisits||{}).filter(v=>v&&!v.cancelledAt&&ids.has(String(v.activityId))&&String(v.pupilId)===String(p.id)&&v.date);
  return {p,count:visits.length,last:visits.map(v=>v.date).sort().at(-1)||''};
  }).filter(x=>activityOverviewVisited==='alle'||(activityOverviewVisited==='ja'?x.count>0:x.count===0)).sort((a,b)=>String(a.p.last).localeCompare(String(b.p.last),'de'));
