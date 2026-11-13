@@ -1,15 +1,22 @@
 {
   "updated": "2026-11-13",
-  "fetchedAt": "2026-11-13T13:21:12.187150+01:00",
-  "leadUrl": "https://www.logo.de/fridays-for-future-klimaschutz-100.html",
+  "fetchedAt": "2026-11-13T21:31:32.567307+01:00",
+  "leadUrl": "https://www.logo.de/wut-132.html",
   "source": "ZDF logo!",
   "items": [
     {
-      "title": "Wie Fridays for Future entstanden ist",
-      "url": "https://www.logo.de/fridays-for-future-klimaschutz-100.html",
-      "summary": "So wurde aus Greta Thunbergs Protest vor dem schwedischen Parlament eine riesige und weltweite Klimaschutzbewegung.",
-      "published": "2022-03-22",
-      "modified": "2026-11-12"
+      "title": "Was macht euch richtig wütend?",
+      "url": "https://www.logo.de/wut-132.html",
+      "summary": "Warum Wut manchmal gut ist und was wirklich hilft, wenn sie zu groß wird. Was macht euch wütend? Und was hilft euch dabei, wieder runterzukommen?",
+      "published": "2026-11-13",
+      "modified": "2026-11-13"
+    },
+    {
+      "title": "6 Tipps für ein starkes Immunsystem",
+      "url": "https://www.logo.de/tipps-fuers-immunsystem-100.html",
+      "summary": "Die Erkältungszeit beginnt wieder - es gibt einiges, was man tun kann, um das Immunsystem zu stärken und sich vor Krankheiten zu schützen.",
+      "published": "2026-11-13",
+      "modified": "2026-11-13"
     },
     {
       "title": "So ist die Situation im Libanon",
@@ -66,13 +73,6 @@
       "summary": "Die \"Youth Olympic Games\" finden vom 31. Oktober bis zum 13. November in Dakar statt. 50 Athletinnen und Athleten aus Deutschland treten an.",
       "published": "2026-11-03",
       "modified": "2026-11-03"
-    },
-    {
-      "title": "Tierisch gutes Comeback",
-      "url": "https://www.logo.de/foto-des-monats-oktober-134.html",
-      "summary": "Beim logo!-Fotowettbewerb springt ein Luchs vor die Kamera. Zuschauer Jakob freut sich über die gute Nachricht aus dem Thüringer Wald.",
-      "published": "2022-04-30",
-      "modified": "2026-11-01"
     }
   ]
 }
