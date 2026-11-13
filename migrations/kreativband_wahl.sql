@@ -24,7 +24,10 @@ CREATE UNIQUE INDEX ON kompass_kreativband.offers(day,activity,period) WHERE NOT
 
 CREATE TABLE kompass_kreativband.codes (
   pupil text PRIMARY KEY,
-  digest bytea NOT NULL UNIQUE
+  -- Reprints use the current code. Only the authorized card and rotation RPCs
+  -- can read it; the private table has no client grants.
+  code text NOT NULL CHECK (code ~ '^[0-9a-f]{32}$'),
+  digest bytea GENERATED ALWAYS AS (sha256(code::bytea)) STORED UNIQUE
 );
 
 CREATE TABLE kompass_kreativband.bookings (
@@ -304,9 +307,32 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM public.kompass_creative_roster WHERE pupil_id = p_pupil AND NOT archived AND grade IN (5,6,7)) THEN
     RAISE EXCEPTION 'Das Kind ist nicht in der aktiven Schülerliste.';
   END IF;
-  INSERT INTO kompass_kreativband.codes VALUES (p_pupil,sha256(convert_to(new_code,'UTF8')))
-    ON CONFLICT (pupil) DO UPDATE SET digest = excluded.digest;
+  INSERT INTO kompass_kreativband.codes(pupil,code) VALUES (p_pupil,new_code)
+    ON CONFLICT (pupil) DO UPDATE SET code = excluded.code;
   RETURN new_code;
+END
+$$;
+
+CREATE FUNCTION kompass_kreativband.print_codes(p_grade smallint)
+RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
+BEGIN
+  IF p_grade IS NULL OR p_grade NOT IN (5,6,7) OR NOT kompass_kreativband.staff()
+    OR NOT public.has_kompass_grade_access(p_grade,'leitung') THEN
+    RAISE EXCEPTION 'Keine Berechtigung für die Codekarten dieses Jahrgangs.' USING ERRCODE = '42501';
+  END IF;
+
+  INSERT INTO kompass_kreativband.codes(pupil,code)
+    SELECT pupil_id,replace(gen_random_uuid()::text,'-','') FROM public.kompass_creative_roster
+    WHERE grade = p_grade AND NOT archived ORDER BY pupil_id
+    ON CONFLICT (pupil) DO NOTHING;
+
+  RETURN coalesce((
+    SELECT jsonb_agg(jsonb_build_object('first',r.first_name,'last',r.last_name,'class',r.class_name,'code',c.code)
+      ORDER BY r.class_name,lower(r.last_name),lower(r.first_name),r.pupil_id)
+    FROM kompass_kreativband.codes c JOIN public.kompass_creative_roster r ON r.pupil_id = c.pupil
+    WHERE r.grade = p_grade AND NOT r.archived
+  ),'[]');
 END
 $$;
 
@@ -456,7 +482,7 @@ REVOKE ALL ON ALL FUNCTIONS IN SCHEMA kompass_kreativband FROM PUBLIC, anon, aut
 GRANT USAGE ON SCHEMA kompass_kreativband TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION kompass_kreativband.student(text,date,uuid,boolean) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION kompass_kreativband.plan(text,date,jsonb),
-  kompass_kreativband.issue_code(text), kompass_kreativband.coaching(text,text,date,jsonb),
+  kompass_kreativband.issue_code(text), kompass_kreativband.print_codes(smallint), kompass_kreativband.coaching(text,text,date,jsonb),
   kompass_kreativband.attendance(date,text,uuid,text,smallint,text) TO authenticated;
 
 CREATE FUNCTION public.kompass_kb_student(p_code text,p_monday date,p_offer uuid DEFAULT NULL,p_cancel boolean DEFAULT false)
@@ -471,6 +497,10 @@ CREATE FUNCTION public.kompass_kb_issue_code(p_pupil text)
 RETURNS text LANGUAGE sql SECURITY INVOKER SET search_path = '' AS $$
   SELECT kompass_kreativband.issue_code(p_pupil)
 $$;
+CREATE FUNCTION public.kompass_kb_print_codes(p_grade smallint)
+RETURNS jsonb LANGUAGE sql SECURITY INVOKER SET search_path = '' AS $$
+  SELECT kompass_kreativband.print_codes(p_grade)
+$$;
 CREATE FUNCTION public.kompass_kb_coaching(p_pupil text,p_action text,p_monday date DEFAULT NULL,p_data jsonb DEFAULT '{}')
 RETURNS jsonb LANGUAGE sql SECURITY INVOKER SET search_path = '' AS $$
   SELECT kompass_kreativband.coaching(p_pupil,p_action,p_monday,p_data)
@@ -482,10 +512,10 @@ RETURNS jsonb LANGUAGE sql SECURITY INVOKER SET search_path = '' AS $$
 $$;
 
 REVOKE ALL ON FUNCTION public.kompass_kb_student(text,date,uuid,boolean) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.kompass_kb_plan(text,date,jsonb),public.kompass_kb_issue_code(text),
+REVOKE ALL ON FUNCTION public.kompass_kb_plan(text,date,jsonb),public.kompass_kb_issue_code(text),public.kompass_kb_print_codes(smallint),
   public.kompass_kb_coaching(text,text,date,jsonb),public.kompass_kb_attendance(date,text,uuid,text,smallint,text) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.kompass_kb_student(text,date,uuid,boolean) TO anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.kompass_kb_plan(text,date,jsonb),public.kompass_kb_issue_code(text),
+GRANT EXECUTE ON FUNCTION public.kompass_kb_plan(text,date,jsonb),public.kompass_kb_issue_code(text),public.kompass_kb_print_codes(smallint),
   public.kompass_kb_coaching(text,text,date,jsonb),public.kompass_kb_attendance(date,text,uuid,text,smallint,text) TO authenticated;
 NOTIFY pgrst,'reload schema';
 

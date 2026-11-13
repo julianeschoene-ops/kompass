@@ -45,20 +45,112 @@ const KreativbandWahl = {
   },
 
   planner() {
-    if (!this.cloudStaff() || ![5,6,7].some(grade => Auth.canLead(grade))) return '';
+    const grades = [5,6,7].filter(grade => Auth.canLead(grade));
+    if (!this.cloudStaff() || !grades.length) return '';
     return `<details class="card kb-choice" ontoggle="if(this.open && !this.dataset.ready) KreativbandWahl.openPlan(this)">
       <summary><strong>Kreativband-Wahl vorbereiten</strong></summary>
       <p>Wähle eine Woche. Für Kinder öffnen sich die Buchungen, sobald du ihren Jahrgang freigibst.</p>
+      <div class="toolbar">
+        <label>Jahrgang für die Codekarten <select id="kb-code-grade">${grades.map(grade =>
+          `<option value="${grade}" ${Number(State.year) === grade ? 'selected':''}>${grade}</option>`).join('')}</select></label>
+        <button class="chip" type="button" onclick="KreativbandWahl.printCodes(this)">Codekarten für den Jahrgang drucken</button>
+      </div>
       <p><a href="kreativband.html" target="_blank" rel="noopener">Schüleransicht öffnen</a></p>
       <label>Woche ab <input type="date" data-week value="${this.monday()}" required></label>
-      <button class="chip" type="button" onclick="KreativbandWahl.plan(this,'read')">Woche laden</button>
+      <button class="chip" type="button" data-load-week onclick="KreativbandWahl.plan(this,'read')">Woche laden</button>
       <p role="status"></p><div data-plan></div>
     </details>`;
   },
 
+  formatCode(code) {
+    return code.match(/.{1,8}/g).join('-');
+  },
+
+  async printCodes(button) {
+    const grade = Number(button.closest('.kb-choice').querySelector('#kb-code-grade').value);
+    if (!this.cloudStaff() || ![5,6,7].includes(grade) || !Auth.canLead(grade)) return;
+    const userId = Auth.currentUser().id;
+    const printWindow = window.open('','_blank');
+    if (!printWindow) {
+      toast('Bitte Pop-ups für KOMPASS erlauben.');
+      return;
+    }
+    printWindow.opener = null;
+    const doc = printWindow.document;
+    doc.write(`<!doctype html><html lang="de"><head><meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <meta name="referrer" content="no-referrer"><title>Kreativband · Codekarten Jahrgang ${grade}</title>
+      <style>
+        body {font: 15px system-ui,sans-serif; max-width: 186mm; margin: 18px auto; padding: 0 8px; color: #253044}
+        h1 {font-size: 22px} h2 {font-size: 15px; margin: 0}
+        button {font: inherit; padding: .4em .85em}
+        .sheet {display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap: 3mm; margin-bottom: 3mm}
+        .card {box-sizing:border-box; padding:4mm; border:1px solid #888; border-radius:2mm; text-align:center; overflow-wrap:anywhere; break-inside:avoid}
+        .card p {margin:1.5mm 0} .card img {width:27mm; height:27mm}
+        .code {font:bold 12px ui-monospace,monospace} .url {font-size:10px; color:inherit}
+        @media print {
+          @page {size:A4 portrait; margin:12mm}
+          body {margin:0; padding:0; max-width:none} .screen {display:none}
+          .sheet {display:block; margin:0; break-inside:avoid; break-after:page; font-size:0}
+          .sheet:last-child {break-after:auto}
+          .card {display:inline-block; vertical-align:top; width:48%; min-height:58mm; margin:0 1% 2mm; font-size:12px}
+        }
+      </style></head><body><header class="screen"><h1>Kreativband · Codekarten Jahrgang ${grade}</h1>
+        <button id="kb-print" type="button" disabled>Drucken / als PDF speichern</button>
+        <p id="kb-print-status" role="status">Codekarten werden geladen …</p>
+      </header><main id="kb-print-cards"></main></body></html>`);
+    doc.close();
+    const status = doc.getElementById('kb-print-status');
+    const print = doc.getElementById('kb-print');
+    print.onclick = () => printWindow.print();
+    try {
+      const cards = await this.rpc('print_codes',{p_grade:grade});
+      if (printWindow.closed) return;
+      if (Auth.currentUser()?.id !== userId) {
+        printWindow.close();
+        return;
+      }
+      if (!Array.isArray(cards) || cards.some(card => !/^[0-9a-f]{32}$/.test(card.code))) {
+        throw new Error('Die Codes konnten nicht vollständig geladen werden.');
+      }
+      if (!cards.length) {
+        status.textContent = 'Für diesen Jahrgang gibt es keine aktiven Kinder.';
+        return;
+      }
+      const url = new URL('kreativband.html', window.location.href);
+      const qr = qrcode(0,'M');
+      qr.addData(url.href);
+      qr.make();
+      const qrImage = qr.createDataURL(5,20);
+      const pages = doc.createDocumentFragment();
+      let sheet;
+      for (const [index,card] of cards.entries()) {
+        if (index % 8 === 0) {
+          sheet = doc.createElement('div');
+          sheet.className = 'sheet';
+          pages.appendChild(sheet);
+        }
+        const entry = doc.createElement('section');
+        entry.className = 'card';
+        entry.innerHTML = `<h2>${esc([card.first,card.last].filter(Boolean).join(' '))}</h2>
+          <p>${esc(card.class || 'Jahrgang ' + grade)} · Kreativband</p>
+          <p>Dein persönlicher KOMPASS-Code</p>
+          <p class="code">${this.formatCode(card.code)}</p>
+          <img src="${qrImage}" alt="QR-Code zur Kreativband-Wahl">
+          <p><a class="url" href="${esc(url.href)}">${esc(url.host + url.pathname)}</a></p>`;
+        sheet.appendChild(entry);
+      }
+      doc.getElementById('kb-print-cards').appendChild(pages);
+      status.textContent = cards.length + (cards.length === 1 ? ' Codekarte ist druckbereit.' : ' Codekarten sind druckbereit.');
+      print.disabled = false;
+    } catch (error) {
+      if (!printWindow.closed) status.textContent = error.message || 'Die Codekarten konnten nicht geladen werden.';
+    }
+  },
+
   async openPlan(panel) {
     panel.dataset.ready = '1';
-    await this.plan(panel.querySelector('button'),'read');
+    await this.plan(panel.querySelector('[data-load-week]'),'read');
   },
 
   async plan(button, action, data = {}) {
@@ -231,7 +323,7 @@ const KreativbandWahl = {
       await this.run(button,status,async () => {
         const code = await this.rpc('issue_code',{p_pupil:pupil});
         const field = panel.querySelector('[data-code]');
-        field.value = code.match(/.{1,8}/g).join('-');
+        field.value = this.formatCode(code);
         field.hidden = false;
         field.focus();
         field.select();
@@ -241,7 +333,7 @@ const KreativbandWahl = {
     await this.run(button,status,async () => {
       const info = await this.rpc('coaching',params);
       panel.querySelector('[data-coaching]').innerHTML = `
-        <button class="chip" type="button" onclick="KreativbandWahl.loadCoach(this.closest('details'),this,'code')">KOMPASS-Code ausstellen</button>
+        <button class="chip" type="button" onclick="KreativbandWahl.loadCoach(this.closest('details'),this,'code')">Neuen KOMPASS-Code ausstellen</button>
         <input data-code hidden readonly aria-label="Persönlicher KOMPASS-Code">
         <form onsubmit="event.preventDefault();KreativbandWahl.loadCoach(this.closest('details'),event.submitter,'block')">
           <div class="formgrid"><label>Woche ab <input type="date" name="week" value="${this.monday()}" required></label>
