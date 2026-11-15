@@ -166,15 +166,34 @@ const COOK_SEW_COMPETENCIES=[
  ['sew_workpiece','Ich kann mit verschiedenen textilen Techniken ein eigenes Werkstück herstellen.'],
  ['sew_safety','Ich kann die Sicherheitsregeln in der Textilwerkstatt einhalten.']
 ];
+const CHOIR_COMPETENCIES=[
+ ['choir_vocal_technique','Ich kann Lieder unterschiedlicher Kulturen singen und gestalten sowie Stimmbildungsübungen und Warm-ups anwenden.'],
+ ['choir_performance','Im Unterstufenchor habe ich gelernt, als Teil einer Gemeinschaft auf eine Aufführung hinzuarbeiten, und ich habe meine Selbstwirksamkeit auf einer Bühne erlebt.'],
+ ['choir_solo','Als Solist/Solistin habe ich in besonderem Maße zum Gelingen der Aufführung beigetragen.']
+];
+const WIND_CLASS_COMPETENCIES=[
+ ['wind_playing_technique','Ich kann grundlegende Spieltechniken auf meinem Blasinstrument anwenden und bekannte Musikstücke musizieren.'],
+ ['wind_ensemble','Ich kann auf Tempo, Dynamik und Zusammenspiel achten und meinen Beitrag zu einem gemeinsamen musikalischen Ergebnis leisten.']
+];
+const MUSIC_STUDIO_COMPETENCIES=[
+ ['music_glockenspiel','Ich kann einfache Melodien und Musikstücke auf dem Glockenspiel spielen und dabei Tonhöhen und Rhythmen richtig umsetzen.'],
+ ['music_practice','Ich kann durch regelmäßiges Üben meine Spielfertigkeiten verbessern und gemeinsam mit anderen musizieren.'],
+ ['music_one_octave','Ich kann Stammtöne im Tonbereich von einer Oktave benennen und auf dem Glockenspiel anwenden.'],
+ ['music_two_octaves','Ich kann Stammtöne und Versetzungszeichen im Tonbereich von zwei Oktaven benennen und anwenden.'],
+ ['music_garageband','Ich kann mit GarageBand eigene Musikstücke gestalten, indem ich Rhythmen, Melodien und Klänge aufnehme, kombiniere und bearbeite.'],
+ ['music_boomwhackers','Ich kann kurze rhythmische und melodische Musikstücke mithilfe von Boomwhackern in einer Kleingruppe erarbeiten und zielgerichtet einüben. Dabei achte ich auf Rhythmus, Tempo und das Zusammenspiel in der Gruppe.']
+];
 function creativeCompetenciesFor(a){
+ if(isMusicOffer(a))return a.name.trim().toLocaleLowerCase('de')==='chor'?CHOIR_COMPETENCIES:WIND_CLASS_COMPETENCIES;
  if(a?.type!=='Kreativband')return [];
+ if(a.id==='room_music')return MUSIC_STUDIO_COMPETENCIES;
  if(creativeStatsGroupName(a.name)==='Kochen & Nähstudio')return COOK_SEW_COMPETENCIES;
  return /it.studio|informatik.studio/i.test(String(a.name||''))?IT_STUDIO_COMPETENCIES:[];
 }
 function creativeCompetencyControls(a,p,assessment){
  const competencies=creativeCompetenciesFor(a);if(!competencies.length)return '';
  const id=esc(a.id+'_'+p.id),values=assessment.competencies||{};
- const title=competencies===IT_STUDIO_COMPETENCIES?'💻 Kompetenzen IT-Studio':'🍳 🧵 Kompetenzen Kochen & Nähstudio';
+ const title=competencies===IT_STUDIO_COMPETENCIES?'💻 Kompetenzen IT-Studio':competencies===COOK_SEW_COMPETENCIES?'🍳 🧵 Kompetenzen Kochen & Nähstudio':'Kompetenzen '+a.name;
  const rated=competencies.filter(([key])=>values[key]).length;
  return '<details class="creativeCompetencyDetails"><summary>'+esc(title)+' ('+rated+'/'+competencies.length+')</summary>'+
  competencies.map(([key,title])=>'<label class="mini" style="display:block;margin:8px 0">'+esc(title)+' <select id="creativeCompetency_'+id+'_'+key+'">'+
