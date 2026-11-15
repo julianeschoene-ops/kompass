@@ -110,7 +110,7 @@ function renderActivityDetail(id){
   const a=Store.activities.find(x=>x.id===id);if(!a)return'';ensureActivityDefaultTeam();
   const teams=activityTeamsForGrade(State.year),own=currentCoachTeam(State.year);
   let pupils=(creativeRosterPupils()).filter(p=>!p.archived).filter(p=>a.type==='Kreativband'?(activityPupilYear==='alle'||Number(p.year||String(p.className||'').charAt(0))===Number(activityPupilYear)):Number(p.year||String(p.className||'').charAt(0))===Number(State.year)).filter(p=>activityTeam==='alle'||p.team===activityTeam).filter(p=>!activitySearch||(p.first+' '+p.last+' '+p.short).toLowerCase().includes(activitySearch.toLowerCase())).sort((x,y)=>x.last.localeCompare(y.last,'de')||x.first.localeCompare(y.first,'de'));
-  return`<button class="chip" onclick="activitySelected=null;render()">← Übersicht</button>${a.type!=='Kreativband'&&!isMusicOffer(a)&&canEdit()?`<button class="chip" onclick="openActivityEditor('${a.id}')">Bearbeiten</button>`:''}<div class="card focusCard"><div><h2>${a.icon||activityIcon(a.type)} ${esc(combinedCookSewMode(a.id)?'Kochen & Nähstudio':a.name)}</h2></div>${isCountableActivity(a)?'':`<div class="scoreHint">${activityMemberCount(a.id)}<br><span class="mini">Kinder mit Eintrag</span></div>`}</div>${isCountableActivity(a)?`<div class="card"><div class="formgrid"><div><label>Besuchsdatum</label><input type="date" value="${esc(activityVisitDate)}" onchange="activityVisitDate=this.value"></div></div><div class="toolbar" style="justify-content:flex-end;margin-top:12px"><button class="chip dark" onclick="creativeRefreshFromCloud()">↻ Cloud-Anwesenheiten laden</button></div></div>`:''}<div class="toolbar formgrid">${a.type==='Kreativband'?`<div><label>Jahrgang</label><select onchange="activityPupilYear=this.value;activityTeam='alle';render()"><option value="alle" ${activityPupilYear==='alle'?'selected':''}>Alle Jahrgänge (5–7)</option>${[5,6,7].map(y=>`<option value="${y}" ${String(activityPupilYear)===String(y)?'selected':''}>Jahrgang ${y}</option>`).join('')}</select></div>`:''}<div><label>Lerngruppe</label><select onchange="activityTeam=this.value;render()">${own?`<option value="${esc(own)}" ${activityTeam===own?'selected':''}>Meine Lerngruppe · ${esc(own)}</option>`:''}<option value="alle" ${activityTeam==='alle'?'selected':''}>alle Teams</option>${teams.filter(t=>t!==own).map(t=>`<option ${activityTeam===t?'selected':''}>${esc(t)}</option>`).join('')}</select></div><div><label>Name filtern</label><input id="activityNameSearch" value="${esc(activitySearch)}" oninput="activitySearch=this.value;renderKeepingFocus('activityNameSearch')" placeholder="Name suchen …"></div></div><div class="quickList">${pupils.map(p=>activityQuickRow(a,p)).join('')||'<div class="card empty">Keine Schüler*innen in dieser Auswahl.</div>'}</div>`;
+  return`<button class="chip" onclick="activitySelected=null;render()">← Übersicht</button>${a.type!=='Kreativband'&&!isMusicOffer(a)&&canEdit()?`<button class="chip" onclick="openActivityEditor('${a.id}')">Bearbeiten</button>`:''}<div class="card focusCard"><div><h2>${a.icon||activityIcon(a.type)} ${esc(combinedCookSewMode(a.id)?'Kochen & Nähstudio':a.name)}</h2></div>${isCountableActivity(a)?'':`<div class="scoreHint">${activityMemberCount(a.id)}<br><span class="mini">Kinder mit Eintrag</span></div>`}</div>${musicCompetencyOverview(a)}${isCountableActivity(a)?`<div class="card"><div class="formgrid"><div><label>Besuchsdatum</label><input type="date" value="${esc(activityVisitDate)}" onchange="activityVisitDate=this.value"></div></div><div class="toolbar" style="justify-content:flex-end;margin-top:12px"><button class="chip dark" onclick="creativeRefreshFromCloud()">↻ Cloud-Anwesenheiten laden</button></div></div>`:''}<div class="toolbar formgrid">${a.type==='Kreativband'?`<div><label>Jahrgang</label><select onchange="activityPupilYear=this.value;activityTeam='alle';render()"><option value="alle" ${activityPupilYear==='alle'?'selected':''}>Alle Jahrgänge (5–7)</option>${[5,6,7].map(y=>`<option value="${y}" ${String(activityPupilYear)===String(y)?'selected':''}>Jahrgang ${y}</option>`).join('')}</select></div>`:''}<div><label>Lerngruppe</label><select onchange="activityTeam=this.value;render()">${own?`<option value="${esc(own)}" ${activityTeam===own?'selected':''}>Meine Lerngruppe · ${esc(own)}</option>`:''}<option value="alle" ${activityTeam==='alle'?'selected':''}>alle Teams</option>${teams.filter(t=>t!==own).map(t=>`<option ${activityTeam===t?'selected':''}>${esc(t)}</option>`).join('')}</select></div><div><label>Name filtern</label><input id="activityNameSearch" value="${esc(activitySearch)}" oninput="activitySearch=this.value;renderKeepingFocus('activityNameSearch')" placeholder="Name suchen …"></div></div><div class="quickList">${pupils.map(p=>activityQuickRow(a,p)).join('')||'<div class="card empty">Keine Schüler*innen in dieser Auswahl.</div>'}</div>`;
 }
 async function confirmCreativeAssessment(activityId,pupilId){
  const key=activityId+'|'+pupilId;
@@ -183,10 +183,22 @@ const MUSIC_STUDIO_COMPETENCIES=[
  ['music_garageband','Ich kann mit GarageBand eigene Musikstücke gestalten, indem ich Rhythmen, Melodien und Klänge aufnehme, kombiniere und bearbeite.'],
  ['music_boomwhackers','Ich kann kurze rhythmische und melodische Musikstücke mithilfe von Boomwhackern in einer Kleingruppe erarbeiten und zielgerichtet einüben. Dabei achte ich auf Rhythmus, Tempo und das Zusammenspiel in der Gruppe.']
 ];
-function creativeCompetenciesFor(a){
+function musicCompetenciesFor(a){
  if(isMusicOffer(a))return a.name.trim().toLocaleLowerCase('de')==='chor'?CHOIR_COMPETENCIES:WIND_CLASS_COMPETENCIES;
+ if(a?.type==='Kreativband'&&a.id==='room_music')return MUSIC_STUDIO_COMPETENCIES;
+ return [];
+}
+function musicCompetencyOverview(a){
+ const competencies=musicCompetenciesFor(a);
+ if(!competencies.length)return '';
+ return '<details class="card" open><summary><b>Kompetenzen</b></summary>'+
+  '<ul>'+competencies.map(([,title])=>'<li>'+esc(title)+'</li>').join('')+'</ul>'+
+  '<p class="mini">Zum Bewerten öffne „Kompetenzen '+esc(a.name)+'“ beim jeweiligen Kind.</p></details>';
+}
+function creativeCompetenciesFor(a){
+ const musicCompetencies=musicCompetenciesFor(a);
+ if(musicCompetencies.length)return musicCompetencies;
  if(a?.type!=='Kreativband')return [];
- if(a.id==='room_music')return MUSIC_STUDIO_COMPETENCIES;
  if(creativeStatsGroupName(a.name)==='Kochen & Nähstudio')return COOK_SEW_COMPETENCIES;
  return /it.studio|informatik.studio/i.test(String(a.name||''))?IT_STUDIO_COMPETENCIES:[];
 }
