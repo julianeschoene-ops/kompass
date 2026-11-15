@@ -30,6 +30,44 @@ const ENGLISH_5 = [
 ];
 function english5Competencies(){return ENGLISH_5.map((x,i)=>({id:'eng5_'+i,type:'core',year:5,sprint:null,subject:'Englisch',category:x[0],area:x[0],unit:x[1],level:'G/M/E',text:x[2],includeInLeb:true,order:(i+1)*10,maxPoints:null,scoreConfig:{...DEFAULT_SCORE_CONFIG},note:''}));}
 
+const DEUTSCH_5 = [
+ ['Lesen/ Literatur verstehen','1.1','Ich kenne die Merkmale eines Märchens.'],
+ ['Lesen/ Literatur verstehen','1.2','Ich kenne verschiedene Märchen.'],
+ ['Lesen/ Literatur verstehen','1.3','Ich verstehe und erkenne den Aufbau eines Märchens.'],
+ ['Lesen/ Literatur verstehen','1.4','Ich verstehe die 5-Schritt-Lesemethode.'],
+ ['Lesen/ Literatur verstehen','1.5','Ich verstehe und erkenne den Aufbau einer Personenbeschreibung.'],
+ ['Lesen/ Literatur verstehen','1.6','Ich kann mein ausgewähltes Buch (Ganzschrift, Sachbuch, Comic etc.) für den Leseclub/die Lesezeit erschließen/untersuchen (ganzjährig).'],
+ ['Schreiben','2.1','Ich kann ein Märchen planen.'],
+ ['Schreiben','2.2','Ich kann ein Märchen planen, schreiben und überarbeiten.'],
+ ['Schreiben','2.3','Ich kann ein Lesetagebuch führen (Leseclub/Lesezeit ganzjährig).'],
+ ['Schreiben','2.4','Ich kann Kreativaufgaben zu einem Lesetagebuch bearbeiten (Leseclub/Lesezeit ganzjährig).'],
+ ['Schreiben','2.5','Ich kann Texte überarbeiten.'],
+ ['Schreiben','2.6','Ich kann selbst ein Gedicht verfassen.'],
+ ['Schreiben','2.7','Ich kann eine schriftliche Personenbeschreibung verfassen.'],
+ ['Rechtschreiben','3.1','Ich kann die Zeichensetzung der Wörtlichen Rede anwenden.'],
+ ['Rechtschreiben','3.2','Ich kann die Rechtschreibregeln anwenden.'],
+ ['Rechtschreiben','3.3','Ich kann die Zeichensetzung anwenden.'],
+ ['Rechtschreiben','3.4','Ich kann Texte überarbeiten.'],
+ ['Sprechen/ Zuhören','4.1','Ich kann über Texte sprechen.'],
+ ['Sprechen/ Zuhören','4.2','Ich kann Inhalte präsentieren.'],
+ ['Sprechen/ Zuhören','4.3','Ich kann adressatenbezogen sprechen.'],
+ ['Sprechen/ Zuhören','4.4','Ich kann aktiv zuhören.'],
+ ['Sprechen/ Zuhören','4.5','Ich kann Gesprächsregeln einhalten.'],
+ ['Sprechen/ Zuhören','4.6','Ich kann Texte flüssig vorlesen.'],
+ ['Sprechen/ Zuhören','4.7','Ich kann Texte sinngestaltend vorlesen.'],
+ ['Sprechen/ Zuhören','4.8','Ich kann ein Gedicht laut, deutlich und betont vortragen.'],
+ ['Sprache untersuchen','5.1','Ich kann die Zeitform Präteritum bilden und von anderen Zeitformen unterscheiden.'],
+ ['Sprache untersuchen','5.2','Ich kann die Wörtliche Rede erkennen und richtig anwenden.'],
+ ['Sprache untersuchen','5.3','Ich kann die unterschiedlichen Wortarten erkennen und richtig anwenden.'],
+ ['Sprache untersuchen','5.4','Ich kann Verse und Strophen unterscheiden und Reime in einem Gedicht erkennen (z. B. Paarreim, Kreuzreim).'],
+ ['Allgemeine Grundlagen','6.1','Grundlagen Lerntagebucheintrag'],
+ ['Allgemeine Grundlagen','6.2','Grundlagen Heftführung'],
+ ['Allgemeine Grundlagen','6.3','Fehlerfreies Abschreiben'],
+ ['Allgemeine Grundlagen','6.4','Ich kann meine Aufgaben mit der Lösung eigenverantwortlich kontrollieren.'],
+ ['Allgemeine Grundlagen','6.5','Ich kann mein Lern- und Arbeitsverhalten beurteilen.']
+];
+function deutsch5Competencies(){return DEUTSCH_5.map((x,i)=>({id:'deu5_'+x[1].replace('.','_'),type:'core',year:5,sprint:null,subject:'Deutsch',category:x[0],area:x[0],unit:x[1],level:'G/M/E',text:x[2],includeInLeb:true,order:(i+1)*10,maxPoints:null,scoreConfig:{...DEFAULT_SCORE_CONFIG},note:''}));}
+
 const MATHEMATIK_5 = [
  [
   "Zahlen und Daten",
@@ -311,7 +349,7 @@ const SEED = {
  version:'8.3.4', subjects:[...WORKSHOP_SUBJECTS], coreSubjects:[...CORE_SUBJECTS], projectTemplates:PROJECT_TEMPLATES, creativeRooms:CREATIVE_ROOMS,
  sprints:[1,2,3,4,5].flatMap(n=>[5,6,7].map(y=>({id:`s${y}_${n}`,year:y,number:n,name:n===1?'Gemeinsam starten':`Sprint ${n}`,projectId:n===1?'project_school':'',startDate:'',endDate:''}))),
  pupils:[],
- competencies:[...english5Competencies(),...mathematik5Competencies(),...deutsch7Competencies(),...mathematik7Competencies(),
+ competencies:[...english5Competencies(),...deutsch5Competencies(),...mathematik5Competencies(),...deutsch7Competencies(),...mathematik7Competencies(),
  {"id":"s5_s1_bio_1","type":"workshop","year":5,"sprint":1,"projectId":"project_school","phase":"base","lab":"Life Lab","subject":"Biologie","category":"Basiskompetenz","area":"Basiskompetenz","level":"G/M/E","text":"Ich kann Pflanzen und Tiere genau beobachten und aufschreiben oder zeichnen, was ich entdecke. (Life Lab)","includeInLeb":true,"order":10,"maxPoints":null,"scoreConfig":{"redMax":24,"yellowMax":74},"note":""},
  {"id":"s5_s1_bio_2","type":"workshop","year":5,"sprint":1,"projectId":"project_school","phase":"base","lab":"Life Lab","subject":"Biologie","category":"Basiskompetenz","area":"Basiskompetenz","level":"G/M/E","text":"Ich kann in Texten und Bildern Informationen über Pflanzen und Tiere finden und passend zu einer Frage in eigenen Worten wiedergeben. (Life Lab)","includeInLeb":true,"order":20,"maxPoints":null,"scoreConfig":{"redMax":24,"yellowMax":74},"note":""},
  {"id":"s5_s1_geo_1","type":"workshop","year":5,"sprint":1,"projectId":"project_school","phase":"base","lab":"Geography Lab","subject":"Geographie","category":"Basiskompetenz","area":"Basiskompetenz","level":"G/M/E","text":"Ich kann an einem Beispiel erklären, wie die Natur beeinflusst, wie Menschen einen Ort nutzen. (Geography Lab)","includeInLeb":true,"order":10,"maxPoints":null,"scoreConfig":{"redMax":24,"yellowMax":74},"note":""},
