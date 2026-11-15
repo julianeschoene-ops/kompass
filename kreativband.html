@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#24344f">
+  <link rel="icon" href="kompass-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <title>KOMPASS · Kreativband wählen</title>
+  <style>
+    body { background: #faf2eb; color: #312a29; }
+    main { width: min(720px, 100% - 2rem); margin: 2rem auto; }
+    h1 { color: #24344f; }
+    .kb-slot { display: flex; justify-content: space-between; gap: 1rem; align-items: center;
+      padding: .7rem 0; border-bottom: 1px solid #e7ddd5; }
+    #kb-status { color: #842f24; }
+  </style>
+</head>
+<body>
+  <main>
+    <p>KOMPASS</p>
+    <h1>Kreativband wählen</h1>
+    <form id="kb-login" class="card">
+      <label for="kb-code">Dein persönlicher KOMPASS-Code</label>
+      <input id="kb-code" type="password" autocomplete="off" autocapitalize="off" maxlength="45" required>
+      <button class="chip dark" type="submit">Anmelden</button>
+    </form>
+    <section id="kb-booking" hidden>
+      <div class="toolbar">
+        <label for="kb-week">Woche ab <input id="kb-week" type="date" required></label>
+        <button class="chip" type="button" id="kb-refresh">Woche anzeigen</button>
+        <button class="chip" type="button" id="kb-logout">Abmelden</button>
+      </div>
+      <div id="kb-offers"></div>
+    </section>
+    <p id="kb-status" role="status"></p>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="auth.js?v=syntax-repair-2"></script>
+  <script src="kreativband-wahl.js?v=1"></script>
+  <script src="kreativband-schueler.js?v=1"></script>
+</body>
+</html>
