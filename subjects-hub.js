@@ -1,7 +1,7 @@
 /* Unified subject entry: keeps existing competency and assessment data paths intact. */
 let subjectHubMode='home',subjectHubSubject='',subjectHubType='core',subjectHubTool='bewertungen';
 function subjectNames(){const core=typeof CORE_SUBJECTS!=='undefined'?CORE_SUBJECTS:[];const work=typeof WORKSHOP_SUBJECTS!=='undefined'?WORKSHOP_SUBJECTS:[];return [...new Set([...core,...work])].sort((a,b)=>a.localeCompare(b,'de'));}
-function subjectHubOpen(subject){subjectHubSubject=subject;subjectHubMode='subject';subjectHubTool='bewertungen';State.subject=subject;State.competency=null;State.team='alle';render();}
+function subjectHubOpen(subject){subjectHubSubject=subject;subjectHubMode='subject';subjectHubTool='bewertungen';State.subject=subject;State.competency=null;State.team='alle';State.search='';render();}
 function subjectHubToolOpen(tool){subjectHubTool=tool;subjectHubMode='tool';render();}
 function subjectHubBack(){subjectHubMode=subjectHubMode==='tool'?'subject':'home';render();}
 function subjectHub(){if(subjectHubMode==='home'||!subjectHubSubject)return subjectHubHome();if(subjectHubMode==='subject')return subjectHubSubjectPage();return subjectHubToolPage();}
