@@ -6,7 +6,7 @@ const CompetencyMatrix={
  open(){this.mode='class';this.category='alle';this.unit='alle';this.pupilId=null;this.competencyYear=State.year;subjectHubToolOpen('raster')},
  competencies(){
   const subject=subjectHubSubject,core=CORE_SUBJECTS.includes(subject);
-  const all=Store.competencies.filter(c=>c.subject===subject&&c.type===(core?'core':'workshop'));
+  const all=Store.competencies.filter(c=>c.subject===subject&&(core?c.type==='core':c.type!=='core'));
   const years=[...new Set(all.map(c=>Number(c.year)))].sort((a,b)=>a-b);
   if(!years.includes(Number(this.competencyYear)))this.competencyYear=years.includes(State.year)?State.year:years[0];
   let list=all.filter(c=>Number(c.year)===Number(this.competencyYear));
@@ -19,9 +19,9 @@ const CompetencyMatrix={
   return {list,all,years,cats,units};
  },
  pupils(){return filteredPupils()},
- status(c,p){const r=Store.records[recKey(c.id,p.id)]||{};return ['green','yellow','red'].includes(r.current)?r.current:'empty'},
- cell(c,p){const s=this.status(c,p),r=Store.records[recKey(c.id,p.id)]||{};const conflict=typeof sharedAssessmentState==='function'&&sharedAssessmentState(r).conflict&&!sharedAssessmentAgreementValid(r);
-  return '<button class="matrixCell matrix-'+s+'" title="'+esc(p.short+' · '+c.text+' · '+statusPlain(s)+(conflict?' · Abstimmung offen':''))+'" onclick="CompetencyMatrix.edit('+JSON.stringify(c.id).replace(/"/g,'&quot;')+','+JSON.stringify(p.id).replace(/"/g,'&quot;')+')">'+(conflict?'!':s==='green'?'✓':s==='yellow'?'–':s==='red'?'×':'·')+'</button>';
+ status(c,p){const r=Store.records[recKey(c.id,p.id)]||{};if(['green','yellow','red'].includes(r.current))return r.current;const latest=[...(Array.isArray(r.history)?r.history:[]),...(Array.isArray(r.practiceResults)?r.practiceResults:[])].filter(h=>h&&!h.removed&&['green','yellow','red'].includes(h.value)).sort((a,b)=>String(b.at||b.date||'').localeCompare(String(a.at||a.date||'')))[0];const value=latest?.value||r.practiceLatest?.value;return ['green','yellow','red'].includes(value)?value:'empty'},
+ cell(c,p){const s=this.status(c,p),r=Store.records[recKey(c.id,p.id)]||{};const conflict=typeof sharedAssessmentState==='function'&&sharedAssessmentState(r).conflict&&!sharedAssessmentAgreementValid(r);const provisional=!r.current&&s!=='empty';
+  return '<button class="matrixCell matrix-'+s+'" title="'+esc(p.short+' · '+c.text+' · '+statusPlain(s)+(conflict?' · Abstimmung offen':'')+(provisional?' · aus Bewertungsverlauf (noch nicht abschließend übernommen)':''))+'" onclick="CompetencyMatrix.edit('+JSON.stringify(c.id).replace(/"/g,'&quot;')+','+JSON.stringify(p.id).replace(/"/g,'&quot;')+')">'+(conflict?'!':s==='green'?'✓':s==='yellow'?'–':s==='red'?'×':'·')+(provisional?'*':'')+'</button>';
  },
  edit(cid,pid){State.competency=cid;openAssessment(cid,pid)},
  render(){
@@ -30,7 +30,7 @@ const CompetencyMatrix={
   const header='<div class="schoolPageHead"><div><button class="schoolBack" onclick="subjectHubBack()">← '+esc(subjectHubSubject)+'</button><h1>'+esc(subjectHubSubject)+' · Kompetenzraster</h1><p class="mini">Alle Bewertungen auf einen Blick · bestehende KOMPASS-Daten</p></div><button class="chip" onclick="window.print()">Drucken</button></div>';
   const filters='<div class="matrixFilters"><label>Stufe der Schüler*innen<select onchange="State.year=Number(this.value);State.team=\'alle\';CompetencyMatrix.pupilId=null;render()">'+options(visibleYears(),State.year)+'</select></label><label>Kompetenzen aus Stufe<select onchange="CompetencyMatrix.competencyYear=Number(this.value);CompetencyMatrix.category=\'alle\';CompetencyMatrix.unit=\'alle\';render()">'+options(data.years,this.competencyYear)+'</select></label><label>Team<select onchange="State.team=this.value;CompetencyMatrix.pupilId=null;render()">'+options(['alle',...TEAMS],State.team)+'</select></label><label>Bereich<select onchange="CompetencyMatrix.category=this.value;render()">'+options(['alle',...data.cats],this.category)+'</select></label><label>Unit / Sprint<select onchange="CompetencyMatrix.unit=this.value;render()">'+options(['alle',...data.units],this.unit)+'</select></label></div>';
   const mode='<div class="matrixModes"><button class="chip '+(this.mode==='class'?'dark':'')+'" onclick="CompetencyMatrix.mode=\'class\';render()">Klassenraster</button><button class="chip '+(this.mode==='pupil'?'dark':'')+'" onclick="CompetencyMatrix.mode=\'pupil\';render()">Schülerraster</button></div>';
-  const legend='<div class="matrixLegend"><span>🟢 Erreicht</span><span>🟡 Teilweise erreicht</span><span>🔴 Noch nicht erreicht</span><span>⚪ Ohne Eintrag</span><span>! Abstimmung offen</span></div>';
+  const legend='<div class="matrixLegend"><span>🟢 Erreicht</span><span>🟡 Teilweise erreicht</span><span>🔴 Noch nicht erreicht</span><span>⚪ Ohne Eintrag</span><span>! Abstimmung offen</span><span>* Bewertung im Verlauf, noch nicht abschließend übernommen</span></div>';
   if(!list.length)return header+filters+mode+'<div class="card empty">Für diese Auswahl sind keine Kompetenzen hinterlegt.</div>';
   let body='';
   if(this.mode==='pupil'){
