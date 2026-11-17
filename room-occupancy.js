@@ -94,7 +94,7 @@ function roomPlanType(value){
 }
 function roomPlanCell(value,editable,h,d){
  const lines=String(value||'').split('\\n').filter(x=>x.trim());
- const expanded=lines.flatMap(line=>{if(/(?:\\s+oder\\s+LA|\\s*\\/\\s*LA|\\s*\\/\\s*Kreativband)/i.test(line)&&!line.includes(' · ')){return [line]}return [line]});
+ const expanded=lines;
  const content=expanded.length?expanded.map(line=>{
   const type=roomPlanType(line);
   const parts=line.split(/\\s*[·–]\\s*/);
