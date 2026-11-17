@@ -28,16 +28,9 @@ function workshop(){
  <div><label>Jahrgang</label><select onchange="State.year=Number(this.value);State.competency=null;State.search='';State.team='alle';render()">${visibleYears().map(y=>`<option value="${y}" ${State.year===y?'selected':''}>Jahrgang ${y}</option>`).join('')}</select></div>
  <div><label>${State.year===7?'Thema':'Sprint / Thema'}</label><select onchange="State.sprint=Number(this.value);State.competency=null;render()">${[1,2,3,4,5].map(n=>`<option value="${n}" ${State.sprint===n?'selected':''}>Sprint ${n}: ${esc(sprintName(n))}</option>`).join('')}</select></div>
  <div><label>Team</label><select onchange="State.team=this.value;render()"><option value="alle">alle Teams</option>${TEAMS.map(t=>`<option ${State.team===t?'selected':''}>${t}</option>`).join('')}</select></div>
+ <div><label>Kompetenz</label><select onchange="State.competency=this.value;render()" ${comps.length?'':'disabled'}>${comps.length?comps.map(c=>`<option value="${esc(c.id)}" ${State.competency===c.id?'selected':''}>${esc(c.text)}${['s6_s1_it_vertiefung_1','s6_s1_recovered_6'].includes(c.id)?' (IT-Lab)':''}</option>`).join(''):'<option>Keine Kompetenzen hinterlegt</option>'}</select></div>
  <div><label>Schüler*in suchen</label><input id="pupilNameSearch" value="${esc(State.search)}" oninput="State.search=this.value;renderKeepingFocus('pupilNameSearch')" placeholder="Name suchen …"></div>
  </div>`;
- if(comps.length){
-  content+=`<fieldset class="workshopCompetencyList"><legend>Kompetenzen (${comps.length})</legend>
-  ${comps.map(c=>`<button type="button" id="workshopCompetency-${esc(c.id)}" data-competency-id="${esc(c.id)}"
-   aria-pressed="${State.competency===c.id}" onclick="State.competency=this.dataset.competencyId;renderKeepingFocus(this.id)">
-   ${esc(c.text)}${['s6_s1_it_vertiefung_1','s6_s1_recovered_6'].includes(c.id)?' (IT-Lab)':''}
-  </button>`).join('')}
-  </fieldset>`;
- }
  const comp=comps.find(c=>c.id===State.competency);
  content+=renderPupilAssessmentList(comp);shell(content);refreshSprintOneITAssessments(comp);
 }
