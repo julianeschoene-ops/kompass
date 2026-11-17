@@ -70,6 +70,7 @@ const ROOM_CATEGORIES={
 'Räume':['Lernatelier 1','Lernatelier 2','Lernatelier 3','Flexraum','Sprachenraum','Matheraum','Weitere Räume'],
 'Teamstundenpläne':['Teamstundenplan Blau','Teamstundenplan Rot','Teamstundenplan Gelb','Teamstundenplan Violett','Teamstundenplan Grün'],
 'Unterricht & Angebote':['Flexstunden Stufe 6','Kreativband Stufe 5–7','Bläserklasse Stufe 6'],
+'Lehrkräfte':['Lehrkraft Bachmair','Lehrkraft Brusda','Lehrkraft Moser','Lehrkraft Oursin','Lehrkraft Rock','Lehrkraft Schnepf','Lehrkraft Schöne','Lehrkraft Tsehaye','Lehrkraft Vietinghoff','Lehrkraft Vogt','Lehrkraft Zwilling'],
 'Aufsicht':['Pausenaufsicht']
 };
 function roomData(){return Store.data.roomOccupancy||ROOM_SEED}
@@ -113,4 +114,15 @@ function roomSave(hour,day,value){
 .roomCompactPlan .roomEditCell:hover,.roomCompactPlan .roomEditCell:focus{border-color:#9aa9c4!important;background:#fff!important}
 .roomCompactPlan .roomReadCell{font-size:13px;line-height:1.4;white-space:pre-wrap}
 @media(max-width:850px){.roomCompactPlan .roomPlanScroll{overflow-x:auto}.roomCompactPlan .roomPlanTable{min-width:800px}}
+`;document.head.appendChild(e)})();
+
+(function(){const e=document.createElement('style');e.textContent=`
+.roomCompactControls{background:#f7f8fc!important;border-color:#e7e9f1!important;box-shadow:none!important}
+.roomCompactNav .chip{border-radius:9px!important}
+.roomCompactPlan{border-radius:15px!important;box-shadow:none!important;border:1px solid #e4e8ef!important}
+.roomCompactPlan .roomPlanTable thead th{background:#e9edf6!important;color:#25344d!important}
+.roomCompactPlan .roomPlanTable tbody tr:nth-child(even) td{background:#fafbfe!important}
+.roomCompactPlan .roomPlanTable tbody td:has(.roomEditCell:focus){background:#fff!important}
+.roomCompactPlan .roomPlanTable td{border:1px solid #e8ebf1!important}
+.roomCompactPlan .roomPlanTable .roomEditCell{white-space:pre-wrap!important;overflow:hidden!important}
 `;document.head.appendChild(e)})();
