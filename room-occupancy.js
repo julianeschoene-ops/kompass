@@ -98,9 +98,10 @@ function roomOccupancy(){
  const colorMap={blau:'#dbeafe',rot:'#fee2e2',gelb:'#fef9c3',violett:'#ede9fe',gruen:'#dcfce7'};
  const teamBg=extra?.teamColor?colorMap[extra.teamColor]:null;
  const isTeam=Boolean(extra?.teamColor);
+ const isLA=/^Lernatelier [123]$/.test(roomSelected);
  const isFlexible=roomSelected==='Flexstunden Stufe 6'||roomSelected==='Kreativband Stufe 5–7'||roomSelected==='Bläserklasse Stufe 6';
  const firstLabel=extra?.label||'Stunde';
- const table='<div class="roomPlanScroll"><table class="roomPlanTable"><thead><tr><th style="width:130px;padding:12px;background:'+(teamBg||'#f1f5f9')+'">'+esc(firstLabel)+'</th>'+ROOM_DAYS.map(d=>'<th style="padding:12px;background:'+(teamBg||'#f1f5f9')+'">'+d+'</th>').join('')+'</tr></thead><tbody>'+rows.map((row,h)=>'<tr><th class="roomTime" style="background:#f8fafc">'+(extra?esc(times[h]||''):((h+1)+'. Stunde<div class="mini">'+esc(times[h]||'')+'</div>'))+'</th>'+ROOM_DAYS.map((d,i)=>{const value=String(row[i]||'');const content=editable?'<textarea aria-label="'+d+', '+(h+1)+'. Zeile" rows="'+Math.max(1,value.split("\\n").length)+'" class="roomEditCell" oninput="this.style.height=\'auto\';this.style.height=this.scrollHeight+\'px\'" onchange="roomSave('+h+','+i+',this.value)">'+esc(value)+'</textarea>':'<div class="roomReadCell">'+esc(value)+'</div>';return '<td class="roomTone-'+roomPlanTone(value)+'" style="'+(isTeam?'background:'+((h===0)?teamBg:'#fff')+';':'')+'">'+content+'</td>'}).join('')+'</tr>').join('')+'</tbody></table></div>';
+ const table='<div class="roomPlanScroll"><table class="roomPlanTable"><thead><tr><th style="width:130px;padding:12px;background:'+(teamBg||'#f1f5f9')+'">'+esc(firstLabel)+'</th>'+ROOM_DAYS.map(d=>'<th style="padding:12px;background:'+(teamBg||'#f1f5f9')+'">'+d+'</th>').join('')+'</tr></thead><tbody>'+rows.map((row,h)=>'<tr><th class="roomTime" style="background:#f8fafc">'+(extra?esc(times[h]||''):((h+1)+'. Stunde<div class="mini">'+esc(times[h]||'')+'</div>'))+'</th>'+ROOM_DAYS.map((d,i)=>{const value=String(row[i]||'');const content=editable?'<textarea aria-label="'+d+', '+(h+1)+'. Zeile" rows="'+Math.max(1,value.split("\\n").length)+'" class="roomEditCell" oninput="this.style.height=\'auto\';this.style.height=this.scrollHeight+\'px\'" onchange="roomSave('+h+','+i+',this.value)">'+esc(value)+'</textarea>':'<div class="roomReadCell">'+esc(value)+'</div>';return '<td class="roomTone-'+(isLA?'atelier':roomPlanTone(value))+'" style="'+(isTeam?'background:'+((h===0)?teamBg:'#fff')+';':'')+'">'+content+'</td>'}).join('')+'</tr>').join('')+'</tbody></table></div>';
  shell(intro+level+'<div class="roomCompactControls">'+categories+buttons+'</div><div class="card roomCompactPlan" style="'+(teamBg?'border-top:6px solid '+teamBg+';':'')+'"><h2>'+esc(roomSelected)+'</h2>'+(extra?.note?'<p class="mini">'+esc(extra.note)+'</p>':'')+table+'<p class="mini">'+(editable?'Einträge bearbeiten: Speicherung beim Verlassen des Feldes. ':'')+(isFlexible?'Längere Einträge werden vollständig angezeigt.':'')+'</p></div>');
 }
 function roomSave(hour,day,value){
@@ -140,4 +141,16 @@ function roomSave(hour,day,value){
 .roomCompactPlan .roomPlanTable tbody td.roomTone-team{background:#edf0f7!important;box-shadow:inset 4px 0 #8998b5}
 .roomCompactPlan .roomPlanTable td.roomTone-plain{background:#fff!important}
 .roomCompactPlan .roomPlanTable .roomEditCell{color:#26364d!important}
+`;document.head.appendChild(e)})();
+
+(function(){const e=document.createElement('style');e.textContent=`
+/* Lernateliers: eigenständige, zurückhaltende Raumfarben statt Fach- oder Einheitsgrün */
+.roomCompactPlan.roomLA .roomPlanTable thead th{background:#edf0f5!important;color:#34445d!important}
+.roomCompactPlan.roomLA .roomPlanTable tbody td.roomTone-atelier{background:#f7f8fb!important;box-shadow:inset 3px 0 #9caac0!important}
+.roomCompactPlan.roomLA1{border-top:5px solid #7c9ec8!important}
+.roomCompactPlan.roomLA2{border-top:5px solid #a58dbd!important}
+.roomCompactPlan.roomLA3{border-top:5px solid #c2a37c!important}
+.roomCompactPlan.roomLA1 .roomPlanTable tbody td.roomTone-atelier{background:#edf3fa!important;box-shadow:inset 3px 0 #7c9ec8!important}
+.roomCompactPlan.roomLA2 .roomPlanTable tbody td.roomTone-atelier{background:#f2edf7!important;box-shadow:inset 3px 0 #a58dbd!important}
+.roomCompactPlan.roomLA3 .roomPlanTable tbody td.roomTone-atelier{background:#f7f2ea!important;box-shadow:inset 3px 0 #c2a37c!important}
 `;document.head.appendChild(e)})();
