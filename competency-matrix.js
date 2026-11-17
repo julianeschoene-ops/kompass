@@ -1,6 +1,8 @@
 /* Read-only, shared competency matrix for core and workshop subjects. */
 const CompetencyMatrix={
  mode:'class',category:'alle',unit:'alle',competencyYear:null,pupilId:null,
+ group(c){const x=String(c.category||'').toLowerCase();if(/vokabel|wortschatz/.test(x))return 'Wortschatz / Vokabeln';if(/grammatik|grammar/.test(x))return 'Grammatik';if(/leseverstehen|reading/.test(x))return 'Leseverstehen';if(/hörverstehen|listening/.test(x))return 'Hörverstehen';if(/schreiben|writing/.test(x))return 'Schreiben';if(/sprechen|speaking/.test(x))return 'Sprechen';if(/sprachmittlung|mediation/.test(x))return 'Sprachmittlung';return c.category||'Weitere Kompetenzen'},
+ short(c){const t=String(c.text||c.title||'').replace(/^\s*(U\s*\d+\s*[·:.–-]?\s*)?(Ich kann|I can)\s+/i,'').replace(/[.!]$/,'').trim();return t.length>58?t.slice(0,55).replace(/\s+\S*$/,'')+'…':t},
  open(){this.mode='class';this.category='alle';this.unit='alle';this.pupilId=null;this.competencyYear=State.year;subjectHubToolOpen('raster')},
  competencies(){
   const subject=subjectHubSubject,core=CORE_SUBJECTS.includes(subject);
@@ -8,11 +10,11 @@ const CompetencyMatrix={
   const years=[...new Set(all.map(c=>Number(c.year)))].sort((a,b)=>a-b);
   if(!years.includes(Number(this.competencyYear)))this.competencyYear=years.includes(State.year)?State.year:years[0];
   let list=all.filter(c=>Number(c.year)===Number(this.competencyYear));
-  const cats=[...new Set(list.map(c=>c.category||'Ohne Bereich'))].sort((a,b)=>a.localeCompare(b,'de'));
+  const cats=[...new Set(list.map(c=>this.group(c)))].sort((a,b)=>a.localeCompare(b,'de'));
   const units=[...new Set(list.map(c=>c.unit||(c.sprint?'Sprint '+c.sprint:'Allgemein')))].sort((a,b)=>a.localeCompare(b,'de',{numeric:true}));
   if(this.category!=='alle'&&!cats.includes(this.category))this.category='alle';
   if(this.unit!=='alle'&&!units.includes(this.unit))this.unit='alle';
-  list=list.filter(c=>(this.category==='alle'||(c.category||'Ohne Bereich')===this.category)&&(this.unit==='alle'||(c.unit||(c.sprint?'Sprint '+c.sprint:'Allgemein'))===this.unit));
+  list=list.filter(c=>(this.category==='alle'||this.group(c)===this.category)&&(this.unit==='alle'||(c.unit||(c.sprint?'Sprint '+c.sprint:'Allgemein'))===this.unit));
   list.sort((a,b)=>String(a.unit||a.sprint||'').localeCompare(String(b.unit||b.sprint||''),'de',{numeric:true})||(a.order||0)-(b.order||0)||String(a.text).localeCompare(String(b.text),'de'));
   return {list,all,years,cats,units};
  },
@@ -24,7 +26,7 @@ const CompetencyMatrix={
  edit(cid,pid){State.competency=cid;openAssessment(cid,pid)},
  render(){
   const data=this.competencies(),pupils=this.pupils(),list=data.list;
-  const options=(arr,current)=>arr.map(v=>'<option value="'+esc(v)+'" '+(String(current)===String(v)?'selected':'')+'>'+esc(v)+'</option>').join('');
+  const options=(arr,current)=>arr.map(v=>'<option value="'+esc(v)+'" '+(String(current)===String(v)?'selected':'')+'>'+esc(v==='alle'?'Alle':v)+'</option>').join('');
   const header='<div class="schoolPageHead"><div><button class="schoolBack" onclick="subjectHubBack()">← '+esc(subjectHubSubject)+'</button><h1>'+esc(subjectHubSubject)+' · Kompetenzraster</h1><p class="mini">Alle Bewertungen auf einen Blick · bestehende KOMPASS-Daten</p></div><button class="chip" onclick="window.print()">Drucken</button></div>';
   const filters='<div class="matrixFilters"><label>Stufe der Schüler*innen<select onchange="State.year=Number(this.value);State.team=\'alle\';CompetencyMatrix.pupilId=null;render()">'+options(visibleYears(),State.year)+'</select></label><label>Kompetenzen aus Stufe<select onchange="CompetencyMatrix.competencyYear=Number(this.value);CompetencyMatrix.category=\'alle\';CompetencyMatrix.unit=\'alle\';render()">'+options(data.years,this.competencyYear)+'</select></label><label>Team<select onchange="State.team=this.value;CompetencyMatrix.pupilId=null;render()">'+options(['alle',...TEAMS],State.team)+'</select></label><label>Bereich<select onchange="CompetencyMatrix.category=this.value;render()">'+options(['alle',...data.cats],this.category)+'</select></label><label>Unit / Sprint<select onchange="CompetencyMatrix.unit=this.value;render()">'+options(['alle',...data.units],this.unit)+'</select></label></div>';
   const mode='<div class="matrixModes"><button class="chip '+(this.mode==='class'?'dark':'')+'" onclick="CompetencyMatrix.mode=\'class\';render()">Klassenraster</button><button class="chip '+(this.mode==='pupil'?'dark':'')+'" onclick="CompetencyMatrix.mode=\'pupil\';render()">Schülerraster</button></div>';
@@ -37,7 +39,7 @@ const CompetencyMatrix={
    body='<div class="matrixPupilSelect"><label>Schüler*in<select onchange="CompetencyMatrix.pupilId=this.value;render()">'+pupils.map(p=>'<option value="'+esc(p.id)+'" '+(p.id===this.pupilId?'selected':'')+'>'+esc(p.short)+' · '+esc(p.team)+'</option>').join('')+'</select></label></div>';
    if(pupil)body+='<div class="matrixPupilList">'+list.map(c=>'<div class="matrixPupilRow"><div><small>'+esc(c.category||'')+' · '+esc(c.unit||(c.sprint?'Sprint '+c.sprint:''))+'</small><div>'+esc(c.text)+'</div></div>'+this.cell(c,pupil)+'</div>').join('')+'</div>';
   }else{
-   body='<div class="matrixScroll"><table class="matrixTable"><thead><tr><th>Schüler*in</th>'+list.map((c,i)=>'<th title="'+esc(c.text)+'"><span>'+esc(c.unit||(c.sprint?'S'+c.sprint:''))+'</span><small>'+String(i+1)+'</small></th>').join('')+'<th>Bewertet</th></tr></thead><tbody>'+pupils.map(p=>{const done=list.filter(c=>this.status(c,p)!=='empty').length;return '<tr><th>'+esc(p.short)+'<small>'+esc(p.team)+'</small></th>'+list.map(c=>'<td>'+this.cell(c,p)+'</td>').join('')+'<td>'+done+'/'+list.length+'</td></tr>'}).join('')+'</tbody></table></div><div class="matrixCompetencyKey"><h3>Kompetenzen</h3>'+list.map((c,i)=>'<div><b>'+(i+1)+'. '+esc(c.unit||(c.sprint?'Sprint '+c.sprint:''))+'</b> '+esc(c.text)+'</div>').join('')+'</div>';
+   body='<div class="matrixScroll"><table class="matrixTable"><thead><tr><th>Schüler*in</th>'+list.map((c,i)=>'<th class="matrixCompetencyHeader" title="'+esc(this.group(c)+' · '+c.text)+'"><span>'+esc(this.short(c))+'</span><small>'+esc(c.unit||(c.sprint?'Sprint '+c.sprint:''))+'</small></th>').join('')+'<th>Bewertet</th></tr></thead><tbody>'+pupils.map(p=>{const done=list.filter(c=>this.status(c,p)!=='empty').length;return '<tr><th>'+esc(p.short)+'<small>'+esc(p.team)+'</small></th>'+list.map(c=>'<td>'+this.cell(c,p)+'</td>').join('')+'<td>'+done+'/'+list.length+'</td></tr>'}).join('')+'</tbody></table></div><div class="matrixCompetencyKey"><h3>Kompetenzen</h3>'+list.map((c,i)=>'<div><b>'+esc(this.group(c))+' · '+esc(c.unit||(c.sprint?'Sprint '+c.sprint:''))+'</b> '+esc(c.text)+'</div>').join('')+'</div>';
   }
   const done=pupils.reduce((n,p)=>n+list.filter(c=>this.status(c,p)!=='empty').length,0);
   return header+filters+mode+'<p class="mini">'+pupils.length+' Schüler*innen · '+list.length+' Kompetenzen · '+done+' von '+(pupils.length*list.length)+' Bewertungen eingetragen</p>'+legend+body;
