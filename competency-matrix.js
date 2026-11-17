@@ -18,7 +18,14 @@ const CompetencyMatrix={
   list.sort((a,b)=>String(a.unit||a.sprint||'').localeCompare(String(b.unit||b.sprint||''),'de',{numeric:true})||(a.order||0)-(b.order||0)||String(a.text).localeCompare(String(b.text),'de'));
   return {list,all,years,cats,units};
  },
- pupils(){return filteredPupils()},
+ pupils(){
+ const pupils=filteredPupils().slice().sort((a,b)=>String(a.last||a.short||'').localeCompare(String(b.last||b.short||''),'de')||String(a.first||'').localeCompare(String(b.first||''),'de'));
+ if(this.mode==='pupil'&&subjectHubSubject==='Englisch'&&Number(State.year)===6){
+  const id='ep_demo_juliane_2026';
+  if(Object.keys(Store.records||{}).some(k=>k.endsWith('|'+id)))pupils.unshift({id,short:'Testkind · English Practice',team:'Testprofil',isDemo:true});
+ }
+ return pupils;
+},
  status(c,p){const r=Store.records[recKey(c.id,p.id)]||{};if(['green','yellow','red'].includes(r.current))return r.current;const latest=[...(Array.isArray(r.history)?r.history:[]),...(Array.isArray(r.practiceResults)?r.practiceResults:[])].filter(h=>h&&!h.removed&&['green','yellow','red'].includes(h.value)).sort((a,b)=>String(b.at||b.date||'').localeCompare(String(a.at||a.date||'')))[0];const value=latest?.value||r.practiceLatest?.value;return ['green','yellow','red'].includes(value)?value:'empty'},
  cell(c,p){const s=this.status(c,p),r=Store.records[recKey(c.id,p.id)]||{};const conflict=typeof sharedAssessmentState==='function'&&sharedAssessmentState(r).conflict&&!sharedAssessmentAgreementValid(r);const provisional=!r.current&&s!=='empty';
   return '<button class="matrixCell matrix-'+s+'" title="'+esc(p.short+' · '+c.text+' · '+statusPlain(s)+(conflict?' · Abstimmung offen':'')+(provisional?' · aus Bewertungsverlauf (noch nicht abschließend übernommen)':''))+'" onclick="CompetencyMatrix.edit('+JSON.stringify(c.id).replace(/"/g,'&quot;')+','+JSON.stringify(p.id).replace(/"/g,'&quot;')+')">'+(conflict?'!':s==='green'?'✓':s==='yellow'?'–':s==='red'?'×':'·')+(provisional?'*':'')+'</button>';
@@ -37,11 +44,12 @@ const CompetencyMatrix={
    if(!pupils.some(p=>p.id===this.pupilId))this.pupilId=pupils[0]?.id||null;
    const pupil=pupils.find(p=>p.id===this.pupilId);
    body='<div class="matrixPupilSelect"><label>Schüler*in<select onchange="CompetencyMatrix.pupilId=this.value;render()">'+pupils.map(p=>'<option value="'+esc(p.id)+'" '+(p.id===this.pupilId?'selected':'')+'>'+esc(p.short)+' · '+esc(p.team)+'</option>').join('')+'</select></label></div>';
+   if(pupil&&pupil.isDemo)body+='<p class="mini">Testprofil: Ergebnisse aus English Practice. Keine abschließenden Lehrkraftbewertungen; nicht in der Klassenstatistik enthalten.</p>';
    if(pupil)body+='<div class="matrixPupilList">'+list.map(c=>'<div class="matrixPupilRow"><div><small>'+esc(c.category||'')+' · '+esc(c.unit||(c.sprint?'Sprint '+c.sprint:''))+'</small><div>'+esc(c.text)+'</div></div>'+this.cell(c,pupil)+'</div>').join('')+'</div>';
   }else{
    body='<div class="matrixScroll"><table class="matrixTable"><thead><tr><th>Schüler*in</th>'+list.map((c,i)=>'<th class="matrixCompetencyHeader" title="'+esc(this.group(c)+' · '+c.text)+'"><span>'+esc(this.short(c))+'</span><small>'+esc(c.unit||(c.sprint?'Sprint '+c.sprint:''))+'</small></th>').join('')+'<th>Bewertet</th></tr></thead><tbody>'+pupils.map(p=>{const done=list.filter(c=>this.status(c,p)!=='empty').length;return '<tr><th>'+esc(p.short)+'<small>'+esc(p.team)+'</small></th>'+list.map(c=>'<td>'+this.cell(c,p)+'</td>').join('')+'<td>'+done+'/'+list.length+'</td></tr>'}).join('')+'</tbody></table></div>';
   }
-  const done=pupils.reduce((n,p)=>n+list.filter(c=>this.status(c,p)!=='empty').length,0);
-  return header+filters+mode+'<p class="mini">'+pupils.length+' Schüler*innen · '+list.length+' Kompetenzen · '+done+' von '+(pupils.length*list.length)+' Bewertungen eingetragen</p>'+legend+body;
+  const realPupils=pupils.filter(p=>!p.isDemo);const done=realPupils.reduce((n,p)=>n+list.filter(c=>this.status(c,p)!=='empty').length,0);
+  return header+filters+mode+'<p class="mini">'+realPupils.length+' Schüler*innen · '+list.length+' Kompetenzen · '+done+' von '+(realPupils.length*list.length)+' Bewertungen eingetragen</p>'+legend+body;
  }
 };
