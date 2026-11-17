@@ -36,77 +36,77 @@ Object.assign(EXTRA_PLANS,{
     ],
     "teamColor": "blau",
     "rows": [
-      [
-        "Ankommen (Oursin)",
-        "Ankommen (Rock)",
-        "Ankommen (Rock) / Religion – Gronbach / LA",
-        "Ankommen (Rock)",
-        "Ankommen (alle Lerncoaches)"
-      ],
-      [
-        "LA",
-        "Deutsch – Oursin / Sprachenraum",
-        "Religion – Gronbach / Matheraum / LA",
-        "LA",
-        "LA"
-      ],
-      [
-        "Englisch – Rock / Flexraum",
-        "Mathe – Bay / Matheraum",
-        "LA",
-        "Mathe – Bay / Matheraum",
-        "Englisch – Rock / Flexraum"
-      ],
-      [
-        "TS Blau / 10a/b",
-        "Franz. 1 – Seyllan / Matheraum / LA",
-        "Deutsch – Oursin / Sprachenraum",
-        "LA",
-        "LA"
-      ],
-      [
-        "Kreativband / LA",
-        "Franz. 1 – Seyllan / Matheraum / LA",
-        "Kreativband / LA",
-        "Chor / Franz. 1 – Seyllan / Matheraum / Kreativband / LA",
-        "Kreativband / LA"
-      ],
-      [
-        "Bläserklasse / Kreativband / LA",
-        "Kreativband / LA",
-        "Kreativband / LA",
-        "—",
-        "Assembly"
-      ],
-      [
-        "—",
-        "—",
-        "—",
-        "Werkstatt",
-        "—"
-      ],
-      [
-        "Werkstatt",
-        "Werkstatt",
-        "",
-        "Werkstatt",
-        ""
-      ],
-      [
-        "Werkstatt",
-        "Werkstatt",
-        "",
-        "Werkstatt",
-        ""
-      ],
-      [
-        "",
-        "",
-        "",
-        "",
-        ""
-      ]
-    ],
+  [
+    "Ankommen · LA",
+    "Ankommen · LA",
+    "Ankommen · LA / Religion – Gronbach",
+    "Ankommen · LA",
+    "Ankommen · LA"
+  ],
+  [
+    "LA",
+    "Deutsch – Oursin · Sprachenraum",
+    "Religion – Gronbach · Matheraum / LA",
+    "LA",
+    "LA"
+  ],
+  [
+    "Englisch – Rock · Flexraum",
+    "Mathe – Bay · Matheraum",
+    "LA",
+    "Mathe – Bay · Matheraum",
+    "Englisch – Rock · Flexraum"
+  ],
+  [
+    "Teamstunde Blau · 10a/b / sonst LA",
+    "Französisch – Seyllan · Matheraum / LA",
+    "Deutsch – Oursin · Sprachenraum",
+    "LA",
+    "LA"
+  ],
+  [
+    "Kreativband / LA",
+    "Französisch-LWL · LA",
+    "Kreativband / LA",
+    "Chor / Französisch · Flexraum / Kreativband / LA",
+    "Kreativband / LA"
+  ],
+  [
+    "Bläserklasse / Kreativband / LA",
+    "Kreativband / LA",
+    "Kreativband / LA",
+    "",
+    "Assembly"
+  ],
+  [
+    "",
+    "",
+    "",
+    "Werkstatt",
+    ""
+  ],
+  [
+    "Werkstatt",
+    "Werkstatt",
+    "",
+    "Werkstatt",
+    ""
+  ],
+  [
+    "Werkstatt",
+    "Werkstatt",
+    "",
+    "Werkstatt",
+    ""
+  ],
+  [
+    "",
+    "",
+    "",
+    "",
+    ""
+  ]
+],
     "note": "Teamstundenplan Stufe 6 · Stand 27.09.2026"
   },
   "Teamstundenplan Rot": {
@@ -125,77 +125,77 @@ Object.assign(EXTRA_PLANS,{
     ],
     "teamColor": "rot",
     "rows": [
-      [
-        "Ankommen (Zwilling)",
-        "Ankommen (Moser)",
-        "Ankommen (Zwilling)",
-        "Ankommen (Moser)",
-        "Ankommen (Zwilling)"
-      ],
-      [
-        "Deutsch – Brusda / Sprachenraum",
-        "Mathe – Moser / Matheraum",
-        "Teamstunde rot / Nawi",
-        "Mathe – Moser / Matheraum",
-        "LA"
-      ],
-      [
-        "LA",
-        "LA",
-        "Religion – Gronbach / Matheraum / LA",
-        "LA",
-        "Englisch – Zwilling / Sprachenraum"
-      ],
-      [
-        "LA",
-        "Englisch – Zwilling / Sprachenraum",
-        "Religion – Gronbach / Matheraum / LA",
-        "Deutsch – Brusda / Sprachenraum",
-        "Franz. 2 – May / Sprachenraum / LA"
-      ],
-      [
-        "Kreativband / LA",
-        "Franz. 2 – May / Sprachenraum / Kreativband / LA",
-        "Kreativband / LA",
-        "Chor / Kreativband / LA",
-        "Kreativband / LA"
-      ],
-      [
-        "Bläserklasse / Kreativband / LA",
-        "Franz. 2 – May / Sprachenraum / Kreativband / LA",
-        "Kreativband / LA",
-        "—",
-        "Assembly"
-      ],
-      [
-        "—",
-        "—",
-        "—",
-        "Werkstatt",
-        "—"
-      ],
-      [
-        "Werkstatt",
-        "Werkstatt",
-        "",
-        "Werkstatt",
-        ""
-      ],
-      [
-        "Werkstatt",
-        "Werkstatt",
-        "",
-        "Werkstatt",
-        ""
-      ],
-      [
-        "",
-        "",
-        "",
-        "",
-        ""
-      ]
-    ],
+  [
+    "Ankommen · LA",
+    "Ankommen · LA",
+    "Ankommen · LA",
+    "Ankommen · LA",
+    "Ankommen · LA"
+  ],
+  [
+    "Deutsch – Brusda · Sprachenraum",
+    "Mathe – Moser · Matheraum",
+    "Teamstunde Rot · Nawi / sonst LA",
+    "Mathe – Moser · Matheraum",
+    "LA"
+  ],
+  [
+    "LA",
+    "LA",
+    "Religion – Gronbach · Matheraum / LA",
+    "LA",
+    "Englisch – Zwilling · Sprachenraum"
+  ],
+  [
+    "LA",
+    "Englisch – Zwilling · Sprachenraum",
+    "Religion – Gronbach · Matheraum / LA",
+    "Deutsch – Brusda · Sprachenraum",
+    "Französisch – May fällt aus / LA"
+  ],
+  [
+    "Kreativband / LA",
+    "Französisch – Seyllan · Matheraum / Kreativband / LA",
+    "Kreativband / LA",
+    "Chor / Kreativband / LA",
+    "Kreativband / LA"
+  ],
+  [
+    "Bläserklasse / Kreativband / LA",
+    "Französisch – May fällt aus / Kreativband / LA",
+    "Kreativband / LA",
+    "",
+    "Assembly"
+  ],
+  [
+    "",
+    "",
+    "",
+    "Werkstatt",
+    ""
+  ],
+  [
+    "Werkstatt",
+    "Werkstatt",
+    "",
+    "Werkstatt",
+    ""
+  ],
+  [
+    "Werkstatt",
+    "Werkstatt",
+    "",
+    "Werkstatt",
+    ""
+  ],
+  [
+    "",
+    "",
+    "",
+    "",
+    ""
+  ]
+],
     "note": "Teamstundenplan Stufe 6 · Stand 27.09.2026"
   },
   "Teamstundenplan Gelb": {
@@ -214,77 +214,77 @@ Object.assign(EXTRA_PLANS,{
     ],
     "teamColor": "gelb",
     "rows": [
-      [
-        "Ankommen (Bachmair)",
-        "Ankommen (Bachmair)",
-        "Ankommen (Bachmair)",
-        "Ankommen (Bachmair)",
-        "Ankommen (Bachmair)"
-      ],
-      [
-        "Teamstunde Gelb / 10a/b",
-        "LA",
-        "LA",
-        "Deutsch – Bachmair / Sprachenraum",
-        "LA"
-      ],
-      [
-        "Deutsch – Bachmair / Sprachenraum",
-        "Mathe – Bachmair / Flexraum",
-        "Englisch – Tsehaye / Sprachenraum",
-        "LA",
-        "LA"
-      ],
-      [
-        "Englisch – Tsehaye / Sprachenraum",
-        "Franz. 1 – Seyllan / Matheraum / LA",
-        "LA",
-        "Mathe – Bachmair / Matheraum",
-        "LA"
-      ],
-      [
-        "Kreativband / LA",
-        "Franz. 1 – Seyllan / Matheraum / LA",
-        "Religion – Gronbach / Matheraum / Kreativband / LA",
-        "Chor / Franz. 1 – Seyllan / Matheraum / Kreativband / LA",
-        "Kreativband / LA"
-      ],
-      [
-        "Bläserklasse / Kreativband / LA",
-        "Kreativband / LA",
-        "Religion – Gronbach / Kreativband / LA",
-        "—",
-        "Assembly"
-      ],
-      [
-        "—",
-        "—",
-        "—",
-        "Werkstatt",
-        "—"
-      ],
-      [
-        "Werkstatt",
-        "Werkstatt",
-        "",
-        "Werkstatt",
-        ""
-      ],
-      [
-        "Werkstatt",
-        "Werkstatt",
-        "",
-        "Werkstatt",
-        ""
-      ],
-      [
-        "",
-        "",
-        "",
-        "",
-        ""
-      ]
-    ],
+  [
+    "Ankommen · LA",
+    "Ankommen · LA",
+    "Ankommen · LA",
+    "Ankommen · LA",
+    "Ankommen · LA"
+  ],
+  [
+    "Teamstunde Gelb · 10a/b / sonst LA",
+    "LA",
+    "LA",
+    "Deutsch – Bachmair · Sprachenraum",
+    "LA"
+  ],
+  [
+    "Deutsch – Bachmair · Sprachenraum",
+    "Mathe – Bachmair · Flexraum",
+    "Englisch – Tsehaye · Sprachenraum",
+    "LA",
+    "LA"
+  ],
+  [
+    "Englisch – Tsehaye · Sprachenraum",
+    "Französisch – Seyllan · Matheraum / LA",
+    "LA",
+    "Mathe – Bachmair · Matheraum",
+    "LA"
+  ],
+  [
+    "Kreativband / LA",
+    "Französisch-LWL · LA",
+    "Religion – Gronbach · Matheraum / Kreativband / LA",
+    "Chor / Französisch · Flexraum / Kreativband / LA",
+    "Kreativband / LA"
+  ],
+  [
+    "Bläserklasse / Kreativband / LA",
+    "Kreativband / LA",
+    "Religion – Gronbach / Kreativband / LA",
+    "",
+    "Assembly"
+  ],
+  [
+    "",
+    "",
+    "",
+    "Werkstatt",
+    ""
+  ],
+  [
+    "Werkstatt",
+    "Werkstatt",
+    "",
+    "Werkstatt",
+    ""
+  ],
+  [
+    "Werkstatt",
+    "Werkstatt",
+    "",
+    "Werkstatt",
+    ""
+  ],
+  [
+    "",
+    "",
+    "",
+    "",
+    ""
+  ]
+],
     "note": "Teamstundenplan Stufe 6 · Stand 27.09.2026"
   },
   "Teamstundenplan Violett": {
@@ -303,77 +303,77 @@ Object.assign(EXTRA_PLANS,{
     ],
     "teamColor": "violett",
     "rows": [
-      [
-        "Ankommen (Schöne, Viet.)",
-        "Ankommen (Brusda)",
-        "Ankommen (Schöne) / Religion – Gronbach / LA",
-        "Ankommen (Brusda)",
-        "Ankommen (Brusda)"
-      ],
-      [
-        "Mathe – Vietinghoff / Matheraum",
-        "LA",
-        "Religion – Gronbach / Matheraum / LA",
-        "LA",
-        "LA"
-      ],
-      [
-        "LA",
-        "Deutsch – Brusda / Sprachenraum",
-        "Teamstunde violett / Flexraum / LA",
-        "Deutsch – Brusda / Sprachenraum",
-        "LA"
-      ],
-      [
-        "Englisch – Schöne / Flexraum",
-        "Franz. 1 – Seyllan / Matheraum / LA",
-        "LA",
-        "Englisch – Schöne / Flexraum",
-        "Mathe – Vietinghoff / Matheraum"
-      ],
-      [
-        "Kreativband / LA",
-        "Franz. 1 – Seyllan / Matheraum / LA",
-        "Kreativband / LA",
-        "Chor / Franz. 1 – Seyllan / Matheraum / Kreativband / LA",
-        "Kreativband / LA"
-      ],
-      [
-        "Bläserklasse / Kreativband / LA",
-        "Kreativband / LA",
-        "Kreativband / LA",
-        "—",
-        "Assembly"
-      ],
-      [
-        "—",
-        "—",
-        "—",
-        "Werkstatt",
-        "—"
-      ],
-      [
-        "Werkstatt",
-        "Werkstatt",
-        "",
-        "Werkstatt",
-        ""
-      ],
-      [
-        "Werkstatt",
-        "Werkstatt",
-        "",
-        "Werkstatt",
-        ""
-      ],
-      [
-        "",
-        "",
-        "",
-        "",
-        ""
-      ]
-    ],
+  [
+    "Ankommen · LA",
+    "Ankommen · LA",
+    "Ankommen · LA / Religion – Gronbach",
+    "Ankommen · LA",
+    "Ankommen · LA"
+  ],
+  [
+    "Mathe – Vietinghoff · Matheraum",
+    "LA",
+    "Religion – Gronbach · Matheraum / LA",
+    "LA",
+    "Englisch – Schöne · Flexraum"
+  ],
+  [
+    "LA",
+    "Deutsch – Brusda · Sprachenraum",
+    "Teamstunde Violett · Flexraum / sonst LA",
+    "Deutsch – Brusda · Sprachenraum",
+    "LA"
+  ],
+  [
+    "Englisch – Schöne · Flexraum",
+    "Französisch – Seyllan · Matheraum / LA",
+    "LA",
+    "LA",
+    "Mathe – Vietinghoff · Matheraum"
+  ],
+  [
+    "Kreativband / LA",
+    "Französisch-LWL · LA",
+    "Kreativband / LA",
+    "Chor / Französisch · Flexraum / Kreativband / LA",
+    "Kreativband / LA"
+  ],
+  [
+    "Bläserklasse / Kreativband / LA",
+    "Kreativband / LA",
+    "Kreativband / LA",
+    "",
+    "Assembly"
+  ],
+  [
+    "",
+    "",
+    "",
+    "Werkstatt",
+    ""
+  ],
+  [
+    "Werkstatt",
+    "Werkstatt",
+    "",
+    "Werkstatt",
+    ""
+  ],
+  [
+    "Werkstatt",
+    "Werkstatt",
+    "",
+    "Werkstatt",
+    ""
+  ],
+  [
+    "",
+    "",
+    "",
+    "",
+    ""
+  ]
+],
     "note": "Teamstundenplan Stufe 6 · Stand 27.09.2026"
   },
   "Teamstundenplan Grün": {
@@ -392,77 +392,77 @@ Object.assign(EXTRA_PLANS,{
     ],
     "teamColor": "gruen",
     "rows": [
-      [
-        "Ankommen (Vogt)",
-        "Ankommen (Schnepf)",
-        "Ankommen (Vogt)",
-        "Ankommen (Vogt)",
-        "Ankommen (Schnepf)"
-      ],
-      [
-        "Deutsch – Vogt / Flexraum",
-        "Teamstunde / Nawi",
-        "LA",
-        "Englisch – Rock / Flexraum",
-        "LA"
-      ],
-      [
-        "Mathe – Schnepf / Matheraum",
-        "LA",
-        "Religion – Gronbach / Matheraum / LA",
-        "Deutsch – Vogt / Flexraum",
-        "Mathe – Schnepf / Matheraum"
-      ],
-      [
-        "LA",
-        "Englisch – Rock / Flexraum",
-        "Religion – Gronbach / Matheraum / LA",
-        "LA",
-        "Franz. 2 – May / Sprachenraum / LA"
-      ],
-      [
-        "Kreativband / LA",
-        "Franz. 2 – May / Sprachenraum / Kreativband / LA",
-        "Kreativband / LA",
-        "Chor / Kreativband / LA",
-        "Kreativband / LA"
-      ],
-      [
-        "Bläserklasse / Kreativband / LA",
-        "Franz. 2 – May / Sprachenraum / Kreativband / LA",
-        "Kreativband / LA",
-        "—",
-        "Assembly"
-      ],
-      [
-        "—",
-        "—",
-        "—",
-        "Werkstatt",
-        "—"
-      ],
-      [
-        "Werkstatt",
-        "Werkstatt",
-        "",
-        "Werkstatt",
-        ""
-      ],
-      [
-        "Werkstatt",
-        "Werkstatt",
-        "",
-        "Werkstatt",
-        ""
-      ],
-      [
-        "",
-        "",
-        "",
-        "",
-        ""
-      ]
-    ],
+  [
+    "Ankommen · LA",
+    "Ankommen · LA",
+    "Ankommen · LA",
+    "Ankommen · LA",
+    "Ankommen · LA"
+  ],
+  [
+    "Deutsch – Vogt · Flexraum",
+    "Teamstunde Grün · Nawi / sonst LA",
+    "LA",
+    "Englisch – Rock · Flexraum",
+    "LA"
+  ],
+  [
+    "Mathe – Schnepf · Matheraum",
+    "LA",
+    "Religion – Gronbach · Matheraum / LA",
+    "Deutsch – Vogt · Flexraum",
+    "Mathe – Schnepf · Matheraum"
+  ],
+  [
+    "LA",
+    "Englisch – Rock · Flexraum",
+    "Religion – Gronbach · Matheraum / LA",
+    "Französisch – Seyllan · Flexraum / LA",
+    "Französisch – May fällt aus / LA"
+  ],
+  [
+    "Kreativband / LA",
+    "Französisch – Seyllan · Matheraum / Kreativband / LA",
+    "Kreativband / LA",
+    "Chor / Kreativband / LA",
+    "Kreativband / LA"
+  ],
+  [
+    "Bläserklasse / Kreativband / LA",
+    "Französisch – May fällt aus / Kreativband / LA",
+    "Kreativband / LA",
+    "",
+    "Assembly"
+  ],
+  [
+    "",
+    "",
+    "",
+    "Werkstatt",
+    ""
+  ],
+  [
+    "Werkstatt",
+    "Werkstatt",
+    "",
+    "Werkstatt",
+    ""
+  ],
+  [
+    "Werkstatt",
+    "Werkstatt",
+    "",
+    "Werkstatt",
+    ""
+  ],
+  [
+    "",
+    "",
+    "",
+    "",
+    ""
+  ]
+],
     "note": "Teamstundenplan Stufe 6 · Stand 27.09.2026"
   }
 });
