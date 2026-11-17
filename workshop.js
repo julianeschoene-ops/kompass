@@ -1,4 +1,4 @@
-let coreCategory='alle'; let coreUnit='alle'; let coreCompetencyYear=null; let workshopPhase='alle'; let workshopAssignedOnly=true;
+let coreCategory='alle'; let coreUnit='alle'; let coreCompetencyYear=null; let workshopAssignedOnly=true;
 function competencyList(type,subject){const list=Store.competencies.filter(c=>c.year===State.year&&c.type===type&&c.subject===subject&&(type!=='workshop'||c.sprint===State.sprint));if(type==='workshop'&&State.year===7&&State.sprint===1&&subject==='WBS'&&!list.some(c=>c.id==='wbs7_s1_product_g_20261024'))list.push({id:'wbs7_s1_product_g_20261024',year:7,type:'workshop',subject:'WBS',sprint:1,phase:'base',category:'Produkt',text:'Ich kann ein Produkt unter wirtschaftlichen Gesichtspunkten beschreiben.',level:'G',order:10,includeInLeb:true});const itSprintOrder=type==='workshop'&&State.year===6&&State.sprint===1&&subject==='Informatik & Medienbildung'?{
  's6_s1_recovered_it_base':4.5,
  's6_s1_recovered_5':5,
@@ -24,19 +24,21 @@ function workshop(){
  restoreMissingSprintOneCompetencies();if(State.year===6&&State.sprint===1){const s=Store.sprints.find(x=>Number(x.year)===6&&Number(x.number)===1);if(s){s.name='Vom Korn zum Brot';s.projectId='project_bread';}} const subjects=WORKSHOP_SUBJECTS; if(!subjects.includes(State.subject))State.subject=subjects[0];
  if(State.year===7&&State.sprint===1&&State.subject==='WBS'&&!Store.competencies.some(c=>c.id==='wbs7_s1_product_g_20261024'))Store.competencies.push({id:'wbs7_s1_product_g_20261024',year:7,type:'workshop',subject:'WBS',sprint:1,phase:'base',category:'Produkt',text:'Ich kann ein Produkt unter wirtschaftlichen Gesichtspunkten beschreiben.',level:'G',order:10,includeInLeb:true}); const project=currentSprintProject(); const comps=competencyList('workshop',State.subject); if(!State.competency||!comps.some(c=>c.id===State.competency))State.competency=comps[0]?.id||null;
  let content=header(State.subject+' · Bewertungen');
- const phases=[...new Set(comps.map(c=>c.phase).filter(Boolean))];
- if(workshopPhase!=='alle'&&!phases.includes(workshopPhase))workshopPhase='alle';
- const phaseComps=comps.filter(c=>workshopPhase==='alle'||c.phase===workshopPhase);
- if(!phaseComps.some(c=>c.id===State.competency))State.competency=phaseComps[0]?.id||null;
  content+=`<div class="toolbar formgrid workshopFilters">
  <div><label>Jahrgang</label><select onchange="State.year=Number(this.value);State.competency=null;State.search='';State.team='alle';render()">${visibleYears().map(y=>`<option value="${y}" ${State.year===y?'selected':''}>Jahrgang ${y}</option>`).join('')}</select></div>
  <div><label>${State.year===7?'Thema':'Sprint / Thema'}</label><select onchange="State.sprint=Number(this.value);State.competency=null;render()">${[1,2,3,4,5].map(n=>`<option value="${n}" ${State.sprint===n?'selected':''}>Sprint ${n}: ${esc(sprintName(n))}</option>`).join('')}</select></div>
- ${phases.length>1?`<div><label>Kompetenzbereich</label><select onchange="workshopPhase=this.value;State.competency=null;render()"><option value="alle" ${workshopPhase==='alle'?'selected':''}>Alle Kompetenzen</option><option value="base" ${workshopPhase==='base'?'selected':''}>Basis</option><option value="lab" ${workshopPhase==='lab'?'selected':''}>Vertiefung</option></select></div>`:''}
- <div class="workshopCompetencySelect"><label>Kompetenz (${phaseComps.length} verfügbar)</label><select onchange="State.competency=this.value;render()">${phaseComps.map(c=>`<option value="${c.id}" ${State.competency===c.id?'selected':''}>${esc(c.text)}${['s6_s1_it_vertiefung_1','s6_s1_recovered_6'].includes(c.id)?' (IT-Lab)':''}</option>`).join('')}</select></div>
  <div><label>Team</label><select onchange="State.team=this.value;render()"><option value="alle">alle Teams</option>${TEAMS.map(t=>`<option ${State.team===t?'selected':''}>${t}</option>`).join('')}</select></div>
  <div><label>Schüler*in suchen</label><input id="pupilNameSearch" value="${esc(State.search)}" oninput="State.search=this.value;renderKeepingFocus('pupilNameSearch')" placeholder="Name suchen …"></div>
  </div>`;
- const comp=Store.competencies.find(c=>c.id===State.competency)||phaseComps[0];
+ if(comps.length){
+  content+=`<fieldset class="workshopCompetencyList"><legend>Kompetenzen (${comps.length})</legend>
+  ${comps.map(c=>`<button type="button" id="workshopCompetency-${esc(c.id)}" data-competency-id="${esc(c.id)}"
+   aria-pressed="${State.competency===c.id}" onclick="State.competency=this.dataset.competencyId;renderKeepingFocus(this.id)">
+   ${esc(c.text)}${['s6_s1_it_vertiefung_1','s6_s1_recovered_6'].includes(c.id)?' (IT-Lab)':''}
+  </button>`).join('')}
+  </fieldset>`;
+ }
+ const comp=comps.find(c=>c.id===State.competency);
  content+=renderPupilAssessmentList(comp);shell(content);refreshSprintOneITAssessments(comp);
 }
 function coreSubjects(){
