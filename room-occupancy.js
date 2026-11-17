@@ -76,22 +76,46 @@ const ROOM_CATEGORIES={
 function roomData(){return Store.data.roomOccupancy||ROOM_SEED}
 function roomSelectCategory(category){roomCategory=category;roomSelected=ROOM_CATEGORIES[category][0];render()}
 function roomSelectPlan(plan){roomSelected=plan;render()}
-function roomOccupancy(){
- const editable=Auth.isAdmin();
- const intro=header('Wochenpläne · Stufe 6','Räume, Teams und Angebote auf einen Blick');
- const level='';
- if(!roomLevelOpen){shell(intro+level);return;}
- const categories='<div class="toolbar roomCompactNav" style="flex-wrap:wrap;gap:6px">'+Object.keys(ROOM_CATEGORIES).map(c=>'<button class="chip '+(roomCategory===c?'dark':'')+'" onclick="roomSelectCategory('+JSON.stringify(c).replace(/"/g,'&quot;')+')">'+esc(c)+'</button>').join('')+'</div>';
- const rooms=ROOM_CATEGORIES[roomCategory],all=roomData(),extra=EXTRA_PLANS[roomSelected],rows=all[roomSelected]||extra?.rows||ROOM_SEED[roomSelected]||[],times=extra?.times||ROOM_TIMES;
- const buttons='<div class="toolbar roomCompactNav" style="flex-wrap:wrap;gap:6px">'+rooms.map(r=>'<button class="chip '+(r===roomSelected?'dark':'')+'" onclick="roomSelectPlan('+JSON.stringify(r).replace(/"/g,'&quot;')+')">'+esc(r)+'</button>').join('')+'</div>';
- const colorMap={blau:'#dbeafe',rot:'#fee2e2',gelb:'#fef9c3',violett:'#ede9fe',gruen:'#dcfce7'};
- const teamBg=extra?.teamColor?colorMap[extra.teamColor]:null;
- const isTeam=Boolean(extra?.teamColor);
- const isFlexible=roomSelected==='Flexstunden Stufe 6'||roomSelected==='Kreativband Stufe 5–7'||roomSelected==='Bläserklasse Stufe 6';
- const firstLabel=extra?.label||'Stunde';
- const table='<div class="roomPlanScroll"><table class="roomPlanTable"><thead><tr><th style="width:130px;padding:12px;background:'+(teamBg||'#f1f5f9')+'">'+esc(firstLabel)+'</th>'+ROOM_DAYS.map(d=>'<th style="padding:12px;background:'+(teamBg||'#f1f5f9')+'">'+d+'</th>').join('')+'</tr></thead><tbody>'+rows.map((row,h)=>'<tr><th class="roomTime" style="background:#f8fafc">'+(extra?esc(times[h]||''):((h+1)+'. Stunde<div class="mini">'+esc(times[h]||'')+'</div>'))+'</th>'+ROOM_DAYS.map((d,i)=>{const value=String(row[i]||'');const content=editable?'<textarea aria-label="'+d+', '+(h+1)+'. Zeile" rows="'+Math.max(1,value.split("\\n").length)+'" class="roomEditCell" oninput="this.style.height=\'auto\';this.style.height=this.scrollHeight+\'px\'" onchange="roomSave('+h+','+i+',this.value)">'+esc(value)+'</textarea>':'<div class="roomReadCell">'+esc(value)+'</div>';return '<td style="'+(isTeam?'background:'+((h===0)?teamBg:'#fff')+';':'')+'">'+content+'</td>'}).join('')+'</tr>').join('')+'</tbody></table></div>';
- shell(intro+level+'<div class="roomCompactControls">'+categories+buttons+'</div><div class="card roomCompactPlan" style="'+(teamBg?'border-top:6px solid '+teamBg+';':'')+'"><h2>'+esc(roomSelected)+'</h2>'+(extra?.note?'<p class="mini">'+esc(extra.note)+'</p>':'')+table+'<p class="mini">'+(editable?'Einträge bearbeiten: Speicherung beim Verlassen des Feldes. ':'')+(isFlexible?'Längere Einträge werden vollständig angezeigt.':'')+'</p></div>');
+let roomEditMode=false;
+function roomPlanType(value){
+ const v=String(value||'').toLowerCase();
+ if(!v.trim())return 'empty';
+ if(/kreativband|atelier|labor|studio|schulgarten|sportangebot|sportspiele|technikwerkstatt|eigenständiges üben|heimbacher/.test(v))return 'creative';
+ if(/teamstunde|teamzeit|assembly/.test(v))return 'teamtime';
+ if(/werkstatt|themenfeld/.test(v))return 'workshop';
+ if(/flex|lwl|quop|flink/.test(v))return 'flex';
+ if(/englisch|english/.test(v))return 'english';
+ if(/mathe|rechnen|geometrie/.test(v))return 'math';
+ if(/deutsch|schreiben/.test(v))return 'german';
+ if(/religion|französisch|franz\./.test(v))return 'subject';
+ if(/ankommen/.test(v))return 'arrival';
+ if(/mitbetreuung|lernatelier|^la[ 123]|^la$/.test(v))return 'atelier';
+ return 'neutral';
 }
+function roomPlanCell(value,editable,h,d){
+ const lines=String(value||'').split('\\n').filter(x=>x.trim());
+ const content=lines.length?lines.map(line=>{
+  const type=roomPlanType(line);
+  const parts=line.split(/\\s*[·–]\\s*/);
+  const title=parts.shift()||line;
+  return '<div class="roomLesson '+type+'"><strong>'+esc(title)+'</strong>'+(parts.length?'<span>'+esc(parts.join(' · '))+'</span>':'')+'</div>';
+ }).join(''):'<span class="roomEmptySlot">—</span>';
+ if(!editable)return '<div class="roomLessonStack">'+content+'</div>';
+ return '<div class="roomLessonStack">'+content+'</div><textarea class="roomEditCell roomEditField" aria-label="'+ROOM_DAYS[d]+', '+(h+1)+'. Stunde" onchange="roomSave('+h+','+d+',this.value)" rows="'+Math.max(2,lines.length+1)+'">'+esc(value)+'</textarea>';
+}
+function roomOccupancy(){
+ const editable=Auth.isAdmin(),extra=EXTRA_PLANS[roomSelected],all=roomData(),rows=all[roomSelected]||extra?.rows||ROOM_SEED[roomSelected]||[],times=extra?.times||ROOM_TIMES;
+ const names={'Teamstundenpläne':'Teams','Unterricht & Angebote':'Angebote','Lehrkräfte':'Lehrkräfte','Aufsicht':'Aufsicht','Räume':'Räume'};
+ const intro=header('Wochenpläne · Stufe 6','Stundenpläne, Raumbelegung und Angebote');
+ const categories='<nav class="roomPlanCategories" aria-label="Planbereiche">'+Object.keys(ROOM_CATEGORIES).map(c=>'<button class="roomPlanTab '+(roomCategory===c?'active':'')+'" onclick="roomSelectCategory('+JSON.stringify(c).replace(/"/g,'&quot;')+')">'+esc(names[c]||c)+'</button>').join('')+'</nav>';
+ const options='<div class="roomPlanOptions">'+ROOM_CATEGORIES[roomCategory].map(r=>'<button class="roomPlanOption '+(r===roomSelected?'active':'')+'" onclick="roomSelectPlan('+JSON.stringify(r).replace(/"/g,'&quot;')+')">'+esc(r.replace('Teamstundenplan ','').replace('Lehrkraft ',''))+'</button>').join('')+'</div>';
+ const team=extra?.teamColor||({'Teamstundenplan Blau':'blau','Teamstundenplan Rot':'rot','Teamstundenplan Gelb':'gelb','Teamstundenplan Violett':'violett','Teamstundenplan Grün':'gruen'}[roomSelected])||'';
+ const heading=roomSelected.replace('Teamstundenplan ','Team ').replace('Lehrkraft ','Stundenplan · ');
+ const action=editable?'<button class="roomEditToggle" onclick="roomEditMode=!roomEditMode;render()">'+(roomEditMode?'✓ Bearbeitung beenden':'✎ Plan bearbeiten')+'</button>':'';
+ const grid='<div class="roomScheduleScroll"><table class="roomSchedule"><thead><tr><th class="roomHourHead">Stunde</th>'+ROOM_DAYS.map(d=>'<th>'+d+'</th>').join('')+'</tr></thead><tbody>'+rows.map((row,h)=>'<tr><th class="roomHour"><b>'+(h+1)+'.</b><small>'+esc((times[h]||'').replace(/^\\d+\\. Stunde\\s*[·-]?\\s*/,''))+'</small></th>'+ROOM_DAYS.map((d,i)=>'<td>'+roomPlanCell(row[i],editable&&roomEditMode,h,i)+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>';
+ shell(intro+'<div class="roomPlanner"><div class="roomPlannerNav">'+categories+options+'</div><section class="roomPlannerSheet '+(team?'roomTeam-'+team:'')+' '+(roomEditMode?'editing':'')+'"><div class="roomPlannerTitle"><div><h2>'+esc(heading)+'</h2>'+(extra?.note?'<p>'+esc(extra.note)+'</p>':'')+'</div>'+action+'</div>'+grid+'</section></div>');
+}
+
 function roomSave(hour,day,value){
  if(!Auth.isAdmin())return;
  if(!Store.data.roomOccupancy)Store.data.roomOccupancy=JSON.parse(JSON.stringify(ROOM_SEED));
@@ -126,3 +150,35 @@ function roomSave(hour,day,value){
 .roomCompactPlan .roomPlanTable td{border:1px solid #e8ebf1!important}
 .roomCompactPlan .roomPlanTable .roomEditCell{white-space:pre-wrap!important;overflow:hidden!important}
 `;document.head.appendChild(e)})();
+
+(function(){
+ const e=document.createElement('style');e.textContent=`
+.roomPlanner{display:grid;gap:14px}.roomPlannerNav{display:grid;gap:10px}
+.roomPlanCategories{display:flex;gap:6px;flex-wrap:wrap;padding:5px;background:#e9edf4;border-radius:12px;width:max-content;max-width:100%}
+.roomPlanTab{border:0;border-radius:9px;background:transparent;color:#526079;padding:9px 17px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.roomPlanTab.active{background:#fff;color:#24334d;box-shadow:0 1px 5px #22334d1b}
+.roomPlanOptions{display:flex;flex-wrap:wrap;gap:7px}
+.roomPlanOption{border:1px solid #dce2ec;background:#fff;color:#485772;border-radius:9px;padding:9px 14px;font:inherit;font-size:13px;font-weight:650;cursor:pointer}
+.roomPlanOption.active{background:#26354f;color:#fff;border-color:#26354f}
+.roomPlannerSheet{--plan-accent:#aab8cd;--plan-head:#eef1f6;background:#fff;border:1px solid #e2e6ed;border-top:5px solid var(--plan-accent);border-radius:13px;padding:20px;min-width:0}
+.roomTeam-blau{--plan-accent:#4c85d3;--plan-head:#e5f0ff}.roomTeam-rot{--plan-accent:#c66c70;--plan-head:#fcebec}.roomTeam-gelb{--plan-accent:#c7a43e;--plan-head:#fff6d9}.roomTeam-violett{--plan-accent:#9374bf;--plan-head:#f0eafb}.roomTeam-gruen{--plan-accent:#5c9d7a;--plan-head:#e8f5ed}
+.roomPlannerTitle{display:flex;align-items:start;justify-content:space-between;gap:12px;margin-bottom:16px}
+.roomPlannerTitle h2{font-size:22px;margin:0;color:#26344d}.roomPlannerTitle p{font-size:12px;color:#68768b;margin:5px 0 0}
+.roomEditToggle{border:1px solid #cfd8e5;background:#fff;color:#33455f;padding:9px 12px;border-radius:9px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.roomScheduleScroll{overflow-x:auto}.roomSchedule{border-collapse:separate;border-spacing:3px;width:100%;min-width:770px;table-layout:fixed}
+.roomSchedule th,.roomSchedule td{border:0!important;padding:0!important;vertical-align:top!important}
+.roomSchedule thead th{background:var(--plan-head);color:#293951;font-size:13px;font-weight:750;text-align:center;padding:12px 6px!important;border-radius:7px 7px 2px 2px}
+.roomSchedule .roomHourHead{width:76px!important}.roomSchedule .roomHour{width:76px!important;background:#f2f4f8;text-align:center;border-radius:5px;padding:11px 4px!important;color:#35445b}
+.roomHour b{display:block;font-size:16px}.roomHour small{display:block;font-size:10px;font-weight:500;line-height:1.3;margin-top:4px;color:#69778a}
+.roomSchedule td{background:#f7f8fb;border-radius:5px;padding:4px!important}
+.roomLessonStack{display:flex;flex-direction:column;gap:4px;min-height:46px}
+.roomLesson{border-radius:5px;border-left:3px solid #b6c3d6;background:#e9edf4;padding:7px 8px;line-height:1.25;overflow-wrap:anywhere}
+.roomLesson strong{display:block;font-size:12px;font-weight:750;color:#26364e}.roomLesson span{display:block;font-size:11px;color:#536178;margin-top:3px}
+.roomLesson.english{background:#fae5e5;border-color:#c85c66}.roomLesson.math{background:#e1ecfc;border-color:#5d91d0}.roomLesson.german{background:#fff0c7;border-color:#d5a841}
+.roomLesson.arrival{background:#e7edf3;border-color:#889bb3}.roomLesson.atelier{background:#e8eef3;border-color:#8aa0b5}.roomLesson.teamtime{background:#e8e0f4;border-color:#9478ba}
+.roomLesson.creative{background:#f9e8da;border-color:#d79b6c}.roomLesson.flex{background:#e5f3f0;border-color:#67a69a}.roomLesson.workshop{background:#eee7dc;border-color:#aa9270}.roomLesson.subject{background:#eee8f7;border-color:#9b83bc}
+.roomEmptySlot{color:#c8d0dc;text-align:center;display:block;padding:15px 0;font-size:12px}
+.roomEditField{display:none!important}.roomPlannerSheet.editing .roomLessonStack{display:none}.roomPlannerSheet.editing .roomEditField{display:block!important;min-height:60px!important;width:100%;font:inherit;font-size:12px;border:1px solid #c4cfdd;border-radius:6px;padding:8px;resize:vertical;background:#fff}
+@media(max-width:700px){.roomPlannerSheet{padding:10px}.roomPlanTab{padding:8px 10px}.roomPlannerTitle{align-items:center}.roomPlannerTitle h2{font-size:18px}}
+`;document.head.appendChild(e);
+})();
