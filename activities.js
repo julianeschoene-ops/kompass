@@ -160,6 +160,11 @@ const IT_STUDIO_COMPETENCIES=[
  ['debug','Ich kann Fehler in meinem Programm erkennen und verbessern.'],
  ['explain','Ich kann mein Programm erklären und eigene Ideen weiterentwickeln.']
 ];
+const SCHOOL_GARDEN_COMPETENCIES=[
+ ['garden_observation','Ich kann in unseren Schulgarten-Bereichen Beobachtungen machen und einfache Messgeräte benutzen.'],
+ ['garden_winter_birds','Ich habe Vögel kennengelernt, die man im Winter bei uns beobachten kann, und weiß, wie der Mensch ihre Lebensbedingungen beeinflussen kann.'],
+ ['garden_germination','Ich habe in einfachen Versuchen beobachtet, welche Bedingungen Samen zum Keimen brauchen.']
+];
 const COOK_SEW_COMPETENCIES=[
  ['cook_preparation','Ich kann Lebensmittel und Küchengeräte richtig verwenden und Speisen mit passenden Zubereitungstechniken herstellen.'],
  ['cook_safety','Ich kann die Sicherheits- und Hygieneregeln in der Schulküche einhalten.'],
@@ -192,6 +197,7 @@ function creativeCompetenciesFor(a){
  if(isMusicOffer(a))return a.name.trim().toLocaleLowerCase('de')==='chor'?CHOIR_COMPETENCIES:WIND_CLASS_COMPETENCIES;
  if(a?.type!=='Kreativband')return [];
  if(a.id==='room_music')return MUSIC_STUDIO_COMPETENCIES;
+ if(a.id==='room_garden')return SCHOOL_GARDEN_COMPETENCIES;
  if(creativeStatsGroupName(a.name)==='Kochen & Nähstudio')return COOK_SEW_COMPETENCIES;
  return /it.studio|informatik.studio/i.test(String(a.name||''))?IT_STUDIO_COMPETENCIES:[];
 }
