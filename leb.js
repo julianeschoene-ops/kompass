@@ -32,6 +32,8 @@ function renderLebStudentView(){ const pupils=(Store.pupils||[]).filter(p=>Strin
 function getRowsForPupil(pupil){return Object.entries(Store.records).filter(([key,record])=>key.endsWith('|'+pupil.id)&&record&&['green','yellow','red'].includes(record.current)).map(([key,record])=>{const comp=Store.competencies.find(c=>c.id===key.split('|')[0]);return comp&&comp.includeInLeb?{comp,record}:null;}).filter(Boolean);}
 function generateSubjectOnlyText(pupil,subject){
  const rows=getRowsForPupil(pupil).filter(r=>r.comp.subject===subject),creative=creativeLebRows(pupil,subject);
+ const pending=rows.filter(r=>typeof sharedAssessmentState==='function'&&sharedAssessmentState(r.record).conflict&&typeof sharedAssessmentAgreementValid==='function'&&!sharedAssessmentAgreementValid(r.record));
+ const approved=rows.filter(r=>!pending.includes(r));
  if(!rows.length&&!creative.length)return `Für ${pupil.first} liegen im Fach ${subject} noch keine dokumentierten Kompetenzen vor.`;
  return [approved.length?generateSubjectParagraph(pupil,subject,approved):'',...creative.map(x=>generateCreativeLebParagraph(pupil,x.activity,x.record)),pending.length?'Für '+pending.length+' Kompetenz(en) steht die gemeinsame Bewertung noch aus.':''].filter(Boolean).join(' ');
 }
