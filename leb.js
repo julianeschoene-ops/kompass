@@ -80,53 +80,56 @@ function lebJoin(values){
  if(values.length===2)return values.join(' und ');
  return values.slice(0,-1).join(', ')+' und '+values[values.length-1];
 }
-function lebCompetencySentence(pupil,status,statements,subject,key){
- if(!statements.length)return '';
- const quoted=statements.map(s=>'„'+s+'“');
- const detail=lebJoin(quoted);
- if(status==='green')return lebSentence(lebStableVariant(key,[
-  pupil.first+' zeigt bereits sichere Kompetenzen in folgenden Bereichen: '+detail,
-  'Zu '+pupil.first+'s nachgewiesenen Stärken gehören '+detail,
-  'Im Fach '+subject+' sind bei '+pupil.first+' folgende Kompetenzen erreicht: '+detail
- ]));
- if(status==='yellow')return lebSentence(lebStableVariant(key,[
-  'Bei '+detail+' sind erste Grundlagen erkennbar, die Kompetenzen sind jedoch erst teilweise erreicht',
-  'Noch nicht vollständig gesichert sind die Kompetenzen '+detail,
-  'In den Bereichen '+detail+' ist der Lernstand bislang als teilweise erreicht dokumentiert'
- ]));
- return lebSentence(lebStableVariant(key,[
-  'Bei '+detail+' besteht weiterer Übungsbedarf, da diese Kompetenzen noch nicht erreicht sind',
-  'Als nächste Lernschritte stehen die noch nicht erreichten Kompetenzen '+detail+' im Mittelpunkt',
-  'Noch nicht nachgewiesen sind die Kompetenzen '+detail
- ]));
+function lebTopic(raw,subject){
+ const t=String(raw||'').toLocaleLowerCase('de').replace(/\\s+/g,' ');
+ if(/\\bto be\\b|verb|grammatik|zeitform|simple (present|past)|satzbau/.test(t))return {area:'Grammatik',skill:/to be/.test(t)?'das Verb „to be“ korrekt anzuwenden':'grammatische Strukturen richtig anzuwenden'};
+ if(/höflich|bitten|aufforderung/.test(t))return {area:'Kommunikation',skill:'höfliche Bitten und Aufforderungen auf Englisch zu formulieren'};
+ if(/text.*information|information.*text|leseversteh|lesen|reading/.test(t))return {area:'Leseverstehen',skill:'Informationen aus Texten zu entnehmen'};
+ if(/wörter|wortschatz|vokabel/.test(t)){
+  const school=/schule|school/.test(t);
+  return {area:'Wortschatz',skill:school?'den englischen Wortschatz rund um die Schule anzuwenden':'den erarbeiteten Wortschatz anzuwenden'};
+ }
+ if(/hörversteh|zuhör|listening/.test(t))return {area:'Hörverstehen',skill:'gesprochenen englischen Äußerungen Informationen zu entnehmen'};
+ if(/schreib|writing|texte verfassen/.test(t))return {area:'Schreiben',skill:'eigene englische Texte zu verfassen'};
+ if(/sprech|dialog|gespräch|speaking/.test(t))return {area:'Sprechen',skill:'sich mündlich auf Englisch auszudrücken'};
+ // Unknown competency wording must not be forced into a potentially false skill claim.
+ return {area:'Weitere Kompetenzen',skill:'die Kompetenz „'+cleanCompetencyText(raw).replace(/\\([^)]*seite[^)]*\\)/gi,'').trim()+'“ umzusetzen'};
 }
+function lebEvidenceTopics(items){
+ const seen=new Set(),out=[];
+ for(const item of items){
+  const raw=typeof item==='string'?item:item?.comp?.text;
+  if(!raw)continue;
+  const topic=lebTopic(raw);
+  const key=topic.skill.toLocaleLowerCase('de');
+  if(!seen.has(key)){seen.add(key);out.push(topic);}
+ }
+ return out;
+}
+function lebSkillList(topics){return lebJoin(topics.map(t=>t.skill));}
 function generateSubjectParagraph(pupil,subject,items){
  if(!items.length)return '';
- const key=(pupil.id||pupil.first)+'|'+subject;
  const groups={green:[],yellow:[],red:[]};
  for(const item of items)if(groups[item.record.current])groups[item.record.current].push(item);
- const sentences=[];
- // Start with specific achievements rather than metadata about stored assessments.
- if(groups.green.length){
-  const strengths=lebEvidence(groups.green,2);
-  sentences.push(lebCompetencySentence(pupil,'green',strengths,subject,key+'|strength'));
- }
- if(groups.yellow.length){
-  const developing=lebEvidence(groups.yellow,2);
-  sentences.push(lebCompetencySentence(pupil,'yellow',developing,subject,key+'|developing'));
- }
- if(groups.red.length){
-  const needs=lebEvidence(groups.red,2);
-  sentences.push(lebCompetencySentence(pupil,'red',needs,subject,key+'|needs'));
- }
- // Include further distinct evidence when available; never repeat the same competency.
- for(const status of ['green','yellow','red']){
-  const extra=lebEvidence(groups[status].slice(2),2);
-  if(extra.length)sentences.push(lebCompetencySentence(pupil,status,extra,subject,key+'|extra|'+status));
- }
- // Do not manufacture development, learning behaviour, confidence or future success.
- // A short text is preferable to padding it with unsupported generic sentences.
+ const good=lebEvidenceTopics(groups.green),partial=lebEvidenceTopics(groups.yellow),needs=lebEvidenceTopics(groups.red);
+ const first=pupil.first, sentences=[];
+ if(good.length)sentences.push(lebSentence(first+' kann bereits '+lebSkillList(good.slice(0,2))));
+ if(partial.length)sentences.push(lebSentence(lebStableVariant(pupil.id+'|'+subject+'|partial',[
+  first+' verfügt über erste Grundlagen, um '+lebSkillList(partial.slice(0,2))+', muss diese aber noch festigen',
+  'Beim Versuch, '+lebSkillList(partial.slice(0,2))+', zeigt '+first+' erste Ansätze, benötigt jedoch noch Übung'
+ ])));
+ if(needs.length)sentences.push(lebSentence('Beim Lernen, '+lebSkillList(needs.slice(0,2))+', benötigt '+first+' noch Unterstützung'));
+ if(good.length>2)sentences.push(lebSentence('Darüber hinaus gelingt es '+first+' bereits, '+lebSkillList(good.slice(2,4))));
+ if(partial.length>2)sentences.push(lebSentence('Weiter zu festigen sind '+lebJoin(partial.slice(2,4).map(t=>t.area.toLowerCase()))));
+ if(needs.length>2)sentences.push(lebSentence('Ein weiterer Lernschritt ist, '+lebSkillList(needs.slice(2,4))));
  return sentences.filter(Boolean).slice(0,6).join(' ');
+}
+function lebCompetencySentence(pupil,status,statements,subject,key){
+ const topics=lebEvidenceTopics(statements);
+ if(!topics.length)return '';
+ if(status==='green')return lebSentence(pupil.first+' kann bereits '+lebSkillList(topics));
+ if(status==='yellow')return lebSentence(pupil.first+' zeigt erste Grundlagen, um '+lebSkillList(topics)+', und sollte diese weiter festigen');
+ return lebSentence('Beim Lernen, '+lebSkillList(topics)+', benötigt '+pupil.first+' noch Unterstützung');
 }
 function generateCreativeLebParagraph(pupil,activity,record){
  const a=record.creativeAssessment||{},groups={green:[],yellow:[],red:[]};
