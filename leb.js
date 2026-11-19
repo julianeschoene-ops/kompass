@@ -82,57 +82,50 @@ function lebJoin(values){
 }
 function lebCompetencySentence(pupil,status,statements,subject,key){
  if(!statements.length)return '';
- const examples=lebJoin(statements);
+ const quoted=statements.map(s=>'„'+s+'“');
+ const detail=lebJoin(quoted);
  if(status==='green')return lebSentence(lebStableVariant(key,[
-  pupil.first+' hat die Kompetenz nachgewiesen, '+examples,
-  'Zu den erreichten Kompetenzen gehört '+(statements.length===1?'die Fähigkeit, ':'unter anderem, ')+examples,
-  'Bereits erreicht hat '+pupil.first+' die Kompetenz'+(statements.length===1?'':'en')+', '+examples
+  pupil.first+' zeigt bereits sichere Kompetenzen in folgenden Bereichen: '+detail,
+  'Zu '+pupil.first+'s nachgewiesenen Stärken gehören '+detail,
+  'Im Fach '+subject+' sind bei '+pupil.first+' folgende Kompetenzen erreicht: '+detail
  ]));
  if(status==='yellow')return lebSentence(lebStableVariant(key,[
-  'Teilweise erreicht sind die Kompetenzen, '+examples,
-  'Bei den Kompetenzen, '+examples+', zeigt '+pupil.first+' bereits Ansätze; sie sind jedoch noch nicht vollständig erreicht',
-  'Noch nicht durchgängig erreicht sind die Kompetenzen, '+examples
+  'Bei '+detail+' sind erste Grundlagen erkennbar, die Kompetenzen sind jedoch erst teilweise erreicht',
+  'Noch nicht vollständig gesichert sind die Kompetenzen '+detail,
+  'In den Bereichen '+detail+' ist der Lernstand bislang als teilweise erreicht dokumentiert'
  ]));
  return lebSentence(lebStableVariant(key,[
-  'Noch nicht erreicht sind die Kompetenzen, '+examples,
-  'Weiterer Lernbedarf besteht bei den Kompetenzen, '+examples,
-  'Die Kompetenzen, '+examples+', sind bislang noch nicht erreicht'
+  'Bei '+detail+' besteht weiterer Übungsbedarf, da diese Kompetenzen noch nicht erreicht sind',
+  'Als nächste Lernschritte stehen die noch nicht erreichten Kompetenzen '+detail+' im Mittelpunkt',
+  'Noch nicht nachgewiesen sind die Kompetenzen '+detail
  ]));
-}
-function lebLevelSentence(items){
- const levels=[...new Set(items.map(r=>String(r.record?.level||'').trim().toUpperCase()).filter(x=>['G','M','E'].includes(x)))];
- return levels.length===1?'Die dokumentierten Bewertungen beziehen sich auf das '+levels[0]+'-Niveau.':'';
 }
 function generateSubjectParagraph(pupil,subject,items){
  if(!items.length)return '';
- const key=(pupil.id||pupil.first)+'|'+subject,groups={green:[],yellow:[],red:[]};
+ const key=(pupil.id||pupil.first)+'|'+subject;
+ const groups={green:[],yellow:[],red:[]};
  for(const item of items)if(groups[item.record.current])groups[item.record.current].push(item);
  const sentences=[];
- const statuses=['green','yellow','red'].filter(x=>groups[x].length);
- const count=items.length;
- // Do not pad a sparse evidence set with unsupported claims.
- if(count>=3)sentences.push(lebSentence(lebStableVariant(key+'|intro',[
-  'Im Fach '+subject+' liegen für '+pupil.first+' mehrere dokumentierte Kompetenzbewertungen vor',
-  'Für '+pupil.first+' liegen im Fach '+subject+' Bewertungen zu verschiedenen Kompetenzen vor',
-  'Im Fach '+subject+' lassen sich anhand der erfassten Bewertungen erreichte Kompetenzen und weitere Lernbedarfe beschreiben'
- ])));
- for(const status of statuses){
-  const evidence=lebEvidence(groups[status],4);
-  // Split long competency groups to improve readability without losing the assessment status.
-  const batches=evidence.length>=4?[evidence.slice(0,2),evidence.slice(2)]:[evidence];
-  for(let i=0;i<batches.length;i++)sentences.push(lebCompetencySentence(pupil,status,batches[i],subject,key+'|'+status+'|'+i));
+ // Start with specific achievements rather than metadata about stored assessments.
+ if(groups.green.length){
+  const strengths=lebEvidence(groups.green,2);
+  sentences.push(lebCompetencySentence(pupil,'green',strengths,subject,key+'|strength'));
  }
- if(count>=3){
-  const level=lebLevelSentence(items);
-  if(level)sentences.push(level);
+ if(groups.yellow.length){
+  const developing=lebEvidence(groups.yellow,2);
+  sentences.push(lebCompetencySentence(pupil,'yellow',developing,subject,key+'|developing'));
  }
- if(groups.yellow.length||groups.red.length){
-  const needs=lebEvidence([...groups.red,...groups.yellow],2);
-  if(needs.length&&sentences.length<6)sentences.push(lebSentence('Für die weitere Arbeit bietet es sich an, insbesondere '+lebJoin(needs)+' gezielt zu üben'));
- }else if(groups.green.length>=3&&sentences.length<4){
-  const more=lebEvidence(groups.green.slice(2),2);
-  if(more.length)sentences.push(lebSentence('Zu den weiteren nachgewiesenen Kompetenzen zählt '+lebJoin(more)));
+ if(groups.red.length){
+  const needs=lebEvidence(groups.red,2);
+  sentences.push(lebCompetencySentence(pupil,'red',needs,subject,key+'|needs'));
  }
+ // Include further distinct evidence when available; never repeat the same competency.
+ for(const status of ['green','yellow','red']){
+  const extra=lebEvidence(groups[status].slice(2),2);
+  if(extra.length)sentences.push(lebCompetencySentence(pupil,status,extra,subject,key+'|extra|'+status));
+ }
+ // Do not manufacture development, learning behaviour, confidence or future success.
+ // A short text is preferable to padding it with unsupported generic sentences.
  return sentences.filter(Boolean).slice(0,6).join(' ');
 }
 function generateCreativeLebParagraph(pupil,activity,record){
