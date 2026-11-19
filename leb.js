@@ -116,9 +116,9 @@ function generateSubjectParagraph(pupil,subject,items){
  if(good.length)sentences.push(lebSentence(first+' kann bereits '+lebSkillList(good.slice(0,2))));
  if(partial.length)sentences.push(lebSentence(lebStableVariant(pupil.id+'|'+subject+'|partial',[
   first+' verfügt über erste Grundlagen, um '+lebSkillList(partial.slice(0,2))+', muss diese aber noch festigen',
-  'Beim Üben, '+lebSkillList(partial.slice(0,2))+', zeigt '+first+' erste Ansätze, benötigt jedoch noch Übung'
+  first+' zeigt erste Ansätze dabei, '+lebSkillList(partial.slice(0,2))+', benötigt jedoch noch Übung'
  ])));
- if(needs.length)sentences.push(lebSentence('Dabei, '+lebSkillList(needs.slice(0,2))+', benötigt '+first+' noch Unterstützung'));
+ if(needs.length)sentences.push(lebSentence(first+' benötigt noch Unterstützung dabei, '+lebSkillList(needs.slice(0,2))));
  if(good.length>2)sentences.push(lebSentence('Darüber hinaus gelingt es '+first+' bereits, '+lebSkillList(good.slice(2,4))));
  if(partial.length>2)sentences.push(lebSentence('Weiter zu festigen sind '+lebJoin(partial.slice(2,4).map(t=>t.area.toLowerCase()))));
  if(needs.length>2)sentences.push(lebSentence('Ein weiterer Lernschritt ist, '+lebSkillList(needs.slice(2,4))));
@@ -129,7 +129,7 @@ function lebCompetencySentence(pupil,status,statements,subject,key){
  if(!topics.length)return '';
  if(status==='green')return lebSentence(pupil.first+' kann bereits '+lebSkillList(topics));
  if(status==='yellow')return lebSentence(pupil.first+' zeigt erste Grundlagen, um '+lebSkillList(topics)+', und sollte diese weiter festigen');
- return lebSentence('Dabei, '+lebSkillList(topics)+', benötigt '+pupil.first+' noch Unterstützung');
+ return lebSentence(pupil.first+' benötigt noch Unterstützung dabei, '+lebSkillList(topics));
 }
 function generateCreativeLebParagraph(pupil,activity,record){
  const a=record.creativeAssessment||{},groups={green:[],yellow:[],red:[]};
