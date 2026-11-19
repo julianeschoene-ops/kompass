@@ -1,9 +1,23 @@
 {
-  "updated": "2026-11-19",
-  "fetchedAt": "2026-11-19T14:28:10.201044+01:00",
-  "leadUrl": "https://www.logo.de/nachrichten-quiz-der-woche-100.html",
+  "updated": "2026-11-20",
+  "fetchedAt": "2026-11-20T00:06:21.817716+01:00",
+  "leadUrl": "https://www.logo.de/vorlesetag-in-deutschland-100.html",
   "source": "ZDF logo!",
   "items": [
+    {
+      "title": "Ein Tag fürs Vorlesen!",
+      "url": "https://www.logo.de/vorlesetag-in-deutschland-100.html",
+      "summary": "Bücher vorlesen ist super. Es macht Spaß und regt die Fantasie an! Deshalb gibt es von uns einen Tipp: Schonmal von einer Vorleseparty gehört?",
+      "published": "2024-11-15",
+      "modified": "2026-11-19"
+    },
+    {
+      "title": "Die wildesten Versteigerungen ever",
+      "url": "https://www.logo.de/wilde-versteigerungen-102.html",
+      "summary": "Hier gibt's Infos über acht wilde Versteigerungen - vom höchsten Gebot ever bis hin zu den schrägsten Sachen, die je versteigert wurden.",
+      "published": "2026-11-19",
+      "modified": "2026-11-19"
+    },
     {
       "title": "So unterhalten sich Tiere",
       "url": "https://www.logo.de/die-sprache-der-tiere-104.html",
