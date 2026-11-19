@@ -81,8 +81,8 @@ function lebJoin(values){
  return values.slice(0,-1).join(', ')+' und '+values[values.length-1];
 }
 function lebTopic(raw,subject){
- const t=String(raw||'').toLocaleLowerCase('de').replace(/\\s+/g,' ');
- if(/\\bto be\\b|verb|grammatik|zeitform|simple (present|past)|satzbau/.test(t))return {area:'Grammatik',skill:/to be/.test(t)?'das Verb „to be“ korrekt anzuwenden':'grammatische Strukturen richtig anzuwenden'};
+ const t=String(raw||'').toLocaleLowerCase('de').replace(/\s+/g,' ');
+ if(/\bto be\b|verb|grammatik|zeitform|simple (present|past)|satzbau/.test(t))return {area:'Grammatik',skill:/to be/.test(t)?'das Verb „to be“ korrekt anzuwenden':'grammatische Strukturen richtig anzuwenden'};
  if(/höflich|bitten|aufforderung/.test(t))return {area:'Kommunikation',skill:'höfliche Bitten und Aufforderungen auf Englisch zu formulieren'};
  if(/text.*information|information.*text|leseversteh|lesen|reading/.test(t))return {area:'Leseverstehen',skill:'Informationen aus Texten zu entnehmen'};
  if(/wörter|wortschatz|vokabel/.test(t)){
@@ -93,7 +93,7 @@ function lebTopic(raw,subject){
  if(/schreib|writing|texte verfassen/.test(t))return {area:'Schreiben',skill:'eigene englische Texte zu verfassen'};
  if(/sprech|dialog|gespräch|speaking/.test(t))return {area:'Sprechen',skill:'sich mündlich auf Englisch auszudrücken'};
  // Unknown competency wording must not be forced into a potentially false skill claim.
- return {area:'Weitere Kompetenzen',skill:'die Kompetenz „'+cleanCompetencyText(raw).replace(/\\([^)]*seite[^)]*\\)/gi,'').trim()+'“ umzusetzen'};
+ return {area:'Weitere Kompetenzen',skill:'die Kompetenz „'+cleanCompetencyText(raw).replace(/\([^)]*seite[^)]*\)/gi,'').trim()+'“ umzusetzen'};
 }
 function lebEvidenceTopics(items){
  const seen=new Set(),out=[];
@@ -116,9 +116,9 @@ function generateSubjectParagraph(pupil,subject,items){
  if(good.length)sentences.push(lebSentence(first+' kann bereits '+lebSkillList(good.slice(0,2))));
  if(partial.length)sentences.push(lebSentence(lebStableVariant(pupil.id+'|'+subject+'|partial',[
   first+' verfügt über erste Grundlagen, um '+lebSkillList(partial.slice(0,2))+', muss diese aber noch festigen',
-  'Beim Versuch, '+lebSkillList(partial.slice(0,2))+', zeigt '+first+' erste Ansätze, benötigt jedoch noch Übung'
+  'Beim Üben, '+lebSkillList(partial.slice(0,2))+', zeigt '+first+' erste Ansätze, benötigt jedoch noch Übung'
  ])));
- if(needs.length)sentences.push(lebSentence('Beim Lernen, '+lebSkillList(needs.slice(0,2))+', benötigt '+first+' noch Unterstützung'));
+ if(needs.length)sentences.push(lebSentence('Dabei, '+lebSkillList(needs.slice(0,2))+', benötigt '+first+' noch Unterstützung'));
  if(good.length>2)sentences.push(lebSentence('Darüber hinaus gelingt es '+first+' bereits, '+lebSkillList(good.slice(2,4))));
  if(partial.length>2)sentences.push(lebSentence('Weiter zu festigen sind '+lebJoin(partial.slice(2,4).map(t=>t.area.toLowerCase()))));
  if(needs.length>2)sentences.push(lebSentence('Ein weiterer Lernschritt ist, '+lebSkillList(needs.slice(2,4))));
@@ -129,7 +129,7 @@ function lebCompetencySentence(pupil,status,statements,subject,key){
  if(!topics.length)return '';
  if(status==='green')return lebSentence(pupil.first+' kann bereits '+lebSkillList(topics));
  if(status==='yellow')return lebSentence(pupil.first+' zeigt erste Grundlagen, um '+lebSkillList(topics)+', und sollte diese weiter festigen');
- return lebSentence('Beim Lernen, '+lebSkillList(topics)+', benötigt '+pupil.first+' noch Unterstützung');
+ return lebSentence('Dabei, '+lebSkillList(topics)+', benötigt '+pupil.first+' noch Unterstützung');
 }
 function generateCreativeLebParagraph(pupil,activity,record){
  const a=record.creativeAssessment||{},groups={green:[],yellow:[],red:[]};
