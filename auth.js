@@ -63,9 +63,10 @@ const Auth={
     // a shared iPad reopen the account of the person who used it before.
     // Persistent sessions are now opt-in, with a device-specific expiry.
     this.cloudClient=window.supabase.createClient(this.cloud.url,this.cloud.anonKey,{auth:{storage:KompassAuthStorage,persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-    const {data,error}=await this.cloudClient.auth.getSession();if(error)throw error;
-    if(data?.session)await this.applyCloudSession(data.session);else if(this.session?.mode==='cloud'){this.session=null;sessionStorage.removeItem(SESSION_KEY);}
+    if(/(?:^|[&#?])type=recovery(?:&|$)/.test(location.hash+location.search)){sessionStorage.setItem('kompass_password_recovery','1');if(typeof kompassRecoveryMode!=='undefined')kompassRecoveryMode=true;}
     this.cloudClient.auth.onAuthStateChange((_e,s)=>{if(_e==='PASSWORD_RECOVERY'){sessionStorage.setItem('kompass_password_recovery','1');if(typeof kompassRecoveryMode!=='undefined')kompassRecoveryMode=true;setTimeout(()=>{if(typeof kompassRecoveryScreen==='function')kompassRecoveryScreen()},0);return;}setTimeout(()=>this.handleCloudAuthChange(s).catch(e=>{console.error('Cloud-Authentifizierung',e);loginErr?.(e)}),0)});
+    const {data,error}=await this.cloudClient.auth.getSession();if(error)throw error;
+    if(data?.session && sessionStorage.getItem('kompass_password_recovery')!=='1')await this.applyCloudSession(data.session);else if(!data?.session && this.session?.mode==='cloud'){this.session=null;sessionStorage.removeItem(SESSION_KEY);}
     return true;
   },
   async applyCloudSession(s){
