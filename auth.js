@@ -65,7 +65,7 @@ const Auth={
     this.cloudClient=window.supabase.createClient(this.cloud.url,this.cloud.anonKey,{auth:{storage:KompassAuthStorage,persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
     const {data,error}=await this.cloudClient.auth.getSession();if(error)throw error;
     if(data?.session)await this.applyCloudSession(data.session);else if(this.session?.mode==='cloud'){this.session=null;sessionStorage.removeItem(SESSION_KEY);}
-    this.cloudClient.auth.onAuthStateChange((_e,s)=>setTimeout(()=>this.handleCloudAuthChange(s).catch(e=>{console.error('Cloud-Authentifizierung',e);loginErr?.(e)}),0));
+    this.cloudClient.auth.onAuthStateChange((_e,s)=>{if(_e==='PASSWORD_RECOVERY'){sessionStorage.setItem('kompass_password_recovery','1');if(typeof kompassRecoveryMode!=='undefined')kompassRecoveryMode=true;setTimeout(()=>{if(typeof kompassRecoveryScreen==='function')kompassRecoveryScreen()},0);return;}setTimeout(()=>this.handleCloudAuthChange(s).catch(e=>{console.error('Cloud-Authentifizierung',e);loginErr?.(e)}),0)});
     return true;
   },
   async applyCloudSession(s){
