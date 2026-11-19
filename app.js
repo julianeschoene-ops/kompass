@@ -25,7 +25,35 @@ function shell(content){
  renderDialog();
 }
 function loginScreen(){
-  const localUsers=Auth.localUsers();const needsAdmin=!Auth.cloudConfigured()&&localUsers.length===0;document.getElementById('app').innerHTML=`<div class="loginPage"><div class="loginCard"><div class="brand">KOMPASS</div>${needsAdmin?`<h1>Ersten Admin anlegen</h1><p>Dieser Schritt richtet den ersten Zugang auf diesem Gerät ein.</p><label>Name</label><input id="login_name" placeholder="z. B. J. Schöne"><label>Benutzername</label><input id="login_user" autocomplete="username"><label>Passwort</label><input id="login_pass" type="password" autocomplete="new-password"><button class="chip dark wide" onclick="firstAdminLogin()">Admin anlegen</button>`:`<h1>Mit dem eigenen Konto anmelden</h1><label>${Auth.cloudConfigured()?'Schul-E-Mail':'Benutzername'}</label><input id="login_user" type="email" inputmode="email" autocapitalize="none" autocomplete="username"><label>Passwort</label><input id="login_pass" type="password" autocomplete="current-password"><label class="loginPasswordCheck"><input type="checkbox" onchange="togglePasswordVisibility(['login_pass'],this.checked)"> Passwort anzeigen</label><label class="loginRemember"><input type="checkbox" id="login_remember"> 7 Tage angemeldet bleiben</label><button class="chip dark wide" onclick="doLogin()">Anmelden</button>`}<div id="login_error" class="loginError"></div>${!Auth.cloudConfigured()?`<details class="setupDetails"><summary>Gemeinsame Speicherung einrichten</summary><p class="mini">Für mehrere Geräte wird Supabase benötigt. URL und öffentlicher Anon-Key werden nur auf diesem Gerät gespeichert.</p><label>Supabase URL</label><input id="cloud_url"><label>Anon Key</label><textarea id="cloud_key"></textarea><button class="chip" onclick="saveCloudSetup()">Cloud verbinden</button></details>`:''}</div></div>`;
+  if(kompassRecoveryMode||sessionStorage.getItem("kompass_password_recovery")==="1"){kompassRecoveryScreen();return;}
+  const localUsers=Auth.localUsers();const needsAdmin=!Auth.cloudConfigured()&&localUsers.length===0;document.getElementById('app').innerHTML=`<div class="loginPage"><div class="loginCard"><div class="brand">KOMPASS</div>${needsAdmin?`<h1>Ersten Admin anlegen</h1><p>Dieser Schritt richtet den ersten Zugang auf diesem Gerät ein.</p><label>Name</label><input id="login_name" placeholder="z. B. J. Schöne"><label>Benutzername</label><input id="login_user" autocomplete="username"><label>Passwort</label><input id="login_pass" type="password" autocomplete="new-password"><button class="chip dark wide" onclick="firstAdminLogin()">Admin anlegen</button>`:`<h1>Mit dem eigenen Konto anmelden</h1><label>${Auth.cloudConfigured()?'Schul-E-Mail':'Benutzername'}</label><input id="login_user" type="email" inputmode="email" autocapitalize="none" autocomplete="username"><label>Passwort</label><input id="login_pass" type="password" autocomplete="current-password"><label class="loginPasswordCheck"><input type="checkbox" onchange="togglePasswordVisibility(['login_pass'],this.checked)"> Passwort anzeigen</label><label class="loginRemember"><input type="checkbox" id="login_remember"> 7 Tage angemeldet bleiben</label><button class="chip dark wide" onclick="doLogin()">Anmelden</button><button type="button" class="chip wide" style="margin-top:10px" onclick="openKompassPasswordRecovery()">Passwort vergessen?</button>`}<div id="login_error" class="loginError"></div>${!Auth.cloudConfigured()?`<details class="setupDetails"><summary>Gemeinsame Speicherung einrichten</summary><p class="mini">Für mehrere Geräte wird Supabase benötigt. URL und öffentlicher Anon-Key werden nur auf diesem Gerät gespeichert.</p><label>Supabase URL</label><input id="cloud_url"><label>Anon Key</label><textarea id="cloud_key"></textarea><button class="chip" onclick="saveCloudSetup()">Cloud verbinden</button></details>`:''}</div></div>`;
+}
+let kompassRecoveryMode=false;
+function kompassRecoveryScreen(){
+ document.getElementById('app').innerHTML=`<div class="loginPage"><div class="loginCard"><div class="brand">KOMPASS</div><h1>Neues Passwort festlegen</h1><p>Bitte wähle ein neues Passwort für dein Schulkonto.</p><label>Neues Passwort</label><input id="recovery_password_1" type="password" autocomplete="new-password" minlength="10"><label>Passwort wiederholen</label><input id="recovery_password_2" type="password" autocomplete="new-password" minlength="10"><button class="chip dark wide" onclick="saveKompassRecoveryPassword()">Passwort speichern</button><div id="recovery_error" class="loginError" role="status"></div></div></div>`;
+}
+function openKompassPasswordRecovery(){
+ document.getElementById('app').innerHTML=`<div class="loginPage"><div class="loginCard"><div class="brand">KOMPASS</div><h1>Passwort zurücksetzen</h1><p>Gib deine Schul-E-Mail-Adresse ein. Wenn ein Konto vorhanden ist, erhältst du einen Link zum Festlegen eines neuen Passworts.</p><label>Schul-E-Mail</label><input id="recovery_email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" value="${esc(document.getElementById('login_user')?.value||'')}"><button class="chip dark wide" onclick="sendKompassRecovery()">Link anfordern</button><button class="chip wide" onclick="loginScreen()">Zurück zur Anmeldung</button><div id="recovery_error" class="loginError" role="status"></div></div></div>`;
+}
+async function sendKompassRecovery(){
+ const email=document.getElementById('recovery_email')?.value.trim().toLowerCase(),msg=document.getElementById('recovery_error');
+ if(!email||!/^\S+@\S+\.\S+$/.test(email)){msg.textContent='Bitte eine gültige Schul-E-Mail-Adresse eingeben.';return}
+ try{
+  const {error}=await Auth.cloudClient.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
+  if(error)throw error;
+  msg.style.color='#246647';msg.textContent='Falls das Konto existiert, wurde ein Link versendet. Bitte auch den Spamordner prüfen.';
+ }catch(e){msg.textContent='Der Link konnte nicht versendet werden. Bitte später erneut versuchen oder die Administration kontaktieren.';console.error('Passwortwiederherstellung',e)}
+}
+async function saveKompassRecoveryPassword(){
+ const a=document.getElementById('recovery_password_1')?.value,b=document.getElementById('recovery_password_2')?.value,msg=document.getElementById('recovery_error');
+ if(a.length<10){msg.textContent='Bitte mindestens 10 Zeichen verwenden.';return}
+ if(a!==b){msg.textContent='Die Passwörter stimmen nicht überein.';return}
+ try{
+  const {error}=await Auth.cloudClient.auth.updateUser({password:a});if(error)throw error;
+  kompassRecoveryMode=false;sessionStorage.removeItem('kompass_password_recovery');
+  msg.style.color='#246647';msg.textContent='Passwort gespeichert. Du kannst KOMPASS jetzt verwenden.';
+  setTimeout(()=>render(),1000);
+ }catch(e){msg.textContent='Das Passwort konnte nicht gespeichert werden. Bitte einen neuen Link anfordern.';console.error('Passwort speichern',e)}
 }
 function togglePasswordVisibility(ids,visible){for(const id of ids){const field=document.getElementById(id);if(field)field.type=visible?'text':'password'}}
 function openPasswordDialog(){State.dialog={mode:'password'};renderDialog()}
