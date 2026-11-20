@@ -91,7 +91,7 @@ function studentProfile(){
  content+='<section id="profileContent" class="profileContent" tabindex="-1">';
  if(profileSection!=='overview')content+=renderProfileNavigation(p);
  if(profileSection==='core')content+=renderProfileCore(p,core);
- else if(profileSection==='practice')content+='<h2>English Practice · Übungsübersicht</h2><p class="mini">Übungen, Übungspunkte und selbst gemeldete Kontrollen. Testergebnisse stehen bei den Kompetenzen unter Kernfächer → Englisch.</p>'+(EnglishPractice.practiceReport(p)||'<div class="card empty">Noch keine Übungsberichte übermittelt.</div>')+EnglishPractice.access(p);
+ else if(profileSection==='practice')content+='<h2>English Practice · Übungsübersicht</h2><p class="mini">Übungen, Sterne und selbst gemeldete Kontrollen. Testergebnisse stehen bei den Kompetenzen unter Kernfächer → Englisch.</p>'+(EnglishPractice.practiceReport(p)||'<div class="card empty">Noch keine Übungsberichte übermittelt.</div>')+EnglishPractice.access(p);
  else if(profileSection==='workshop')content+=renderWorkshopLearningOverview(p,workshop);
  else if(profileSection==='offers')content+=renderProfileOffers(p,acts);
  else if(profileSection==='development'){
