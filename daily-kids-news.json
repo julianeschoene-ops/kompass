@@ -1,21 +1,28 @@
 {
   "updated": "2026-11-20",
-  "fetchedAt": "2026-11-20T14:09:55.483632+01:00",
+  "fetchedAt": "2026-11-20T22:16:10.143756+01:00",
   "leadUrl": "https://www.logo.de/vorlesetag-in-deutschland-100.html",
   "source": "ZDF logo!",
   "items": [
     {
-      "title": "Ein Tag fürs Vorlesen!",
-      "url": "https://www.logo.de/vorlesetag-in-deutschland-100.html",
-      "summary": "Bücher vorlesen ist super. Es macht Spaß und regt die Fantasie an! Deshalb gibt es von uns einen Tipp: Schonmal von einer Vorleseparty gehört?",
-      "published": "2024-11-15",
-      "modified": "2026-11-19"
+      "title": "Das war bei den Demos los",
+      "url": "https://www.logo.de/gen-z-proteste-104.html",
+      "summary": "Deutschlandweit waren am Freitag vor allem Jugendliche und junge Erwachsene auf der Straße. Was sie genau fordern - und wie die Proteste liefen.",
+      "published": "2026-11-20",
+      "modified": "2026-11-20"
     },
     {
       "title": "Die wildesten Versteigerungen ever",
       "url": "https://www.logo.de/wilde-versteigerungen-102.html",
       "summary": "Hier gibt's Infos über acht wilde Versteigerungen - vom höchsten Gebot ever bis hin zu den schrägsten Sachen, die je versteigert wurden.",
       "published": "2026-11-19",
+      "modified": "2026-11-19"
+    },
+    {
+      "title": "Ein Tag fürs Vorlesen!",
+      "url": "https://www.logo.de/vorlesetag-in-deutschland-100.html",
+      "summary": "Bücher vorlesen ist super. Es macht Spaß und regt die Fantasie an! Deshalb gibt es von uns einen Tipp: Schonmal von einer Vorleseparty gehört?",
+      "published": "2024-11-15",
       "modified": "2026-11-19"
     },
     {
@@ -33,32 +40,11 @@
       "modified": "2026-11-14"
     },
     {
-      "title": "6 Tipps für ein starkes Immunsystem",
-      "url": "https://www.logo.de/tipps-fuers-immunsystem-100.html",
-      "summary": "Die Erkältungszeit beginnt wieder - es gibt einiges, was man tun kann, um das Immunsystem zu stärken und sich vor Krankheiten zu schützen.",
-      "published": "2026-11-13",
-      "modified": "2026-11-13"
-    },
-    {
-      "title": "So ist die Situation im Libanon",
-      "url": "https://www.logo.de/libanon-krieg-100.html",
-      "summary": "Wegen der Kämpfe zwischen der Hisbollah-Miliz und Israel sind besonders im Süden des Libanon Menschen auf der Flucht. Was ist dort los?",
-      "published": "2026-04-04",
-      "modified": "2026-11-10"
-    },
-    {
-      "title": "Warum die Weltklimakonferenz auch COP heißt",
+      "title": "Darum geht's bei der Weltklimakonferenz",
       "url": "https://www.logo.de/weltklimakonferenz-cop-31-100.html",
       "summary": "Es ist wieder soweit: Die Weltklimakonferenz startet - auch COP genannt. Antworten auf die wichtigsten Fragen, zu dem Treffen in der Türkei.",
       "published": "2025-11-04",
       "modified": "2026-11-09"
-    },
-    {
-      "title": "Stimmt ab! Wer ist euer Favorit?",
-      "url": "https://www.logo.de/abstimmung-kinderreporter-interviews-100.html",
-      "summary": "Am 26. Dezember gibt’s ein logo! extra für euch mit den coolsten und lustigsten Kinderreporterinterviews 2026. Ihr dürft darüber abstimmen!",
-      "published": "2026-11-06",
-      "modified": "2026-11-06"
     }
   ]
 }
