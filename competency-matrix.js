@@ -18,6 +18,10 @@ const CompetencyMatrix={
   const rows=this.practiceFor(c,p);if(!rows.length)return '';
   return '<details class="mini"><summary>English Practice · '+rows.length+' Ergebnis(se)</summary>'+rows.map(r=>'<div style="margin:8px 0"><b>'+esc(r.topic)+'</b> · '+Number(r.points)+'/'+Number(r.max_points)+' Punkte · '+esc(r.assessment_level||r.assessment_detail?.outcome?.level||'ohne Niveau')+' · '+esc(new Date(r.submitted_at).toLocaleDateString('de-DE'))+(r.assessment_detail?.needs_review?' · Prüfung offen':'')+'</div>').join('')+'</details>';
  },
+ practiceSummary(p){
+  const rows=this.practiceRows.filter(r=>r.pupil_id===p.id);
+  return '<section class="card"><h3>English Practice · '+rows.length+' Lernnachweise</h3>'+(rows.length?rows.map(r=>'<p class="mini">'+esc(r.topic)+' · '+Number(r.points)+'/'+Number(r.max_points)+' Punkte · '+esc(new Date(r.submitted_at).toLocaleDateString('de-DE'))+'</p>').join(''):'<p class="mini">Noch kein übermittelter Lernnachweis.</p>')+'</section>'+(typeof EnglishPractice!=='undefined'?EnglishPractice.practiceReport(p):'');
+ },
  group(c){const x=String(c.category||'').toLowerCase();if(/vokabel|wortschatz/.test(x))return 'Wortschatz / Vokabeln';if(/grammatik|grammar/.test(x))return 'Grammatik';if(/leseverstehen|reading/.test(x))return 'Leseverstehen';if(/hörverstehen|listening/.test(x))return 'Hörverstehen';if(/schreiben|writing/.test(x))return 'Schreiben';if(/sprechen|speaking/.test(x))return 'Sprechen';if(/sprachmittlung|mediation/.test(x))return 'Sprachmittlung';return c.category||'Weitere Kompetenzen'},
  short(c){const t=String(c.text||c.title||'').replace(/^\s*(U\s*\d+\s*[·:.–-]?\s*)?(Ich kann|I can)\s+/i,'').replace(/[.!]$/,'').trim();return t.length>58?t.slice(0,55).replace(/\s+\S*$/,'')+'…':t},
  open(){this.mode='class';this.category='alle';this.unit='alle';this.pupilId=null;this.classPupilId='alle';this.competencyYear=State.year;subjectHubToolOpen('raster')},
@@ -63,7 +67,7 @@ const CompetencyMatrix={
    const pupil=pupils.find(p=>p.id===this.pupilId);
    body='<div class="matrixPupilSelect"><label>Schüler*in<select onchange="CompetencyMatrix.pupilId=this.value;render()">'+pupils.map(p=>'<option value="'+esc(p.id)+'" '+(p.id===this.pupilId?'selected':'')+'>'+esc(p.short)+' · '+esc(p.team)+'</option>').join('')+'</select></label></div>';
    if(pupil&&pupil.isDemo)body+='<p class="mini">Testprofil: Ergebnisse aus English Practice. Keine abschließenden Lehrkraftbewertungen; nicht in der Klassenstatistik enthalten.</p>';
-   if(pupil)body+='<div class="matrixPupilList">'+list.map(c=>'<div class="matrixPupilRow"><div><small>'+esc(c.category||'')+' · '+esc(c.unit||(c.sprint?'Sprint '+c.sprint:''))+'</small><div>'+esc(c.text)+'</div></div>'+this.cell(c,pupil)+this.practiceEvidence(c,pupil)+'</div>').join('')+'</div>';
+   if(pupil){if(subjectHubSubject==='Englisch')body+=this.practiceSummary(pupil);body+='<div class="matrixPupilList">'+list.map(c=>'<div class="matrixPupilRow"><div><small>'+esc(c.category||'')+' · '+esc(c.unit||(c.sprint?'Sprint '+c.sprint:''))+'</small><div>'+esc(c.text)+'</div></div>'+this.cell(c,pupil)+this.practiceEvidence(c,pupil)+'</div>').join('')+'</div>';}
   }else{
    const shown=pupils.filter(p=>this.classPupilId==='alle'||p.id===this.classPupilId);
    body='<div class="matrixPupilSelect"><label>Schüler*in filtern<select onchange="CompetencyMatrix.classPupilId=this.value;render()"><option value="alle">Alle Schüler*innen</option>'+pupils.map(p=>'<option value="'+esc(p.id)+'" '+(p.id===this.classPupilId?'selected':'')+'>'+esc(p.short)+' · '+esc(p.team)+'</option>').join('')+'</select></label></div>';
