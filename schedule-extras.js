@@ -1,5 +1,11 @@
 // Weitere Wochenübersichten; ausschließlich für angemeldete Kollegiums-Konten.
 const EXTRA_PLANS={
+'Gesamtplan Stufe 6':{
+ label:'Zeit',
+ times:['Frühaufsicht (ca. 7.30)','1. Stunde (7.40–8.25)','2. Stunde (8.25–9.10)','1. Pause (9.10–9.30)','3. Stunde (9.30–10.15)','4. Stunde (10.15–11.00)','2. Pause (11.00–11.20)','5. Stunde (11.20–12.05)','6. Stunde (12.05–12.50)','Mittagsaufsicht','7.–9. Stunde (13.00–15.25)'],
+ note:'Stand 21.11.2026 · LA nach Variante 1 · feste Flex-Förderkurse ab Mi., 25.11.',
+ teams:['Blau · Oursin / Rock','Rot · Zwilling / Moser','Gelb · Bachmair / Tsehaye','Violett · Schöne / Brusda','Grün · Vogt / Schnepf']
+},
 'Pausenaufsicht':{label:'Aufsicht',times:['Frühaufsicht (ca. 7.30)','1. Pause (9.10–9.30)','2. Pause (11.00–11.20)','Mittagspause'],rows:[
 ['Vietinghoff / Dierolf','Brusda / Putz','Rock / Okhrimenko','Moser / Okhrimenko','Zwilling / Putz'],
 ['Bachmair / Mück','Bachmair / Okhrimenko','Oursin / Beißwenger','Vogt / Mück','Rock / Kümmerer'],

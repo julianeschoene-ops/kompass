@@ -77,6 +77,10 @@ const Sync={
     const oldProjects=Array.isArray(remote.projectTemplates)?remote.projectTemplates:[];
     const projectIds=new Set((local.projectTemplates||[]).map(x=>String(x.id)));
     local.projectTemplates=[...(local.projectTemplates||[]),...oldProjects.filter(x=>!projectIds.has(String(x.id))).map(clone)];
+    const overview='Gesamtplan Stufe 6';
+    if(remote.roomOccupancy?.[overview]){
+      local.roomOccupancy={...local.roomOccupancy,[overview]:remote.roomOccupancy[overview]};
+    }
     const stamp=new Date().toISOString();
     const saved=await Auth.cloudClient.from('kompass_shared_state').upsert({id:'school',payload:local,updated_at:stamp},{onConflict:'id'}).select('payload');
     if(saved.error)throw saved.error;
