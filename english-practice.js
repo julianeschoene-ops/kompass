@@ -47,7 +47,7 @@ const EnglishPractice = {
       if(!byTopic.has(key))byTopic.set(key,{title,attempts:0,points:0,max:0,last:''});
       const t=byTopic.get(key);t.attempts++;t.points+=Number(a.points||0);t.max+=Number(a.max||0);if(String(a.at||'')>t.last)t.last=String(a.at||'');
     }
-    const topics=[...byTopic.values()].sort((a,b)=>b.last.localeCompare(a.last));
+    const topics=[...byTopic.entries()].map(([key,t])=>({...t,key,rounds:selected.activities.filter(a=>String(a.key||a.title||'Weitere Übung')===key).sort((a,b)=>String(b.at||'').localeCompare(String(a.at||'')))})).sort((a,b)=>b.last.localeCompare(a.last));
     const tile=(label,value,detail)=>'<div style="border:1px solid #e1e5ec;border-radius:15px;padding:15px;background:#fafbfd;min-width:0"><div style="font-size:.84rem;color:#64748b">'+label+'</div><div style="font-size:1.55rem;font-weight:750;margin:5px 0">'+value+'</div><div class="mini">'+detail+'</div></div>';
     html+='<section class="card"><h2>'+esc(selected.p.first+' '+selected.p.last)+'</h2>'+
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin:14px 0">'+
@@ -60,16 +60,10 @@ const EnglishPractice = {
       '<h3>Was wurde geübt?</h3>'+
       (topics.length?'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:12px 0 20px">'+topics.map(t=>{
         const percent=safePercent(t.points,t.max);
-        return '<div style="border:1px solid #e1e5ec;border-radius:14px;padding:15px"><b>'+esc(t.title)+'</b><p style="margin:8px 0 4px"><strong>'+percent+' %</strong> richtig · '+t.attempts+' Runde'+(t.attempts===1?'':'n')+'</p>'+bar(t.points,t.max)+'<div class="mini">'+t.points+'/'+t.max+' Aufgabenpunkte</div></div>';
+        return '<details style="border:1px solid #e1e5ec;border-radius:14px;padding:15px;min-width:0"><summary style="cursor:pointer;list-style:none"><b>'+esc(t.title)+'</b><p style="margin:8px 0 4px"><strong>'+percent+' %</strong> richtig · '+t.attempts+' Runde'+(t.attempts===1?'':'n')+'</p>'+bar(t.points,t.max)+'<div class="mini">'+t.points+'/'+t.max+' Aufgabenpunkte · <span style="text-decoration:underline">Berichte ansehen</span></div></summary>'+
+        '<div style="border-top:1px solid #e1e5ec;margin-top:12px;padding-top:8px">'+t.rounds.map((a,i)=>'<div style="padding:9px 0;border-bottom:1px solid #edf0f5"><b>Runde '+(t.rounds.length-i)+'</b> · '+(a.at?esc(new Date(a.at).toLocaleString('de-DE')):'Ohne Datum')+'<div>'+Number(a.points||0)+' / '+Number(a.max||0)+' Aufgabenpunkte · '+safePercent(Number(a.points||0),Number(a.max||0))+' % richtig</div></div>').join('')+'</div></details>';
       }).join('')+'</div>':'<p>Noch keine abgeschlossene digitale Übung übermittelt.</p>')+
-      '<details style="margin-top:14px"><summary><b>Einzelne Übungsberichte ansehen ('+selected.reports.length+')</b></summary>'+
-      selected.reports.slice().sort((a,b)=>String(b.at).localeCompare(String(a.at))).map(r=>{
-        const acts=Array.isArray(r.grammar)?r.grammar:[],controls=Array.isArray(r.controls)?r.controls:[];
-        const date=r.at?new Date(r.at).toLocaleDateString('de-DE'):'Ohne Datum';
-        return '<details style="margin:12px 0;padding:12px;border:1px solid #e1e5ec;border-radius:12px"><summary>'+esc(date)+' · '+acts.length+' Übungen · '+controls.filter(c=>c.compared).length+' Vergleiche</summary>'+
-        '<h4>Digitale Übungen</h4>'+(acts.map(a=>'<p>'+esc(a.title||'Übung')+': '+Number(a.points||0)+'/'+Number(a.max||0)+' richtig</p>').join('')||'<p>Keine digitalen Übungen in diesem Bericht.</p>')+
-        '<h4>Lernwegeliste</h4>'+(controls.map(c=>'<p>'+esc(c.title||c.id||'Aufgabe')+': '+(c.compared?'selbst verglichen':'noch nicht verglichen')+' · '+Number(c.correct||0)+'/3 Zusatzfragen richtig</p>').join('')||'<p>Keine LWL-Aufgabe dokumentiert.</p>')+'</details>';
-      }).join('')+'</details><p class="mini" style="margin-top:14px">Übungsdaten sind keine Kompetenzbewertung. Sterne und Übungsergebnisse werden getrennt ausgewiesen.</p></section>';
+      '<p class="mini" style="margin-top:14px">Übungsergebnisse sind keine Kompetenzbewertung.</p></section>';
     return html;
   },
   practiceReport(p){const reports=(this.practiceCloudRecords?.['english_practice_log|'+p.id]||Store.records['english_practice_log|'+p.id])?.reports||[];if(!reports.length)return '';return `<details class="card"><summary><b>Übungsberichte (${reports.length})</b></summary><p class="mini">Freiwillig übermittelte Übungsstände. Kontrollen sind Selbstauskünfte; keine Kompetenzbewertungen.</p>${reports.slice().sort((a,b)=>String(b.at).localeCompare(String(a.at))).map(r=>`<details><summary>${esc(new Date(r.at).toLocaleString('de-DE'))} · ${Number(r.starsTotal ?? r.stars ?? Math.round((Number(r.xp)||0)/10))||0} Sterne · ${(r.controls||[]).filter(x=>x.compared).length} verglichen · ${(r.controls||[]).filter(x=>x.star).length} ★</summary><h4>LWL-Kontrollen</h4>${(r.controls||[]).map(c=>`<p>${esc(c.title)}: ${c.compared?'verglichen / verbessert':'begonnen'} · ${Number(c.correct)||0}/3 Zusatzfragen ${c.star?'★':''}</p>`).join('')}<h4>Abgeschlossene Übungen</h4>${(r.grammar||[]).map(g=>`<p>${esc(g.title)}: ${Number(g.points)||0}/${Number(g.max)||0} richtig</p>`).join('')||'<p>Noch keine abgeschlossene Übungsrunde.</p>'}</details>`).join('')}</details>`},
