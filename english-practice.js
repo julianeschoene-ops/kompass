@@ -159,7 +159,30 @@ const EnglishPractice = {
   },
   answerDetails(e) {
     const d=e.assessmentDetail,answers=d.answers||[],items=d.items||[];
-    return `<details><summary>Einzelantworten & Punkte</summary>${answers.map((a,n)=>`<div style="border-bottom:1px solid #ddd;padding:8px 0"><b>${n+1}. ${esc(items[n]?.prompt||'')}</b><p>Antwort: ${esc(a.given||'—')} · ${this.point(a.points,e.score?.max)}/${this.point(items[n]?.max_points||2,e.score?.max)} P. · ${esc(({correct:'Richtig',spelling:'Kleiner Tippfehler',incorrect:'Nicht richtig',review:e.reviewed?'Von Lehrkraft geprüft; Gesamtpunktzahl maßgeblich':'Satzvariante prüfen'})[a.kind]||'')}</p><p>Beispiel: ${esc(items[n]?.accepted?.[0]||'')}</p></div>`).join('')}${this.userKey()?`<button class="chip" data-result="${esc(e.id)}" data-max="${Number(e.score.max)}" data-common="${e.outcome?'true':'false'}" onclick="this.dataset.common==='true'?EnglishPractice.reviewDepth(this.dataset.result):EnglishPractice.reviewVocab(this.dataset.result,Number(this.dataset.max))">${e.needsReview?'Antworten prüfen und Punkte korrigieren':'Punkte oder Feedback anpassen'}</button><p class="mini">Nur bei Bedarf korrigieren. Niveau und Ampelfarbe werden automatisch aktualisiert.</p>`:''}${e.reviewed?`<p>Geprüft von ${esc(e.reviewedBy||'Lehrkraft')}: ${esc(e.reviewNote||'')}</p>`:''}</details>`;
+    return `<details><summary>Einzelantworten & Punkte</summary>${answers.map((a,n)=>`<div style="border-bottom:1px solid #ddd;padding:8px 0"><b>${n+1}. ${esc(items[n]?.prompt||'')}</b><p>Antwort: ${esc(a.given||'—')} · ${this.point(a.points,e.score?.max)}/${this.point(items[n]?.max_points||2,e.score?.max)} P. · ${esc(({correct:'Richtig',spelling:'Kleiner Tippfehler',incorrect:'Nicht richtig',review:e.reviewed?'Von Lehrkraft geprüft; Gesamtpunktzahl maßgeblich':'Satzvariante prüfen'})[a.kind]||'')}</p><p>Beispiel: ${esc(items[n]?.accepted?.[0]||'')}</p></div>`).join('')}${this.userKey()?`<button class="chip" data-result="${esc(e.id)}" data-max="${Number(e.score.max)}" data-common="${e.outcome?'true':'false'}" onclick="this.dataset.common==='true'?EnglishPractice.reviewAnswers(this.dataset.result):EnglishPractice.reviewVocab(this.dataset.result,Number(this.dataset.max))">${e.needsReview?'Antworten prüfen und Punkte korrigieren':'Punkte oder Feedback anpassen'}</button><p class="mini">Nur bei Bedarf korrigieren. Niveau und Ampelfarbe werden automatisch aktualisiert.</p>`:''}${e.reviewed?`<p>Geprüft von ${esc(e.reviewedBy||'Lehrkraft')}: ${esc(e.reviewNote||'')}</p>`:''}</details>`;
+  },
+  async reviewAnswers(id) {
+    if(!this.userKey())return;
+    const entry=Object.values(Store.records||{}).flatMap(r=>r.practiceResults||[]).find(e=>e.id===id);
+    const items=entry?.assessmentDetail?.items||[],answers=entry?.assessmentDetail?.answers||[];
+    if(!items.length||items.length!==answers.length){alert('Bitte Ergebnisse neu laden.');return}
+    const points=[];
+    for(let i=0;i<items.length;i++){
+      const max=Number(items[i].max_points||0),current=Number(answers[i].points||0);
+      const value=prompt('Aufgabe '+(i+1)+'/'+items.length+'\\n'+String(items[i].prompt||'')+'\\nAntwort: '+String(answers[i].given||'—')+'\\nMögliche Lösung: '+String(items[i].accepted?.[0]||'')+'\\nPunkte (0–'+max+'):',String(current));
+      if(value===null)return;
+      const n=Number(value);
+      if(!value.trim()||!Number.isInteger(n)||n<0||n>max){alert('Bitte eine gültige Punktzahl eingeben.');return}
+      points.push(n);
+    }
+    const note=prompt('Feedback an das Kind (optional):',entry.reviewNote||'');
+    if(note===null)return;
+    try{
+      const r=await Auth.cloudClient.rpc('kompass_english_review_answers',{p_id:id,p_points:points,p_note:note});
+      if(r.error)throw r.error;
+      await reloadTeacherCloudData();
+      toast('Einzelpunkte, Niveau, Ampel und Feedback gespeichert.');
+    }catch(e){alert('Korrektur nicht gespeichert: '+(e.message||e))}
   },
   async reviewDepth(id) {
     if(!this.userKey())return;const entry=Object.values(Store.records||{}).flatMap(r=>r.practiceResults||[]).find(e=>e.id===id),parts=entry?.outcome?.byLevel;if(!parts){alert('Bitte Ergebnisse neu laden.');return}
