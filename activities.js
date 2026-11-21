@@ -161,7 +161,8 @@ const IT_STUDIO_COMPETENCIES=[
  ['explain','Ich kann mein Programm erklären und eigene Ideen weiterentwickeln.']
 ];
 const SCIENCE_LAB_COMPETENCIES=[
- ['science_experiments','Ich kann Experimente sicher und selbstständig durchführen und auswerten.']
+ ['science_experiments','Ich kann Experimente sicher und selbstständig durchführen und auswerten.'],
+ ['science_water_topics','Ich habe mich zielgerichtet mit Fischarten, der Löslichkeit verschiedener Stoffe in Wasser, dem Wasserkreislauf und der Funktionsweise einer Kläranlage beschäftigt.']
 ];
 const SCHOOL_GARDEN_COMPETENCIES=[
  ['garden_observation','Ich kann in unseren Schulgarten-Bereichen Beobachtungen machen und einfache Messgeräte benutzen.'],
