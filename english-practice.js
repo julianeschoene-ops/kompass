@@ -166,23 +166,36 @@ const EnglishPractice = {
     const entry=Object.values(Store.records||{}).flatMap(r=>r.practiceResults||[]).find(e=>e.id===id);
     const items=entry?.assessmentDetail?.items||[],answers=entry?.assessmentDetail?.answers||[];
     if(!items.length||items.length!==answers.length){alert('Bitte Ergebnisse neu laden.');return}
-    const points=[];
-    for(let i=0;i<items.length;i++){
-      const max=Number(items[i].max_points||0),current=Number(answers[i].points||0);
-      const value=prompt('Aufgabe '+(i+1)+'/'+items.length+'\\n'+String(items[i].prompt||'')+'\\nAntwort: '+String(answers[i].given||'—')+'\\nMögliche Lösung: '+String(items[i].accepted?.[0]||'')+'\\nPunkte (0–'+max+'):',String(current));
-      if(value===null)return;
-      const n=Number(value);
-      if(!value.trim()||!Number.isInteger(n)||n<0||n>max){alert('Bitte eine gültige Punktzahl eingeben.');return}
-      points.push(n);
-    }
-    const note=prompt('Feedback an das Kind (optional):',entry.reviewNote||'');
-    if(note===null)return;
-    try{
-      const r=await Auth.cloudClient.rpc('kompass_english_review_answers',{p_id:id,p_points:points,p_note:note});
-      if(r.error)throw r.error;
-      await reloadTeacherCloudData();
-      toast('Einzelpunkte, Niveau, Ampel und Feedback gespeichert.');
-    }catch(e){alert('Korrektur nicht gespeichert: '+(e.message||e))}
+    document.getElementById('english-answer-review')?.remove();
+    const overlay=document.createElement('div');
+    overlay.id='english-answer-review';
+    overlay.setAttribute('role','dialog');
+    overlay.setAttribute('aria-modal','true');
+    overlay.setAttribute('aria-label','Lernnachweis korrigieren');
+    overlay.style.cssText='position:fixed;inset:0;background:rgba(22,30,48,.65);z-index:10000;display:flex;align-items:center;justify-content:center;padding:12px';
+    const rows=items.map((item,i)=>{
+      const max=Number(item.max_points||0),points=Number(answers[i].points||0);
+      return '<div style="padding:13px 0;border-bottom:1px solid #e2e8f0"><div style="font-weight:650">'+(i+1)+'. '+esc(item.prompt||'Aufgabe')+'</div><div style="margin:6px 0">Antwort: <b>'+esc(answers[i].given||'—')+'</b></div><div style="font-size:.9rem;color:#475569">Lösung: '+esc(item.accepted?.[0]||'—')+'</div><label style="display:flex;gap:8px;align-items:center;margin-top:8px">Punkte <input class="answer-review-points" type="number" min="0" max="'+max+'" step="1" required value="'+points+'" style="width:76px;padding:7px;border:1px solid #94a3b8;border-radius:8px"> / '+max+'</label></div>';
+    }).join('');
+    overlay.innerHTML='<div style="background:white;color:#172033;border-radius:18px;width:min(720px,100%);max-height:94vh;overflow:auto;padding:20px;box-shadow:0 18px 60px #0004"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h2 style="margin:0">Lernnachweis korrigieren</h2><button type="button" class="btn secondary" data-close-review>Schließen</button></div><p style="margin:10px 0;color:#475569">Nur Punkte ändern, die du anders bewertest. Alle anderen bleiben erhalten.</p><form id="english-answer-review-form">'+rows+'<label style="display:block;margin:16px 0 6px;font-weight:650">Feedback für das Kind (optional)</label><textarea name="teacherNote" maxlength="1000" rows="3" style="width:100%;box-sizing:border-box;border:1px solid #94a3b8;border-radius:10px;padding:10px">'+esc(entry.reviewNote||'')+'</textarea><div style="display:flex;justify-content:flex-end;gap:10px;margin-top:15px"><button type="button" class="btn secondary" data-close-review>Abbrechen</button><button type="submit" class="btn">Bewertung speichern</button></div><p role="alert" id="answer-review-error" style="color:#b91c1c"></p></form></div>';
+    document.body.appendChild(overlay);
+    const close=()=>overlay.remove();
+    overlay.querySelectorAll('[data-close-review]').forEach(btn=>btn.addEventListener('click',close));
+    overlay.addEventListener('click',ev=>{if(ev.target===overlay)close()});
+    const form=overlay.querySelector('form');
+    form.addEventListener('submit',async ev=>{
+      ev.preventDefault();
+      const inputs=[...form.querySelectorAll('.answer-review-points')];
+      const points=inputs.map(input=>Number(input.value));
+      if(inputs.some((input,i)=>!input.value.trim()||!Number.isInteger(points[i])||points[i]<0||points[i]>Number(items[i].max_points||0))){overlay.querySelector('#answer-review-error').textContent='Bitte die Punkte prüfen.';return}
+      const save=form.querySelector('[type=submit]');save.disabled=true;save.textContent='Wird gespeichert …';
+      try{
+        const r=await Auth.cloudClient.rpc('kompass_english_review_answers',{p_id:id,p_points:points,p_note:form.elements.teacherNote.value});
+        if(r.error)throw r.error;
+        close();await reloadTeacherCloudData();toast('Punkte, Niveau, Ampel und Feedback gespeichert.');
+      }catch(e){overlay.querySelector('#answer-review-error').textContent='Speichern fehlgeschlagen: '+(e.message||e);save.disabled=false;save.textContent='Bewertung speichern'}
+    });
+    overlay.querySelector('[data-close-review]')?.focus();
   },
   async reviewDepth(id) {
     if(!this.userKey())return;const entry=Object.values(Store.records||{}).flatMap(r=>r.practiceResults||[]).find(e=>e.id===id),parts=entry?.outcome?.byLevel;if(!parts){alert('Bitte Ergebnisse neu laden.');return}
