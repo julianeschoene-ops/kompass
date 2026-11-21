@@ -1,10 +1,27 @@
 /* Results are stored in normal competency records by the database. */
 const EnglishPractice = {
   selectedPracticePupil: '',
+  practiceCloudRecords: null, practiceCloudLoading: false, practiceCloudAt: 0, practiceCloudGrade: null,
+  async refreshPracticeReports(){
+    if(this.practiceCloudLoading||!Auth.cloudClient)return;
+    this.practiceCloudLoading=true;
+    try{
+      const grade=Number(State.year);
+      const {data,error}=await Auth.cloudClient.from('kompass_grade_state').select('payload').eq('grade',grade).single();
+      if(error)throw error;
+      const records=data?.payload?.records||{};
+      this.practiceCloudRecords=Object.fromEntries(Object.entries(records).filter(([key])=>key.startsWith('english_practice_log|')));
+      this.practiceCloudGrade=grade;
+      this.practiceCloudAt=Date.now();
+      if(State.view==='core')render();
+    }catch(e){console.warn('English Practice reports could not be refreshed',e)}
+    finally{this.practiceCloudLoading=false}
+  },
   practiceOverview(){
+    if((this.practiceCloudGrade!==Number(State.year)||Date.now()-this.practiceCloudAt>30000)&&!this.practiceCloudLoading)void this.refreshPracticeReports();
     const pupils=filteredPupils();
     const info=p=>{
-      const reports=Store.records['english_practice_log|'+p.id]?.reports||[];
+      const reports=(this.practiceCloudRecords?.['english_practice_log|'+p.id]||Store.records['english_practice_log|'+p.id])?.reports||[];
       const activities=reports.flatMap(r=>Array.isArray(r.grammar)?r.grammar:[]);
       const compared=reports.reduce((n,r)=>n+(r.controls||[]).filter(c=>c.compared).length,0);
       const points=activities.reduce((n,a)=>n+Number(a.points||0),0);
@@ -26,7 +43,7 @@ const EnglishPractice = {
             '<h3>Lernwegeliste</h3>'+(controls.map(c=>'<p>'+esc(c.title||c.id||'Aufgabe')+': '+(c.compared?'selbst verglichen':'noch nicht verglichen')+' · '+Number(c.correct||0)+'/3 Zusatzfragen richtig</p>').join('')||'<p>Keine LWL-Aufgabe dokumentiert.</p>')+'</details>';
         }).join(''):'<p>Noch kein Übungsbericht übermittelt.</p>')+'</section>':'');
   },
-  practiceReport(p){const reports=Store.records['english_practice_log|'+p.id]?.reports||[];if(!reports.length)return '';return `<details class="card"><summary><b>Übungsberichte (${reports.length})</b></summary><p class="mini">Freiwillig übermittelte Übungsstände. Kontrollen sind Selbstauskünfte; keine Kompetenzbewertungen.</p>${reports.slice().sort((a,b)=>String(b.at).localeCompare(String(a.at))).map(r=>`<details><summary>${esc(new Date(r.at).toLocaleString('de-DE'))} · ${Number(r.starsTotal ?? r.stars ?? Math.round((Number(r.xp)||0)/10))||0} Sterne · ${(r.controls||[]).filter(x=>x.compared).length} verglichen · ${(r.controls||[]).filter(x=>x.star).length} ★</summary><h4>LWL-Kontrollen</h4>${(r.controls||[]).map(c=>`<p>${esc(c.title)}: ${c.compared?'verglichen / verbessert':'begonnen'} · ${Number(c.correct)||0}/3 Zusatzfragen ${c.star?'★':''}</p>`).join('')}<h4>Abgeschlossene Übungen</h4>${(r.grammar||[]).map(g=>`<p>${esc(g.title)}: ${Number(g.points)||0}/${Number(g.max)||0} richtig</p>`).join('')||'<p>Noch keine abgeschlossene Übungsrunde.</p>'}</details>`).join('')}</details>`},
+  practiceReport(p){const reports=(this.practiceCloudRecords?.['english_practice_log|'+p.id]||Store.records['english_practice_log|'+p.id])?.reports||[];if(!reports.length)return '';return `<details class="card"><summary><b>Übungsberichte (${reports.length})</b></summary><p class="mini">Freiwillig übermittelte Übungsstände. Kontrollen sind Selbstauskünfte; keine Kompetenzbewertungen.</p>${reports.slice().sort((a,b)=>String(b.at).localeCompare(String(a.at))).map(r=>`<details><summary>${esc(new Date(r.at).toLocaleString('de-DE'))} · ${Number(r.starsTotal ?? r.stars ?? Math.round((Number(r.xp)||0)/10))||0} Sterne · ${(r.controls||[]).filter(x=>x.compared).length} verglichen · ${(r.controls||[]).filter(x=>x.star).length} ★</summary><h4>LWL-Kontrollen</h4>${(r.controls||[]).map(c=>`<p>${esc(c.title)}: ${c.compared?'verglichen / verbessert':'begonnen'} · ${Number(c.correct)||0}/3 Zusatzfragen ${c.star?'★':''}</p>`).join('')}<h4>Abgeschlossene Übungen</h4>${(r.grammar||[]).map(g=>`<p>${esc(g.title)}: ${Number(g.points)||0}/${Number(g.max)||0} richtig</p>`).join('')||'<p>Noch keine abgeschlossene Übungsrunde.</p>'}</details>`).join('')}</details>`},
   symbols:{fox:['🦊','Fuchs'],panda:['🐼','Panda'],frog:['🐸','Frosch'],lion:['🦁','Löwe'],penguin:['🐧','Pinguin'],turtle:['🐢','Schildkröte'],dolphin:['🐬','Delfin'],butterfly:['🦋','Schmetterling'],bee:['🐝','Biene'],owl:['🦉','Eule'],rabbit:['🐰','Hase'],cat:['🐱','Katze'],dog:['🐶','Hund'],koala:['🐨','Koala'],octopus:['🐙','Oktopus'],unicorn:['🦄','Einhorn']},
   schoolClosures: [], calendarError: '', tasks: [], taskUser: null, taskBusy: false, taskError: '',
   userKey() { return Auth.session?.mode === 'cloud' && !Auth.isLernatelier() ? Auth.currentUser()?.id : null; },
