@@ -1,9 +1,16 @@
 {
   "updated": "2026-11-21",
-  "fetchedAt": "2026-11-21T13:48:08.894506+01:00",
+  "fetchedAt": "2026-11-21T21:09:40.826926+01:00",
   "leadUrl": "https://www.logo.de/gen-z-proteste-104.html",
   "source": "ZDF logo!",
   "items": [
+    {
+      "title": "Wisst ihr, was los war?",
+      "url": "https://www.logo.de/nachrichten-quiz-der-woche-100.html",
+      "summary": "Habt ihr alle wichtigen Nachrichten der Woche mitbekommen? Testet mit unseren spannenden Quizfragen euer Wissen zu den aktuellen Themen!",
+      "published": "2025-05-17",
+      "modified": "2026-11-21"
+    },
     {
       "title": "Das war bei den Demos los",
       "url": "https://www.logo.de/gen-z-proteste-104.html",
