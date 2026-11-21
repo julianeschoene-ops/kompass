@@ -20,28 +20,57 @@ const EnglishPractice = {
   practiceOverview(){
     if((this.practiceCloudGrade!==Number(State.year)||Date.now()-this.practiceCloudAt>30000)&&!this.practiceCloudLoading)void this.refreshPracticeReports();
     const pupils=filteredPupils();
+    const levels=[{name:'Starter',at:0},{name:'Explorer',at:15},{name:'Word Wizard',at:40},{name:'English Hero',at:80}];
+    const levelFor=stars=>levels.reduce((n,l,i)=>stars>=l.at?i:n,0);
+    const safePercent=(a,b)=>b>0?Math.max(0,Math.min(100,Math.round(a/b*100))):0;
+    const bar=(a,b)=>'<div style="height:9px;border-radius:20px;background:#e9edf2;overflow:hidden;margin:7px 0"><div style="height:100%;width:'+safePercent(a,b)+'%;background:'+(safePercent(a,b)>=80?'#36856c':safePercent(a,b)>=50?'#d39a42':'#bd6868')+';border-radius:20px"></div></div>';
     const info=p=>{
       const reports=(this.practiceCloudRecords?.['english_practice_log|'+p.id]||Store.records['english_practice_log|'+p.id])?.reports||[];
       const activities=reports.flatMap(r=>Array.isArray(r.grammar)?r.grammar:[]);
       const compared=reports.reduce((n,r)=>n+(r.controls||[]).filter(c=>c.compared).length,0);
       const points=activities.reduce((n,a)=>n+Number(a.points||0),0);
       const max=activities.reduce((n,a)=>n+Number(a.max||0),0);
-      return {p,reports,activities,compared,points,max,stars:Math.max(0,...reports.map(r=>Number(r.starsTotal ?? r.stars ?? Math.round((Number(r.xp)||0)/10))||0))};
+      return {p,reports,activities,compared,points,max,stars:Math.max(0,...reports.map(r=>Number(r.starsTotal??r.stars??Math.round((Number(r.xp)||0)/10))||0))};
     };
     const rows=pupils.map(info),withReports=rows.filter(x=>x.reports.length).length;
     if(!pupils.some(p=>String(p.id)===String(this.selectedPracticePupil)))this.selectedPracticePupil='';
     const selected=rows.find(x=>String(x.p.id)===String(this.selectedPracticePupil));
-    const percent=x=>x.max?Math.round(x.points/x.max*100)+' %':'–';
-    return '<div class="card"><p>'+withReports+' von '+pupils.length+' Kindern mit Übungsbericht. Vergleiche sind Angaben der Kinder; Ergebnisse der Zusatzfragen und digitalen Übungen werden getrennt gezeigt.</p>'+
+    let html='<div class="card"><p><b>'+withReports+' von '+pupils.length+'</b> Kindern haben einen Übungsbericht gesendet.</p>'+
       '<div class="toolbar"><label>Team <select onchange="State.team=this.value;EnglishPractice.selectedPracticePupil=\'\';render()">'+['alle',...TEAMS].map(t=>'<option value="'+esc(t)+'" '+(State.team===t?'selected':'')+'>'+esc(t==='alle'?'Alle Teams':t)+'</option>').join('')+'</select></label>'+
-      '<label>Kind <select onchange="EnglishPractice.selectedPracticePupil=this.value;render()"><option value="">Bitte auswählen</option>'+pupils.map(p=>'<option value="'+esc(p.id)+'" '+(String(p.id)===String(this.selectedPracticePupil)?'selected':'')+'>'+esc(p.short||p.first+' '+p.last)+'</option>').join('')+'</select></label></div></div>'+
-      (selected?'<section class="card"><h2>'+esc(selected.p.first+' '+selected.p.last)+'</h2><p>'+selected.reports.length+' Übungsbericht(e) · '+selected.activities.length+' abgeschlossene digitale Übungen · '+selected.compared+' selbst bestätigte Vergleiche · ⭐ '+selected.stars+' Sterne · '+percent(selected)+' richtig in digitalen Übungen</p>'+
-        (selected.reports.length?selected.reports.slice().sort((a,b)=>String(b.at).localeCompare(String(a.at))).map(r=>{
-          const activities=Array.isArray(r.grammar)?r.grammar:[],controls=Array.isArray(r.controls)?r.controls:[];
-          return '<details><summary>'+esc(new Date(r.at).toLocaleDateString('de-DE'))+' · '+activities.length+' Übungen · '+controls.filter(c=>c.compared).length+' Vergleiche</summary>'+
-            '<h3>Digitale Übungen</h3>'+(activities.map(a=>'<p>'+esc(a.title||'Übung')+': '+Number(a.points||0)+'/'+Number(a.max||0)+' richtig</p>').join('')||'<p>Keine abgeschlossene digitale Übung.</p>')+
-            '<h3>Lernwegeliste</h3>'+(controls.map(c=>'<p>'+esc(c.title||c.id||'Aufgabe')+': '+(c.compared?'selbst verglichen':'noch nicht verglichen')+' · '+Number(c.correct||0)+'/3 Zusatzfragen richtig</p>').join('')||'<p>Keine LWL-Aufgabe dokumentiert.</p>')+'</details>';
-        }).join(''):'<p>Noch kein Übungsbericht übermittelt.</p>')+'</section>':'');
+      '<label>Kind <select onchange="EnglishPractice.selectedPracticePupil=this.value;render()"><option value="">Bitte auswählen</option>'+pupils.map(p=>'<option value="'+esc(p.id)+'" '+(String(p.id)===String(this.selectedPracticePupil)?'selected':'')+'>'+esc(p.short||p.first+' '+p.last)+'</option>').join('')+'</select></label></div></div>';
+    if(!selected)return html;
+    const levelIndex=levelFor(selected.stars),level=levels[levelIndex],next=levels[levelIndex+1];
+    const byTopic=new Map();
+    for(const a of selected.activities){
+      const title=String(a.title||a.key||'Weitere Übung');
+      const key=String(a.key||title);
+      if(!byTopic.has(key))byTopic.set(key,{title,attempts:0,points:0,max:0,last:''});
+      const t=byTopic.get(key);t.attempts++;t.points+=Number(a.points||0);t.max+=Number(a.max||0);if(String(a.at||'')>t.last)t.last=String(a.at||'');
+    }
+    const topics=[...byTopic.values()].sort((a,b)=>b.last.localeCompare(a.last));
+    const tile=(label,value,detail)=>'<div style="border:1px solid #e1e5ec;border-radius:15px;padding:15px;background:#fafbfd;min-width:0"><div style="font-size:.84rem;color:#64748b">'+label+'</div><div style="font-size:1.55rem;font-weight:750;margin:5px 0">'+value+'</div><div class="mini">'+detail+'</div></div>';
+    html+='<section class="card"><h2>'+esc(selected.p.first+' '+selected.p.last)+'</h2>'+
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin:14px 0">'+
+      tile('⭐ Sterne',selected.stars,'Gesammelte Übungssterne')+
+      tile('🏅 Level',String(levelIndex+1)+' · '+esc(level.name),'Aktueller Lernstand')+
+      tile('✏️ Geübt',selected.activities.length+' Runden',topics.length+' Themen')+
+      tile('🎯 Richtig',selected.max?Math.round(selected.points/selected.max*100)+' %':'–','Digitale Übungen insgesamt')+'</div>'+
+      '<div style="border:1px solid #e1e5ec;border-radius:15px;padding:15px;margin-bottom:17px"><b>Dein Weg zum nächsten Level</b>'+
+      (next?'<p class="mini" style="margin:6px 0">'+esc(level.name)+' → '+esc(next.name)+' · noch '+(next.at-selected.stars)+' Sterne</p>'+bar(selected.stars-level.at,next.at-level.at):'<p class="mini">Höchstes Level erreicht</p>')+'</div>'+
+      '<h3>Was wurde geübt?</h3>'+
+      (topics.length?'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:12px 0 20px">'+topics.map(t=>{
+        const percent=safePercent(t.points,t.max);
+        return '<div style="border:1px solid #e1e5ec;border-radius:14px;padding:15px"><b>'+esc(t.title)+'</b><p style="margin:8px 0 4px"><strong>'+percent+' %</strong> richtig · '+t.attempts+' Runde'+(t.attempts===1?'':'n')+'</p>'+bar(t.points,t.max)+'<div class="mini">'+t.points+'/'+t.max+' Aufgabenpunkte</div></div>';
+      }).join('')+'</div>':'<p>Noch keine abgeschlossene digitale Übung übermittelt.</p>')+
+      '<details style="margin-top:14px"><summary><b>Einzelne Übungsberichte ansehen ('+selected.reports.length+')</b></summary>'+
+      selected.reports.slice().sort((a,b)=>String(b.at).localeCompare(String(a.at))).map(r=>{
+        const acts=Array.isArray(r.grammar)?r.grammar:[],controls=Array.isArray(r.controls)?r.controls:[];
+        const date=r.at?new Date(r.at).toLocaleDateString('de-DE'):'Ohne Datum';
+        return '<details style="margin:12px 0;padding:12px;border:1px solid #e1e5ec;border-radius:12px"><summary>'+esc(date)+' · '+acts.length+' Übungen · '+controls.filter(c=>c.compared).length+' Vergleiche</summary>'+
+        '<h4>Digitale Übungen</h4>'+(acts.map(a=>'<p>'+esc(a.title||'Übung')+': '+Number(a.points||0)+'/'+Number(a.max||0)+' richtig</p>').join('')||'<p>Keine digitalen Übungen in diesem Bericht.</p>')+
+        '<h4>Lernwegeliste</h4>'+(controls.map(c=>'<p>'+esc(c.title||c.id||'Aufgabe')+': '+(c.compared?'selbst verglichen':'noch nicht verglichen')+' · '+Number(c.correct||0)+'/3 Zusatzfragen richtig</p>').join('')||'<p>Keine LWL-Aufgabe dokumentiert.</p>')+'</details>';
+      }).join('')+'</details><p class="mini" style="margin-top:14px">Übungsdaten sind keine Kompetenzbewertung. Sterne und Übungsergebnisse werden getrennt ausgewiesen.</p></section>';
+    return html;
   },
   practiceReport(p){const reports=(this.practiceCloudRecords?.['english_practice_log|'+p.id]||Store.records['english_practice_log|'+p.id])?.reports||[];if(!reports.length)return '';return `<details class="card"><summary><b>Übungsberichte (${reports.length})</b></summary><p class="mini">Freiwillig übermittelte Übungsstände. Kontrollen sind Selbstauskünfte; keine Kompetenzbewertungen.</p>${reports.slice().sort((a,b)=>String(b.at).localeCompare(String(a.at))).map(r=>`<details><summary>${esc(new Date(r.at).toLocaleString('de-DE'))} · ${Number(r.starsTotal ?? r.stars ?? Math.round((Number(r.xp)||0)/10))||0} Sterne · ${(r.controls||[]).filter(x=>x.compared).length} verglichen · ${(r.controls||[]).filter(x=>x.star).length} ★</summary><h4>LWL-Kontrollen</h4>${(r.controls||[]).map(c=>`<p>${esc(c.title)}: ${c.compared?'verglichen / verbessert':'begonnen'} · ${Number(c.correct)||0}/3 Zusatzfragen ${c.star?'★':''}</p>`).join('')}<h4>Abgeschlossene Übungen</h4>${(r.grammar||[]).map(g=>`<p>${esc(g.title)}: ${Number(g.points)||0}/${Number(g.max)||0} richtig</p>`).join('')||'<p>Noch keine abgeschlossene Übungsrunde.</p>'}</details>`).join('')}</details>`},
   symbols:{fox:['🦊','Fuchs'],panda:['🐼','Panda'],frog:['🐸','Frosch'],lion:['🦁','Löwe'],penguin:['🐧','Pinguin'],turtle:['🐢','Schildkröte'],dolphin:['🐬','Delfin'],butterfly:['🦋','Schmetterling'],bee:['🐝','Biene'],owl:['🦉','Eule'],rabbit:['🐰','Hase'],cat:['🐱','Katze'],dog:['🐶','Hund'],koala:['🐨','Koala'],octopus:['🐙','Oktopus'],unicorn:['🦄','Einhorn']},
